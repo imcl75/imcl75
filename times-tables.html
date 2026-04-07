@@ -378,6 +378,50 @@
         }
         .btn-home:hover { background: #292929; }
 
+        /* Responsive - tablets (iPad) */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            h1 { font-size: 1.7em; }
+            .question-display { font-size: 2.5em; margin: 15px 0; }
+            .answer-input { width: 130px; padding: 12px; font-size: 1.8em; }
+            .btn-submit { padding: 12px 20px; font-size: 1.1em; }
+            .table-grid { gap: 8px; }
+            .table-btn { padding: 12px; font-size: 1.1em; }
+            .keypad { max-width: 260px; }
+            .key-btn { padding: 15px; font-size: 1.4em; }
+            .settings-row { flex-direction: column; gap: 5px; }
+        }
+
+        /* Responsive - phones (iPhone) */
+        @media (max-width: 480px) {
+            body { padding: 5px; align-items: flex-start; }
+            .container { padding: 15px; border-radius: 8px; }
+            h1 { font-size: 1.4em; }
+            .subtitle { font-size: 0.95em; margin-bottom: 15px; }
+            .school-logo { max-width: 80px; }
+            .question-display { font-size: 2em; margin: 10px 0; }
+            .answer-input { width: 110px; padding: 10px; font-size: 1.5em; }
+            .btn-submit { padding: 10px 15px; font-size: 1em; }
+            .table-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .table-btn { padding: 10px; font-size: 1em; }
+            .keypad { max-width: 240px; gap: 6px; }
+            .key-btn { padding: 14px; font-size: 1.3em; }
+            .feedback { font-size: 1.1em; }
+            .btn-start { font-size: 1.1em; padding: 12px 20px; }
+            .btn-next { font-size: 1em; padding: 12px 20px; }
+            .btn-again { font-size: 1em; padding: 12px 20px; }
+            .summary-item { font-size: 0.95em; padding: 6px 10px; }
+            .results-header .score-big { font-size: 2em; }
+            .results-header .emoji { font-size: 3em; }
+        }
+
+        /* Prevent zoom on input focus on iOS */
+        @media (max-width: 768px) {
+            .answer-input { font-size: 16px; }
+            .settings-row select { font-size: 16px; }
+        }
+
         .timer {
             text-align: center;
             color: #999;
