@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folder Creator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; min-height: 100vh; }
+
+    header {
+      background: #1798d3; color: white; padding: 14px 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    header .version { margin-left: auto; font-size: 0.72rem; opacity: 0.75; font-family: monospace; }
+
+    main { max-width: 780px; margin: 0 auto; padding: 20px 14px; }
+
+    .card {
+      background: white; border-radius: 12px; padding: 18px 20px;
+      margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 14px;
+    }
+
+    /* Level cards */
+    .level-card {
+      border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;
+      margin-bottom: 8px; transition: border-color 0.15s;
+    }
+    .level-card:focus-within { border-color: #1798d3; }
+
+    .level-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .level-badge {
+      background: #1798d3; color: white; width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+    }
+    .level-name-input {
+      flex: 1; border: 1.5px solid #d1d5db; border-radius: 6px;
+      padding: 6px 10px; font-size: 0.9rem; font-weight: 600;
+    }
+    .level-name-input:focus { outline: none; border-color: #1798d3; }
+
+    .mode-toggle { display: flex; background: #f1f5f9; border-radius: 6px; padding: 2px; flex-shrink: 0; }
+    .mode-btn {
+      padding: 4px 11px; border: none; background: none; border-radius: 5px;
+      font-size: 0.78rem; cursor: pointer; color: #64748b; transition: all 0.12s;
+    }
+    .mode-btn.active {
+      background: white; color: #1798d3; font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+
+    .level-move { display: flex; flex-direction: column; gap: 1px; }
+    .move-btn {
+      background: none; border: none; color: #cbd5e1; cursor: pointer;
+      font-size: 0.65rem; padding: 1px 3px; line-height: 1;
+      transition: color 0.12s;
+    }
+    .move-btn:hover { color: #1798d3; }
+
+    .delete-btn {
+      background: none; border: none; color: #fca5a5; cursor: pointer;
+      font-size: 1rem; padding: 2px 6px; border-radius: 5px;
+      transition: all 0.12s; line-height: 1;
+    }
+    .delete-btn:hover { background: #fee2e2; color: #ef4444; }
+
+    /* Numbered config */
+    .numbered-config {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    }
+    .cfg-group { display: flex; align-items: center; gap: 5px; }
+    .cfg-label { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+    .cfg-input {
+      border: 1.5px solid #d1d5db; border-radius: 6px;
+      padding: 5px 8px; font-size: 0.85rem;
+    }
+    .cfg-input:focus { outline: none; border-color: #1798d3; }
+    .cfg-input.w-sm { width: 65px; }
+    .cfg-input.w-md { width: 110px; }
+    .cfg-input.w-xs { width: 55px; }
+
+    /* Named config */
+    .named-config textarea {
+      width: 100%; border: 1.5px solid #d1d5db; border-radius: 6px;
+      padding: 7px 10px; font-size: 0.85rem; resize: vertical; min-height: 54px;
+    }
+    .named-config textarea:focus { outline: none; border-color: #1798d3; }
+
+    /* Extra (flat) folders row */
+    .extra-row {
+      margin-top: 9px; padding-top: 9px; border-top: 1px dashed #e2e8f0;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .extra-label { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+    .extra-input {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 6px;
+      padding: 5px 9px; font-size: 0.82rem; color: #374151; background: #fafafa;
+    }
+    .extra-input:focus { outline: none; border-color: #1798d3; background: white; }
+    .extra-hint { font-size: 0.72rem; color: #cbd5e1; white-space: nowrap; }
+
+    .add-level-btn {
+      width: 100%; padding: 9px; border: 2px dashed #cbd5e1; border-radius: 8px;
+      background: none; color: #64748b; font-size: 0.88rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .add-level-btn:hover { border-color: #1798d3; color: #1798d3; background: #f0f9ff; }
+
+    /* Preview */
+    .preview-meta { font-size: 0.82rem; color: #6b7280; margin-bottom: 10px; }
+    .tree {
+      font-family: 'Courier New', monospace; font-size: 0.82rem; line-height: 1.75;
+      color: #374151; max-height: 280px; overflow-y: auto; overflow-x: auto;
+      background: #f8fafc; border-radius: 6px; padding: 10px 12px;
+      white-space: pre;
+    }
+    .tf { color: #1798d3; font-weight: 600; }
+    .tm { color: #9ca3af; }
+    .empty-preview { color: #9ca3af; font-size: 0.88rem; }
+
+    /* Actions */
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 22px; border-radius: 8px; border: none;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: #1798d3; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #1281b8; }
+    .btn-outline { background: white; color: #1798d3; border: 2px solid #1798d3; }
+    .btn-outline:hover:not(:disabled) { background: #f0f9ff; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .status {
+      margin-top: 12px; padding: 9px 13px; border-radius: 7px;
+      font-size: 0.88rem; display: none;
+    }
+    .status.success { background: #d1fae5; color: #065f46; display: block; }
+    .status.error   { background: #fee2e2; color: #991b1b; display: block; }
+    .status.info    { background: #dbeafe; color: #1e40af; display: block; }
+
+    .script-box {
+      display: none; margin-top: 12px;
+      background: #1e1e2e; color: #a6e3a1; border-radius: 8px;
+      padding: 12px 14px; font-family: monospace; font-size: 0.78rem;
+      max-height: 200px; overflow-y: auto; white-space: pre;
+    }
+    .script-box.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📁 Folder Creator</h1>
+  <span class="version">26.07.26b</span>
+</header>
+
+<main>
+  <div class="card">
+    <div class="card-title">Folder Levels</div>
+    <div id="levels-list"></div>
+    <button class="add-level-btn" onclick="addLevel()">+ Add Level</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Preview</div>
+    <div class="preview-meta" id="preview-meta"></div>
+    <div class="tree" id="tree-preview">
+      <span class="empty-preview">Add levels above to see a preview.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Create</div>
+    <div class="actions">
+      <button class="btn btn-primary" id="create-btn" onclick="createFolders()">📁 Create Folders…</button>
+      <button class="btn btn-outline" onclick="downloadScript()">⬇ Download Shell Script</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+</main>
+
+<script>
+  let levels = [];
+  let nextId = 1;
+
+  // ── Data helpers ──────────────────────────────────────────────────
+
+  function getExtraNames(level) {
+    return (level.extra || '').split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  function getFolderNames(level) {
+    if (level.mode === 'named') {
+      return level.names.split(',').map(n => n.trim()).filter(Boolean);
+    }
+    const prefix = (level.prefix.trim() || level.name.trim() || 'Folder');
+    const start = parseInt(level.start) || 1;
+    const count = Math.max(1, parseInt(level.count) || 1);
+    const suffix = level.suffix || '';
+    return Array.from({ length: count }, (_, i) => `${prefix} ${start + i}${suffix}`);
+  }
+
+  function getAllPaths() {
+    if (!levels.length) return [];
+    function build(idx, prefix) {
+      if (idx >= levels.length) return [prefix];
+      const level = levels[idx];
+      const paths = getFolderNames(level).flatMap(name =>
+        build(idx + 1, prefix ? `${prefix}/${name}` : name)
+      );
+      getExtraNames(level).forEach(name =>
+        paths.push(prefix ? `${prefix}/${name}` : name)
+      );
+      return paths;
+    }
+    return build(0, '');
+  }
+
+  function countAllFolders() {
+    let total = 0;
+    function count(idx, parentCount) {
+      if (idx >= levels.length) return;
+      const n = getFolderNames(levels[idx]).length;
+      const e = getExtraNames(levels[idx]).length;
+      total += (n + e) * parentCount;
+      count(idx + 1, n * parentCount);
+    }
+    count(0, 1);
+    return total;
+  }
+
+  // ── State mutations ───────────────────────────────────────────────
+
+  function addLevel(defaults = {}) {
+    levels.push({
+      id: nextId++,
+      name:   defaults.name   ?? '',
+      mode:   defaults.mode   ?? 'numbered',
+      prefix: defaults.prefix ?? '',
+      start:  defaults.start  ?? 1,
+      count:  defaults.count  ?? 3,
+      suffix: defaults.suffix ?? '',
+      names:  defaults.names  ?? '',
+      extra:  defaults.extra  ?? '',
+    });
+    refresh();
+  }
+
+  function removeLevel(id) {
+    levels = levels.filter(l => l.id !== id);
+    refresh();
+  }
+
+  function moveLevel(id, dir) {
+    const i = levels.findIndex(l => l.id === id);
+    const j = i + dir;
+    if (j < 0 || j >= levels.length) return;
+    [levels[i], levels[j]] = [levels[j], levels[i]];
+    refresh();
+  }
+
+  function setMode(id, mode) {
+    const l = levels.find(l => l.id === id);
+    if (l) { l.mode = mode; refresh(); }
+  }
+
+  function setField(id, key, value) {
+    const l = levels.find(l => l.id === id);
+    if (l) { l[key] = value; updatePreview(); }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderLevels() {
+    const el = document.getElementById('levels-list');
+    el.innerHTML = levels.map((lv, i) => `
+      <div class="level-card">
+        <div class="level-header">
+          <div class="level-move">
+            <button class="move-btn" onclick="moveLevel(${lv.id},-1)" title="Move up">▲</button>
+            <button class="move-btn" onclick="moveLevel(${lv.id}, 1)" title="Move down">▼</button>
+          </div>
+          <div class="level-badge">${i + 1}</div>
+          <input class="level-name-input" type="text" placeholder="Level name (e.g. Term)"
+            value="${esc(lv.name)}"
+            oninput="setField(${lv.id},'name',this.value)" />
+          <div class="mode-toggle">
+            <button class="mode-btn ${lv.mode==='numbered'?'active':''}" onclick="setMode(${lv.id},'numbered')">Numbered</button>
+            <button class="mode-btn ${lv.mode==='named'?'active':''}" onclick="setMode(${lv.id},'named')">Named</button>
+          </div>
+          ${levels.length > 1 ? `<button class="delete-btn" onclick="removeLevel(${lv.id})" title="Remove">✕</button>` : ''}
+        </div>
+
+        ${lv.mode === 'numbered' ? `
+          <div class="numbered-config">
+            <div class="cfg-group">
+              <span class="cfg-label">Prefix</span>
+              <input class="cfg-input w-md" type="text" placeholder="${esc(lv.name)||'Folder'}"
+                value="${esc(lv.prefix)}" oninput="setField(${lv.id},'prefix',this.value)" />
+            </div>
+            <div class="cfg-group">
+              <span class="cfg-label">Start at</span>
+              <input class="cfg-input w-xs" type="number" min="0" value="${lv.start}"
+                oninput="setField(${lv.id},'start',this.value)" />
+            </div>
+            <div class="cfg-group">
+              <span class="cfg-label">Count</span>
+              <input class="cfg-input w-xs" type="number" min="1" max="200" value="${lv.count}"
+                oninput="setField(${lv.id},'count',this.value)" />
+            </div>
+            <div class="cfg-group">
+              <span class="cfg-label">Suffix</span>
+              <input class="cfg-input w-md" type="text" placeholder="optional"
+                value="${esc(lv.suffix)}" oninput="setField(${lv.id},'suffix',this.value)" />
+            </div>
+          </div>
+        ` : `
+          <div class="named-config">
+            <textarea placeholder="Enter names separated by commas, e.g.  Maths, English, Science, RE"
+              oninput="setField(${lv.id},'names',this.value)">${esc(lv.names)}</textarea>
+          </div>
+        `}
+        <div class="extra-row">
+          <span class="extra-label">${i === 0 ? 'Also at root:' : `Also in each ${esc(levels[i-1].name.trim() || 'parent')}:`}</span>
+          <input class="extra-input" type="text"
+            placeholder="e.g. PE, Swimming — sit alongside ${esc(lv.name.trim() || 'these')}, no sub-levels"
+            value="${esc(lv.extra)}" oninput="setField(${lv.id},'extra',this.value)" />
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updatePreview() {
+    const meta = document.getElementById('preview-meta');
+    const preview = document.getElementById('tree-preview');
+
+    if (!levels.length) {
+      meta.textContent = '';
+      preview.innerHTML = '<span class="empty-preview">Add levels above to see a preview.</span>';
+      return;
+    }
+
+    const total = countAllFolders();
+    const levelSummary = levels.map((lv, i) => {
+      const n = getFolderNames(lv).length;
+      const e = getExtraNames(lv).length;
+      const label = lv.name.trim() || `Level ${i+1}`;
+      return `${n} ${label}${n!==1?'s':''}${e > 0 ? ` +${e} flat` : ''}`;
+    }).join(' × ');
+    meta.textContent = `${levelSummary} = ${total} folder${total!==1?'s':''} total`;
+
+    const MAX = 3;
+    function renderNode(idx, linePrefix) {
+      if (idx >= levels.length) return '';
+      const level = levels[idx];
+      const names = getFolderNames(level);
+      const extras = getExtraNames(level);
+      const shownNames = names.slice(0, MAX);
+      const moreNames = names.length - MAX;
+      const shownExtras = extras.slice(0, 2);
+      const moreExtras = extras.length - 2;
+
+      // Build an ordered list of all items to render at this node
+      const items = [
+        ...shownNames.map(n => ({ t: 'folder', name: n })),
+        ...(moreNames > 0 ? [{ t: 'more', count: moreNames }] : []),
+        ...shownExtras.map(n => ({ t: 'flat', name: n })),
+        ...(moreExtras > 0 ? [{ t: 'more-flat', count: moreExtras }] : []),
+      ];
+
+      let out = '';
+      items.forEach((item, i) => {
+        const isLast = i === items.length - 1;
+        const conn  = isLast ? '└── ' : '├── ';
+        const child = linePrefix + (isLast ? '    ' : '│   ');
+        if (item.t === 'folder') {
+          out += `${linePrefix}${conn}<span class="tf">📁 ${esc(item.name)}</span>\n`;
+          out += renderNode(idx + 1, child);
+        } else if (item.t === 'flat') {
+          out += `${linePrefix}${conn}<span class="tf">📁 ${esc(item.name)}</span> <span class="tm">(no subfolders)</span>\n`;
+        } else if (item.t === 'more') {
+          out += `${linePrefix}${conn}<span class="tm">… and ${item.count} more</span>\n`;
+        } else {
+          out += `${linePrefix}${conn}<span class="tm">… and ${item.count} more (no subfolders)</span>\n`;
+        }
+      });
+      return out;
+    }
+
+    preview.innerHTML = renderNode(0, '');
+  }
+
+  function refresh() {
+    renderLevels();
+    updatePreview();
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = `status ${type}`;
+  }
+
+  async function createFolders() {
+    if (!levels.length) { showStatus('Add at least one level first.', 'error'); return; }
+    if (!window.showDirectoryPicker) {
+      showStatus('Direct folder creation is not supported in this browser — use "Download Shell Script" instead and run it in Terminal.', 'error');
+      return;
+    }
+    const paths = getAllPaths();
+    if (!paths.length) { showStatus('No folders to create.', 'error'); return; }
+
+    let dirHandle;
+    try { dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+    catch (e) { if (e.name !== 'AbortError') showStatus(`Error: ${e.message}`, 'error'); return; }
+
+    const btn = document.getElementById('create-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+    try {
+      for (const path of paths) {
+        let cur = dirHandle;
+        for (const part of path.split('/')) {
+          cur = await cur.getDirectoryHandle(part, { create: true });
+        }
+      }
+      showStatus(`✓ ${countAllFolders()} folders created successfully inside "${dirHandle.name}".`, 'success');
+    } catch(e) {
+      showStatus(`Error while creating folders: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📁 Create Folders…';
+    }
+  }
+
+  function downloadScript() {
+    if (!levels.length) { showStatus('Add at least one level first.', 'error'); return; }
+    const paths = getAllPaths();
+    if (!paths.length) { showStatus('No folders to create.', 'error'); return; }
+
+    const lines = [
+      '#!/bin/bash',
+      '# Generated by Folder Creator — 26.07.26a',
+      '# Run from the parent directory where you want your folders created:',
+      '#   bash create-folders.sh',
+      '',
+      ...paths.map(p => `mkdir -p "${p.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}"`)
+    ];
+
+    const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/x-sh' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: 'create-folders.sh' });
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showStatus('Script downloaded. In Terminal: cd to your target folder, then run  bash create-folders.sh', 'info');
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────
+
+  addLevel({ name: 'Term',    mode: 'numbered', prefix: 'Term',  count: 3 });
+  addLevel({ name: 'Week',    mode: 'numbered', prefix: 'Week',  count: 12, extra: 'PE, Swimming' });
+  addLevel({ name: 'Subject', mode: 'named',    names: 'Maths, English, Science, RE, History' });
+</script>
+</body>
+</html>
