@@ -92,6 +92,19 @@
     }
     .named-config textarea:focus { outline: none; border-color: #1798d3; }
 
+    /* Template row */
+    .tmpl-row {
+      margin-top: 8px; display: flex; align-items: center; gap: 7px;
+    }
+    .tmpl-label { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+    .tmpl-input {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 6px;
+      padding: 5px 9px; font-size: 0.82rem; font-family: 'Courier New', monospace;
+      color: #374151; background: #fafafa;
+    }
+    .tmpl-input:focus { outline: none; border-color: #1798d3; background: white; }
+    .tmpl-hint { font-size: 0.7rem; color: #cbd5e1; white-space: nowrap; }
+
     /* Extra (flat) folders row */
     .extra-row {
       margin-top: 9px; padding-top: 9px; border-top: 1px dashed #e2e8f0;
@@ -157,7 +170,7 @@
 
 <header>
   <h1>📁 Folder Creator</h1>
-  <span class="version">26.07.26b</span>
+  <span class="version">26.07.26c</span>
 </header>
 
 <main>
@@ -195,31 +208,40 @@
     return (level.extra || '').split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  function getFolderNames(level) {
+  function getFolderNames(level, parentNum = 1) {
     if (level.mode === 'named') {
       return level.names.split(',').map(n => n.trim()).filter(Boolean);
     }
-    const prefix = (level.prefix.trim() || level.name.trim() || 'Folder');
     const start = parseInt(level.start) || 1;
     const count = Math.max(1, parseInt(level.count) || 1);
+    if (level.template && level.template.trim()) {
+      const tmpl = level.template.trim();
+      return Array.from({ length: count }, (_, i) =>
+        tmpl.replace(/\{n\}/g, start + i).replace(/\{\^\}/g, parentNum)
+      );
+    }
+    const prefix = (level.prefix.trim() || level.name.trim() || 'Folder');
     const suffix = level.suffix || '';
     return Array.from({ length: count }, (_, i) => `${prefix} ${start + i}${suffix}`);
   }
 
   function getAllPaths() {
     if (!levels.length) return [];
-    function build(idx, prefix) {
+    function build(idx, prefix, parentNum) {
       if (idx >= levels.length) return [prefix];
       const level = levels[idx];
-      const paths = getFolderNames(level).flatMap(name =>
-        build(idx + 1, prefix ? `${prefix}/${name}` : name)
+      const start = parseInt(level.start) || 1;
+      const names = getFolderNames(level, parentNum);
+      const paths = [];
+      names.forEach((name, i) =>
+        paths.push(...build(idx + 1, prefix ? `${prefix}/${name}` : name, start + i))
       );
       getExtraNames(level).forEach(name =>
         paths.push(prefix ? `${prefix}/${name}` : name)
       );
       return paths;
     }
-    return build(0, '');
+    return build(0, '', 1);
   }
 
   function countAllFolders() {
@@ -247,7 +269,8 @@
       count:  defaults.count  ?? 3,
       suffix: defaults.suffix ?? '',
       names:  defaults.names  ?? '',
-      extra:  defaults.extra  ?? '',
+      extra:    defaults.extra    ?? '',
+      template: defaults.template ?? '',
     });
     refresh();
   }
@@ -326,6 +349,11 @@
                 value="${esc(lv.suffix)}" oninput="setField(${lv.id},'suffix',this.value)" />
             </div>
           </div>
+          <div class="tmpl-row">
+            <span class="tmpl-label">Name template:</span>
+            <input class="tmpl-input" type="text" placeholder="e.g. T{^}W{n}  —  {n} = this number, {^} = parent's number"
+              value="${esc(lv.template)}" oninput="setField(${lv.id},'template',this.value)" />
+          </div>
         ` : `
           <div class="named-config">
             <textarea placeholder="Enter names separated by commas, e.g.  Maths, English, Science, RE"
@@ -362,19 +390,19 @@
     meta.textContent = `${levelSummary} = ${total} folder${total!==1?'s':''} total`;
 
     const MAX = 3;
-    function renderNode(idx, linePrefix) {
+    function renderNode(idx, linePrefix, parentNum) {
       if (idx >= levels.length) return '';
       const level = levels[idx];
-      const names = getFolderNames(level);
+      const start = parseInt(level.start) || 1;
+      const names = getFolderNames(level, parentNum);
       const extras = getExtraNames(level);
       const shownNames = names.slice(0, MAX);
       const moreNames = names.length - MAX;
       const shownExtras = extras.slice(0, 2);
       const moreExtras = extras.length - 2;
 
-      // Build an ordered list of all items to render at this node
       const items = [
-        ...shownNames.map(n => ({ t: 'folder', name: n })),
+        ...shownNames.map((n, i) => ({ t: 'folder', name: n, num: start + i })),
         ...(moreNames > 0 ? [{ t: 'more', count: moreNames }] : []),
         ...shownExtras.map(n => ({ t: 'flat', name: n })),
         ...(moreExtras > 0 ? [{ t: 'more-flat', count: moreExtras }] : []),
@@ -387,7 +415,7 @@
         const child = linePrefix + (isLast ? '    ' : '│   ');
         if (item.t === 'folder') {
           out += `${linePrefix}${conn}<span class="tf">📁 ${esc(item.name)}</span>\n`;
-          out += renderNode(idx + 1, child);
+          out += renderNode(idx + 1, child, item.num);
         } else if (item.t === 'flat') {
           out += `${linePrefix}${conn}<span class="tf">📁 ${esc(item.name)}</span> <span class="tm">(no subfolders)</span>\n`;
         } else if (item.t === 'more') {
@@ -399,7 +427,7 @@
       return out;
     }
 
-    preview.innerHTML = renderNode(0, '');
+    preview.innerHTML = renderNode(0, '', 1);
   }
 
   function refresh() {
@@ -473,7 +501,7 @@
   // ── Boot ──────────────────────────────────────────────────────────
 
   addLevel({ name: 'Term',    mode: 'numbered', prefix: 'Term',  count: 3 });
-  addLevel({ name: 'Week',    mode: 'numbered', prefix: 'Week',  count: 12, extra: 'PE, Swimming' });
+  addLevel({ name: 'Week',    mode: 'numbered', prefix: 'Week',  count: 12, template: 'T{^}W{n}', extra: 'PE, Swimming' });
   addLevel({ name: 'Subject', mode: 'named',    names: 'Maths, English, Science, RE, History' });
 </script>
 </body>
