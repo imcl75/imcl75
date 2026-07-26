@@ -1,0 +1,87 @@
+name: Fetch Art Images
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fetch-art-images.yml'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artwork images
+        run: |
+          mkdir -p art-explorer/img
+          cd art-explorer/img
+
+          UA="Mozilla/5.0 (compatible; WFAClassroom/1.0; +https://imcl75.github.io)"
+
+          download() {
+            local fname="$1"
+            local url="$2"
+            if [ -f "$fname" ]; then
+              echo "SKIP $fname (already exists)"
+              return
+            fi
+            if curl -sS -L -A "$UA" --max-time 30 -o "$fname" "$url"; then
+              size=$(wc -c < "$fname")
+              if [ "$size" -gt 5000 ]; then
+                echo "OK   $(($size/1024))KB  $fname"
+              else
+                echo "TINY $size bytes $fname — removing"
+                rm "$fname"
+              fi
+            else
+              echo "ERR  $fname"
+            fi
+            sleep 0.5
+          }
+
+          download grande-jatte.jpg    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/800px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg"
+          download paris-street.jpg    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg/800px-Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg"
+          download water-lilies.jpg    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Reflections_of_Clouds_on_the_Water-Lily_Pond.jpg/800px-Reflections_of_Clouds_on_the_Water-Lily_Pond.jpg"
+          download stacks-of-wheat.jpg "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Claude_Monet_-_Stacks_of_Wheat_%28End_of_Summer%29_-_1985.1103_-_Art_Institute_of_Chicago.jpg/800px-Claude_Monet_-_Stacks_of_Wheat_%28End_of_Summer%29_-_1985.1103_-_Art_Institute_of_Chicago.jpg"
+          download bedroom.jpg         "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Vincent_van_Gogh_-_De_slaapkamer_-_Google_Art_Project.jpg/800px-Vincent_van_Gogh_-_De_slaapkamer_-_Google_Art_Project.jpg"
+          download millinery-shop.jpg  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Edgar_Degas_-_The_Millinery_Shop_-_Google_Art_Project.jpg/800px-Edgar_Degas_-_The_Millinery_Shop_-_Google_Art_Project.jpg"
+          download childs-bath.jpg     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg/800px-Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg"
+          download normandy-train.jpg  "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg/800px-Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg"
+          download great-wave.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/800px-Tsunami_by_hokusai_19th_century.jpg"
+          download nighthawks.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Nighthawks_by_Edward_Hopper_1942.jpg/800px-Nighthawks_by_Edward_Hopper_1942.jpg"
+          download hay-wain.jpg        "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/John_Constable_-_The_Hay_Wain_%281821%29.jpg/800px-John_Constable_-_The_Hay_Wain_%281821%29.jpg"
+          download american-gothic.jpg "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg/800px-Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg"
+          download christinas-world.jpg "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/Christinasworld.jpg/800px-Christinasworld.jpg"
+          download young-hare.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Albrecht_D%C3%BCrer_-_Hare%2C_1502_-_Google_Art_Project.jpg/800px-Albrecht_D%C3%BCrer_-_Hare%2C_1502_-_Google_Art_Project.jpg"
+          download whistlejacket.jpg   "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Whistlejacket_by_George_Stubbs_edit.jpg/800px-Whistlejacket_by_George_Stubbs_edit.jpg"
+          download monarch-glen.png    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/The_Monarch_of_the_Glen%2C_Edwin_Landseer%2C_1851.png/800px-The_Monarch_of_the_Glen%2C_Edwin_Landseer%2C_1851.png"
+          download st-george.jpg       "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Bernat_Martorell_-_Saint_George_Killing_the_Dragon_-_Google_Art_Project.jpg/800px-Bernat_Martorell_-_Saint_George_Killing_the_Dragon_-_Google_Art_Project.jpg"
+          download lady-unicorn.jpg    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg/800px-%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg"
+          download bayeux.png          "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Odo_bayeux_tapestry.png/800px-Odo_bayeux_tapestry.png"
+          download nefertiti.jpg       "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Nofretete_Neues_Museum.jpg/800px-Nofretete_Neues_Museum.jpg"
+          download rosetta-stone.jpg   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Rosetta_Stone.JPG/800px-Rosetta_Stone.JPG"
+          download sphinx.jpg          "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Sphinx_with_the_third_pyramid.jpg/800px-Sphinx_with_the_third_pyramid.jpg"
+          download venus-de-milo.jpg   "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Front_views_of_the_Venus_de_Milo.jpg/800px-Front_views_of_the_Venus_de_Milo.jpg"
+          download discobolus.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Roman_bronze_copy_of_Myron%E2%80%99s_Discobolos%2C_2nd_century_CE_%28Glyptothek_Munich%29.jpg/800px-Roman_bronze_copy_of_Myron%E2%80%99s_Discobolos%2C_2nd_century_CE_%28Glyptothek_Munich%29.jpg"
+          download homer.jpg           "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Homer_At_the_British_Museum_2024_%283x4_cropped%29.jpg/800px-Homer_At_the_British_Museum_2024_%283x4_cropped%29.jpg"
+          download mona-lisa.jpg       "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_natural_color.jpg/800px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_natural_color.jpg"
+          download girl-pearl.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/800px-1665_Girl_with_a_Pearl_Earring.jpg"
+          download tornabuoni.jpg      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Ghirlandaio-Giovanna_Tornabuoni_cropped.jpg/800px-Ghirlandaio-Giovanna_Tornabuoni_cropped.jpg"
+
+          ls -lh
+          echo "Done. Files present: $(ls | wc -l)"
+
+      - name: Commit images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add art-explorer/img/
+          if git diff --staged --quiet; then
+            echo "No new images to commit"
+          else
+            git commit -m "Add artwork images via GitHub Actions"
+            git push
+          fi
