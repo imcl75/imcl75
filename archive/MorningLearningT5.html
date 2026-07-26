@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Morning Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#fff;font-family:'Nunito',sans-serif}
+#app{width:100%;height:100%;display:flex;flex-direction:column;outline:5px solid #4DC8E8;outline-offset:-2px}
+
+#date-hdr{font-size:clamp(2.8rem,8vh,6rem);font-weight:700;text-align:center;padding:0.06em 0;border-bottom:3px solid #111;flex-shrink:0;color:#111;line-height:1.05;letter-spacing:0.01em}
+
+#lunch-bar{display:grid;grid-template-columns:2fr 2fr 1.5fr 1.5fr 1fr;border-bottom:3px solid #111;flex-shrink:0}
+.lc{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:clamp(1.3rem,3.2vh,2.2rem);padding:0.4em 0.6em;text-align:center;line-height:1.2;min-height:clamp(60px,9.5vh,100px)}
+.lc+.lc{border-left:2.5px solid rgba(0,0,0,0.18)}
+.lc-r{background:#E00;color:#fff}.lc-g{background:#3A9922;color:#fff}.lc-p{background:#E07070;color:#fff}.lc-j{background:#6B4820;color:#F0DFC0}.lc-b{background:#111;color:#fff}
+
+#main{flex:1;display:grid;grid-template-columns:65% 35%;min-height:0;overflow:hidden}
+
+/* PUZZLE */
+#puzzle-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2vh 2vw;gap:1vh}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);border:3px solid #111}
+.pcell{width:clamp(72px,10.5vh,120px);height:clamp(72px,10.5vh,120px);display:flex;align-items:center;justify-content:center;border:1.5px solid #111;font-size:clamp(2.2rem,6vh,4rem);font-weight:800;background:#fff;color:#111}
+.ptitle{font-size:clamp(1.6rem,4.5vh,3rem);font-weight:700;text-align:center;color:#111;margin-top:0.5vh}
+.num-tbl{border-collapse:collapse;margin-top:0.6vh}
+.num-tbl th{padding:clamp(6px,1.2vh,13px) clamp(18px,3vw,40px);font-size:clamp(1rem,2.4vh,1.6rem);font-weight:800;border:2.5px solid #111}
+.num-tbl td{text-align:center;padding:clamp(5px,1vh,11px) clamp(16px,2.5vw,36px);border:1.5px solid #777;font-size:clamp(1.3rem,3.4vh,2.4rem);font-weight:700}
+.th-2{background:#AED6F1;color:#1A5276}.th-3{background:#A9DFBF;color:#145A32}.th-4{background:#FAD7A0;color:#784212}
+.td-2{background:#EBF5FB}.td-3{background:#EAFAF1}.td-4{background:#FEF9E7}
+
+/* COMBINED PUZZLE */
+#combined-panel{width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;min-height:0;overflow:hidden}
+.cpanel{display:flex;flex-direction:column;padding:0.5vh 0.8vw;border-right:2.5px solid #EEE;border-bottom:2.5px solid #EEE;overflow:hidden;min-height:0}
+.cpanel:nth-child(2),.cpanel:nth-child(4){border-right:none}
+.cpanel:nth-child(3),.cpanel:nth-child(4){border-bottom:none}
+.cpanel-hdr{font-size:clamp(0.9rem,2vh,1.3rem);font-weight:900;color:#fff;background:#4DC8E8;border-radius:5px 5px 0 0;padding:0.18em 0.7em;text-align:center;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.cpanel-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4vh;padding:0.3vh 0;overflow:hidden;min-height:0}
+
+/* anagram */
+.ana-main{font-size:clamp(1.6rem,4.5vh,3.2rem);font-weight:900;letter-spacing:0.18em;background:#F1EFE8;border:2.5px solid #B4B2A9;border-radius:7px;padding:0.2em 0.5em;color:#111;text-align:center}
+.ana-blanks{display:flex;gap:5px;justify-content:center}
+.ana-blank{width:clamp(22px,3.5vh,36px);height:clamp(26px,4vh,42px);border-bottom:3.5px solid #111}
+.ana-hint{font-size:clamp(0.85rem,1.9vh,1.3rem);color:#999;font-weight:700;font-style:italic;text-align:center}
+.ana-bonus-list{width:100%;display:flex;flex-direction:column;gap:0.3vh;margin-top:0.1vh}
+.ana-bonus-row{display:flex;align-items:center;gap:8px;justify-content:center}
+.ana-bonus-word{font-size:clamp(0.9rem,2.2vh,1.5rem);font-weight:900;letter-spacing:0.12em;background:#F8F8F8;border:1.5px solid #DDD;border-radius:4px;padding:0.15em 0.5em;color:#666}
+.ana-bonus-blanks{display:flex;gap:4px}
+.ana-bonus-blank{width:clamp(14px,2.2vh,22px);height:clamp(18px,2.8vh,28px);border-bottom:2.5px solid #AAA}
+
+/* sequences */
+.seq-row{display:flex;align-items:center;justify-content:center;gap:clamp(4px,0.6vw,10px);width:100%}
+.seq-n{min-width:clamp(38px,5.5vh,62px);height:clamp(38px,5.5vh,62px);border:2.5px solid #111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:clamp(1rem,2.6vh,1.8rem);font-weight:800;color:#111;padding:0 4px;flex-shrink:0}
+.seq-n.q{background:#FAD7A0;border-color:#F0A500;color:#784212;font-size:clamp(1.2rem,3vh,2rem)}
+.seq-arr{color:#CCC;font-weight:700;font-size:1.1rem;flex-shrink:0}
+.seq-divider{width:100%;height:1.5px;background:#EEE}
+.seq-instr{font-size:clamp(0.8rem,1.8vh,1.2rem);color:#AAA;font-style:italic;font-weight:700;text-align:center}
+
+/* two truths */
+.tt-topic{font-size:clamp(0.85rem,1.9vh,1.3rem);font-weight:900;color:#888;text-transform:uppercase;letter-spacing:0.06em;text-align:center}
+.tt-item{display:flex;gap:8px;align-items:flex-start;width:100%;padding:0.55vh 0.6vw;border:2px solid #E8E8E8;border-radius:7px}
+.tt-num{width:clamp(20px,3vh,32px);height:clamp(20px,3vh,32px);border-radius:50%;background:#4DC8E8;color:#fff;font-size:clamp(0.72rem,1.6vh,1.1rem);font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.tt-text{font-size:clamp(0.9rem,2.2vh,1.5rem);font-weight:700;color:#111;line-height:1.3}
+.tt-instr{font-size:clamp(0.75rem,1.7vh,1.1rem);color:#AAA;font-style:italic;font-weight:700;text-align:center}
+
+/* odd one out */
+.ooo-set{width:100%;display:flex;flex-direction:column;gap:0.35vh}
+.ooo-set+.ooo-set{border-top:3px solid #4DC8E8;padding-top:0.6vh;margin-top:0.3vh}
+.ooo-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ooo-item{border:2px solid #E0E0E0;border-radius:6px;padding:0.45vh 0.5vw;font-size:clamp(0.9rem,2.2vh,1.5rem);font-weight:700;color:#111;text-align:center;line-height:1.25}
+.ooo-instr{font-size:clamp(0.75rem,1.7vh,1.1rem);color:#AAA;font-style:italic;font-weight:700;text-align:center}
+
+/* RIGHT PANEL */
+#right-panel{border-left:3px solid #E0E0E0;display:flex;flex-direction:column;padding:1.2vh 1.4vw 0.8vh;gap:0;min-height:0;overflow:hidden}
+.msg-hdr{background:#4DC8E8;color:#fff;font-size:clamp(1.2rem,3vh,2rem);font-weight:700;padding:0.22em 0.8em;border-radius:6px 6px 0 0;flex-shrink:0;line-height:1.3}
+#msg-img-wrap{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;border:2.5px solid #4DC8E8;border-top:none;border-radius:0 0 6px 6px}
+#msg-body{flex:0 0 auto;padding:0.8vh 1vw;font-size:clamp(1.6rem,3.8vh,2.6rem);font-weight:700;outline:none;overflow-y:auto;color:#111;line-height:1.5;width:100%;min-height:2em}
+#msg-body:empty::before{content:attr(data-ph);color:#ccc;font-style:italic;font-weight:400;font-size:0.85em}
+#img-pane{display:none;flex:1;border-top:2px solid #E8E8E8;position:relative;overflow:hidden;align-items:center;justify-content:center;min-height:0}
+#img-pane.visible{display:flex}
+#img-pane img{max-width:100%;max-height:100%;object-fit:contain}
+#img-del{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);color:#fff;border:none;border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;opacity:0;transition:opacity 0.15s}
+#img-pane:hover #img-del{opacity:1}
+#img-input{display:none}
+
+/* CONTROLS */
+#ctrl{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:6px 0 2px;flex-shrink:0}
+.cb{padding:6px 8px;font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;background:rgba(240,240,240,0.95);border:1.5px solid #C8C8C8;border-radius:5px;cursor:pointer;color:#444;text-align:center}
+.cb:hover{background:#DCDCDC}
+#override-dot{width:7px;height:7px;background:#FFC000;border-radius:50%;margin-left:4px;vertical-align:middle;display:none}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.48);z-index:100;align-items:flex-start;justify-content:center;padding:4vh 1rem 2rem;overflow-y:auto}
+.overlay.on{display:flex}
+.obox{background:#fff;border-radius:14px;padding:22px 26px;width:90vw;max-width:920px;font-family:'Nunito',sans-serif;margin:auto}
+.obox h2{font-size:1.3rem;font-weight:800;margin-bottom:0.8rem;color:#111}
+.obox h3{font-size:1rem;font-weight:800;margin:1rem 0 0.5rem;color:#333}
+.oclose{padding:7px 18px;background:#eee;border:none;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.osave{padding:7px 18px;background:#4DC8E8;color:#fff;border:none;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.odanger{padding:7px 18px;background:#E03030;color:#fff;border:none;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.oadd{padding:7px 18px;background:#3A9922;color:#fff;border:none;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.ov-field{margin-bottom:11px}
+.ov-field label{display:block;font-size:0.82rem;font-weight:700;color:#333;margin-bottom:4px}
+.ov-field input,.ov-field textarea{width:100%;padding:7px 10px;border:1.5px solid #CCC;border-radius:5px;font-family:'Nunito',sans-serif;font-size:0.9rem}
+.ov-field textarea{min-height:70px;resize:vertical}
+.hint{font-size:0.75rem;color:#999;margin-top:3px}
+.menu-wk{font-weight:800;font-size:1rem;color:#111;margin:14px 0 5px;padding-top:12px;border-top:2px solid #EEE}
+.menu-wk:first-child{border-top:none;margin-top:0}
+.mrow{display:grid;grid-template-columns:70px 1fr 1fr;gap:5px 10px;align-items:center;margin-bottom:5px}
+.mrow label{font-size:0.82rem;font-weight:700;color:#555}
+.mrow input{padding:5px 8px;border:1.5px solid #CCC;border-radius:5px;font-family:'Nunito',sans-serif;font-size:0.82rem;width:100%}
+.col-hdr{font-size:0.74rem;font-weight:700;color:#AAA}
+.sol-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sol-cl{font-weight:800;font-size:0.82rem;color:#555;margin-bottom:5px}
+.sol-ci{font-size:0.88rem;font-family:monospace;margin-bottom:4px;color:#111}
+.sol-words{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sol-w{background:#E8F8EE;border:1px solid #A9DFBF;padding:3px 9px;border-radius:4px;font-size:0.9rem;font-weight:600;color:#145A32}
+
+/* TWO TRUTHS EDITOR */
+.tt-bank-item{border:1.5px solid #EEE;border-radius:8px;padding:10px 14px;margin-bottom:8px;position:relative}
+.tt-bank-topic{font-size:0.8rem;font-weight:800;color:#4DC8E8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+.tt-bank-stmts{font-size:0.82rem;color:#333;line-height:1.6}
+.tt-bank-lie{color:#E03030}
+.tt-bank-del{position:absolute;top:8px;right:10px;background:none;border:none;color:#CCC;cursor:pointer;font-size:1.1rem;font-family:'Nunito',sans-serif;font-weight:700}
+.tt-bank-del:hover{color:#E03030}
+.tt-add-form{background:#F8F8F8;border-radius:8px;padding:14px;margin-top:10px}
+.tt-add-form input{width:100%;padding:6px 9px;border:1.5px solid #CCC;border-radius:5px;font-family:'Nunito',sans-serif;font-size:0.85rem;margin-bottom:6px}
+.tt-lie-label{display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;color:#666;margin-bottom:6px}
+.tt-lie-label select{padding:4px 7px;border:1.5px solid #CCC;border-radius:5px;font-family:'Nunito',sans-serif;font-size:0.82rem}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="date-hdr"></div>
+  <div id="lunch-bar">
+    <div class="lc lc-r" id="lc0">—</div>
+    <div class="lc lc-g" id="lc1">—</div>
+    <div class="lc lc-p">Tomato Pasta</div>
+    <div class="lc lc-j">Jacket Potato</div>
+    <div class="lc lc-b">Packed Lunch</div>
+  </div>
+  <div id="main">
+    <div id="puzzle-panel"></div>
+    <div id="right-panel">
+      <div class="msg-hdr">Morning Messages</div>
+      <div id="msg-img-wrap">
+        <div class="msg-body" id="msg-body" contenteditable="true" data-ph="No message today"></div>
+        <div id="img-pane">
+          <img id="img-el" src="" alt="">
+          <button id="img-del" onclick="removeImg()">Remove</button>
+        </div>
+      </div>
+      <div id="ctrl">
+        <button class="cb" id="solbtn" onclick="toggleSols()">Solutions</button>
+        <button class="cb" onclick="newPuzzle()">New puzzle</button>
+        <button class="cb" onclick="toggleType()">Switch puzzle</button>
+        <button class="cb" onclick="document.getElementById('img-input').click()">Add image</button>
+        <button class="cb" onclick="openOverride()">Override today <span id="override-dot"></span></button>
+        <button class="cb" onclick="openSetup()">Setup</button>
+      </div>
+    </div>
+  </div>
+</div>
+<input type="file" id="img-input" accept="image/*" onchange="handleImgFile(event)">
+
+<!-- Solutions -->
+<div class="overlay" id="sol-ov" onclick="if(event.target===this)closeSols()">
+  <div class="obox">
+    <h2 id="sol-title">Solutions</h2>
+    <div id="sol-content"></div>
+    <div style="text-align:right;margin-top:1rem"><button class="oclose" onclick="closeSols()">Close</button></div>
+  </div>
+</div>
+
+<!-- Override today -->
+<div class="overlay" id="ov-overlay" onclick="if(event.target===this)closeOverride()">
+  <div class="obox">
+    <h2>Override today's display</h2>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:12px">Leave any field blank to use the automatic value.</p>
+    <div class="ov-field"><label>Hot option 1 (red)</label><input id="ov-meal1" placeholder="Leave blank to use rotation"></div>
+    <div class="ov-field"><label>Hot option 2 (green)</label><input id="ov-meal2" placeholder="Leave blank to use rotation"></div>
+    <div class="ov-field">
+      <label>Morning message</label>
+      <textarea id="ov-msg" placeholder="Leave blank for automatic message (Thu/Fri) or no message"></textarea>
+      <div class="hint" id="ov-auto-preview"></div>
+    </div>
+    <div class="ov-field">
+      <label>Two truths &amp; a lie — use today's custom set instead of bank</label>
+      <input id="ov-tt-topic" placeholder="Topic (e.g. Fractions)" style="margin-bottom:5px">
+      <input id="ov-tt-1" placeholder="Statement 1">
+      <input id="ov-tt-2" placeholder="Statement 2" style="margin-top:5px">
+      <input id="ov-tt-3" placeholder="Statement 3" style="margin-top:5px">
+      <div class="tt-lie-label" style="margin-top:6px">The lie is statement <select id="ov-tt-lie"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+      <div class="hint">Leave topic blank to use a random set from the bank</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:space-between;margin-top:1rem;flex-wrap:wrap">
+      <button class="odanger" onclick="clearOverride()">Clear all overrides</button>
+      <div style="display:flex;gap:10px"><button class="oclose" onclick="closeOverride()">Cancel</button><button class="osave" onclick="saveOverride()">Apply</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Setup (menu + two truths bank) -->
+<div class="overlay" id="setup-ov" onclick="if(event.target===this)closeSetup()">
+  <div class="obox">
+    <h2>Setup</h2>
+
+    <h3>Lunch menu — 3-week rotation</h3>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:10px">Tomato Pasta, Jacket Potato and Packed Lunch are fixed.</p>
+    <div id="menu-form"></div>
+
+    <h3 style="margin-top:1.5rem">Two Truths &amp; a Lie — question bank</h3>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:10px">Add your own sets. The game picks randomly from this bank. Mark which statement is the lie — the lie is shown in solutions but not to pupils.</p>
+    <div id="tt-bank-list"></div>
+    <div class="tt-add-form">
+      <div style="font-size:0.85rem;font-weight:800;color:#333;margin-bottom:8px">Add a new set</div>
+      <input id="tt-new-topic" placeholder="Topic (e.g. Ancient Maya)">
+      <input id="tt-new-1" placeholder="Statement 1">
+      <input id="tt-new-2" placeholder="Statement 2">
+      <input id="tt-new-3" placeholder="Statement 3">
+      <div class="tt-lie-label">The lie is statement <select id="tt-new-lie"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+      <button class="oadd" onclick="addTTSet()" style="margin-top:6px">Add to bank</button>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem">
+      <button class="oclose" onclick="closeSetup()">Cancel</button>
+      <button class="osave" onclick="saveSetup()">Save all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// MENU DATA
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// MENU DATA — direct lookup by Monday date (from spring/summer menu)
+// Red = main, Green = veg option
+// ═══════════════════════════════════════════════════════════
+const MENU_BY_WEEK={
+  '2026-04-13':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-04-20':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-04-27':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-05-04':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-05-11':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-05-18':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-05-25':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-06-01':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-06-08':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-06-15':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-06-22':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-06-29':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-07-06':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-07-13':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-07-20':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-07-27':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-08-03':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-08-10':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-08-24':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-08-31':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-09-07':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-09-14':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-09-21':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-09-28':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+  '2026-10-05':{Mon:['Cheese & Tomato Pizza','Cheddar & Tomato Puff Pastry Tart'],Tue:['Bangers and Mash','Veggie Bangers and Mash'],Wed:['Roast Gammon','Tomato & Lentil Layer Bake'],Thu:['Beef Pasta Bolognese','Veggie Pasta Bolognese'],Fri:['Golden Fish Fingers','Cheesy Bean Wrap']},
+  '2026-10-12':{Mon:['Cheese & Tomato Pizza','Macaroni Cheese'],Tue:['Creamy Swedish Meatballs','Creamy Veggie Sausage'],Wed:['Roast Pork','Med Veg Wellington'],Thu:['Jerk Chicken Wrap','Sweet Potato Coconut Bean Stew'],Fri:['Golden Fish Fingers','Vegetable Fingers']},
+  '2026-10-19':{Mon:['Macaroni Cheese','Mixed Bean Fajitas'],Tue:['Homemade Sausage Roll','Veggie Sausage Roll'],Wed:['Roast Chicken','Cauliflower & Broccoli Cheese Bake'],Thu:['Cottage Pie','Shepherdless Pie'],Fri:['Golden Fish Fingers','BBQ Veggie Wrap']},
+};
+const AUTO_MSGS={Thu:'Hand in your home learning\nPaired Spelling Bee',Fri:'Stick in your home learning\nLeave last week\'s to be checked'};
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYNAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ═══════════════════════════════════════════════════════════
+// BOGGLE BANK
+// ═══════════════════════════════════════════════════════════
+const BOGGLE=[
+  {w:'SOMETHING',s:['go','me','so','get','got','hen','him','his','hot','met','net','not','one','set','she','ten','the','tie','tin','toe','ton','come','gone','gosh','home','hone','hose','mesh','most','nose','note','shin','shoe','shot','some','song','them','then','this','tome','tone','notes','stone','those','tones','homes']},
+  {w:'ADVENTURE',s:['and','ant','are','ate','due','ear','eat','end','era','nut','ran','run','rut','tan','tar','ten','vet','aunt','dare','date','dean','dear','dune','earn','near','nude','rate','read','rend','rent','rude','rune','true','tune','turn','vent','under','trade','tuned','turned']},
+  {w:'CHAMPIONS',s:['aim','can','cap','cop','ham','him','hip','his','hop','imp','ion','man','map','nap','pan','pin','sap','sin','sip','son','aims','amps','camp','chai','chin','chip','chop','coin','icon','inch','main','moan','pain','ship','snap','span','spin','champ','chain','coins','sonic','panic','pains']},
+  {w:'BIRTHDAYS',s:['aid','air','art','bad','bar','bat','bay','bid','bit','day','dry','had','hat','hay','his','hit','rib','rid','sad','sat','sit','tab','try','arts','bars','bats','bird','days','drab','hair','hard','hats','tabs','tray','yard','diary','habit','tardy','braids']},
+  {w:'SPARKLING',s:['air','ark','ask','gin','ink','kin','lag','lap','lip','nag','nap','pan','par','pig','pin','rag','ran','rip','sag','sap','sin','ski','king','lair','laps','lark','link','pals','pang','pans','park','pink','ping','plan','rang','rank','ring','rink','sing','sink','skip','slap','slip','span','spin','kings','plank','spring']},
+  {w:'DANGEROUS',s:['ago','and','are','don','doe','dog','ego','ear','end','era','god','nod','nor','ode','our','rag','ran','rod','roe','rue','run','dare','done','drag','dune','goad','gone','gore','near','node','road','rude','rune','sand','sang','sane','snag','sound','groan','round','under','adorn']},
+  {w:'LANDSCAPE',s:['ace','ale','and','ape','can','cap','den','end','lap','lad','led','pan','pal','pea','sad','sap','sea','cane','cape','clad','clap','clan','deal','dean','lace','lade','land','lane','lead','lean','lend','pale','pals','pane','pans','sane','sand','seal','span','lands','plane','panel']},
+  {w:'BREAKFAST',s:['are','ark','art','ate','bar','bat','ear','eat','far','fat','set','tab','tar','beak','bear','beat','best','east','fare','fast','feat','fret','rake','rate','rest','safe','seat','star','stab','bears','feast','steak','stark','stare','beaks','tears','brake']},
+  {w:'THOUSANDS',s:['and','ant','don','dot','had','has','hat','hot','hut','nod','not','nut','out','sad','sat','son','sun','tan','ton','aunt','dash','dots','dust','hand','hunt','nods','nuts','oust','outs','sand','shot','shun','shut','snot','sons','stand','hands','hunts','south','snout','shout']},
+  {w:'WONDERFUL',s:['dew','doe','due','elf','end','few','foe','fun','nod','nor','one','ore','owe','owl','rod','roe','rue','run','dune','fond','fore','furl','lone','lore','lure','node','nude','rend','role','rude','rune','under','weld','wolf','word','wore','wren','found','wonder']},
+  {w:'CHOCOLATE',s:['ace','ache','ale','cat','eat','hat','hot','lot','oat','the','toe','alto','coat','cola','cool','each','echo','hale','halt','hate','heal','heat','hole','late','lace','tale','teal','cleat','cheat','hotel','cloth','coach','coals']},
+  {w:'IMPORTANT',s:['aim','ant','apt','arm','art','imp','ion','man','map','mat','nap','nor','not','oar','opt','pan','par','pat','pin','pit','pot','ran','rat','rim','rip','rot','tan','tap','tar','tip','ton','top','main','moan','morn','pant','part','port','rain','ramp','rant','trim','trio','trip']},
+  {w:'MOUNTAINS',s:['aim','ant','its','man','mat','nit','nut','oat','out','sat','sin','sit','son','sum','sun','tan','tin','ton','aunt','atom','main','mint','moan','moat','nuts','oats','oust','outs','satin','mount','stain','moans','mounts']},
+  {w:'CAREFULLY',s:['ace','arc','are','car','cue','ear','elf','era','far','fur','lay','race','ray','rely','rue','rule','fray','real','clay','clue','earl','fare','fury','furl','fuel','lace','ulcer','early','layer','relay','clear','flare','curly']},
+  {w:'QUESTIONS',s:['ion','its','net','not','nit','nut','one','out','set','sit','son','sue','sun','ten','tie','tin','toe','ton','into','ions','nest','nets','nits','nuts','ones','outs','site','tone','tins','toes','unit','units','stone','oust','onset','snout','suite']},
+  {w:'STRANGERS',s:['age','ant','are','art','ear','eat','era','gas','get','nag','ran','rag','rat','sag','sat','set','tag','tan','tar','ten','ante','earn','gear','nags','rang','rant','rate','rent','rest','sage','sang','sane','snag','star','stare','stern','tears','great','grant']},
+  {w:'ORGANISED',s:['age','ago','aid','air','and','are','dog','don','ego','end','era','gin','god','nod','nor','ode','ore','rag','ran','rod','roe','aged','dens','drag','gird','gore','nods','rind','ring','road','rode','side','sign','sing','grids','drone','siren','groan']},
+  {w:'DISCOVERY',s:['cod','coy','cry','die','doc','doe','dry','dye','ice','icy','ode','ore','roe','rye','code','cord','core','cove','dive','dove','over','rice','ride','rode','cored','cried','decoy','disco','dicey','ivory']},
+  {w:'BEAUTIFUL',s:['able','bail','bale','beat','belt','blue','bull','feat','felt','file','fill','flat','fuel','full','leaf','left','lube','lute','tail','tale','tall','tell','tile','till','tube','but','flu','let','lit','tab','tie']},
+  {w:'FAVOURITE',s:['air','are','ate','ear','eat','era','far','fat','fit','for','fur','oar','our','out','rat','rot','rue','rut','tar','toe','tour','riot','rove','fate','fire','fore','four','fave','irate','ratio']},
+  {w:'FLOWERING',s:['fig','fin','fir','foe','for','gin','gore','glow','grin','grow','iron','line','lion','loin','long','lore','nor','one','ore','owe','own','rein','ring','role','rile','roe','row','woe','wire','wine','wing','wore','wren','flew','flow','frown','gone','lower','owner','reign','rifle']},
+  {w:'SHOULDERS',s:['doe','dole','dose','dour','hoe','hold','hole','hour','lord','lore','lose','loud','lush','ode','old','ore','our','rode','role','ruse','shed','shod','shoe','shore','sloe','slur','sole','soul','sour','sure','louse','holds','holes','hours','rods','rouse','shred']},
+  {w:'INTRODUCE',s:['cod','code','coin','cord','core','corn','den','die','din','dire','done','dote','dune','icon','into','iron','nerd','nice','node','note','nude','ode','rind','rite','rode','rude','rune','tide','tier','tin','tire','tone','trod','true','tune','turn','undo','unit','cried','inter','inure','nitro','trice']},
+  {w:'ALONGSIDE',s:['ago','aid','ale','and','den','die','doe','dog','ego','end','gal','gel','gin','god','idea','isle','lag','lad','lane','lead','lean','load','loan','lone','long','nose','ode','old','side','sign','silo','sled','slid','slide','along','gales','glade','glide','goals','leads','loads','loans']},
+  {w:'BREATHING',s:['ant','ban','bar','bat','bean','beat','bent','bit','bran','earn','eat','gin','grab','grin','hair','bare','hate','heat','hint','hire','rain','rang','rant','rate','rein','ring','rite','tan','than','thin','bait','bane','brine','earth','giant','grain','grant','great','night','tiger','train']},
+  {w:'CREATURES',s:['ace','arc','are','art','cat','cue','cur','cut','ear','eat','era','rue','rut','set','sue','tar','use','acre','arcs','arts','care','cart','case','cast','cure','cute','crate','cures','curse','race','rate','rust','scar','seat','star','sure','tear','tree','trace','crest','truce']},
+  {w:'CELEBRATE',s:['ace','ale','arc','are','art','ate','bar','bat','bear','beat','beer','belt','car','care','cart','cat','earl','eat','era','lace','late','leer','reel','tar','tale','tear','tree','bare','brace','cable','clear','crate','elate','table','trace','alert','react']},
+  {w:'HALLOWEEN',s:['ale','all','aloe','awl','eon','hale','hall','haw','heal','heel','hew','hewn','hole','how','howl','lane','lawn','lean','lee','lone','low','noel','owe','owl','own','wan','wane','weal','wee','well','woe','won','allow','alone','whale','whole','hello']},
+  {w:'AFTERNOON',s:['ant','ante','earn','fare','fern','font','for','fore','fort','fan','foe','not','nor','note','noon','near','neat','oar','often','one','onto','ore','rant','rate','rent','rot','rote','tan','tar','tear','ten','tone','tore','torn','atone','front','orate','tenor']},
+  {w:'MATERIALS',s:['ail','aim','ale','arm','art','isle','lame','lair','late','lime','list','lit','male','mare','mast','mate','mire','rail','real','rile','rise','sail','sale','salt','same','slat','slim','star','tail','tale','team','teal','tear','trim','trail','mails','males','mates','miles','rails']},
+  {w:'OVERNIGHT',s:['gore','grin','hire','hit','hoe','hog','hot','into','iron','night','nor','note','over','rein','rig','right','ring','riot','roe','rot','rote','rove','thin','tier','tinge','tire','toe','ton','tore','torn','vein','vent','vine','groin','grove','thorn']},
+  {w:'GARDENING',s:['age','aged','and','dare','dear','dean','den','dig','din','drain','drag','earn','end','era','gain','gear','gin','gird','grid','nag','near','nerd','rage','rain','rang','range','read','rein','rend','ring','rind','aide','daring','diner','drain']},
+  {w:'TRANSLATE',s:['ale','alt','ant','are','art','ate','ear','eat','era','last','late','lean','learn','lent','net','ran','rant','rate','rent','rest','tan','tar','tale','teal','ten','lane','near','nest','salt','seal','sent','slant','stale','steal','tense']},
+  {w:'OTHERWISE',s:['her','his','hit','hoe','hot','how','ire','its','ore','owe','row','set','sew','she','sir','sit','tie','toe','tow','two','who','hire','hose','host','rest','riot','rite','rose','rote','shoe','shot','site','sort','sore','stir','store','their','three','tower','white']},
+  {w:'PAINTINGS',s:['aim','and','ant','apt','gin','gains','gait','giant','nag','naps','nips','ants','anti','pains','pant','pants','past','pats','ping','pins','pint','pints','pit','saint','sang','satin','sing','snap','snag','span','spin','spit','sting','tags','tins']},
+  {w:'CARPENTER',s:['ant','ape','apt','arc','are','art','can','cap','car','cat','ear','eat','era','nap','pan','par','pat','pea','pen','ran','rap','rat','tar','ten','ante','care','cane','cape','cart','crane','earn','near','pace','pant','rant','rape','rate','reap','rent','tape','tear','trace']},
+  {w:'TELEPHONE',s:['eel','eon','hen','hoe','let','net','noel','not','one','pen','pet','pole','teen','ten','the','toe','ton','heel','help','hole','hone','lone','lope','note','peel','poet','pole','hotel','lemon','phone','repel','three']},
+  {w:'KNOWLEDGE',s:['doe','dog','dole','done','eel','ego','elk','end','gel','god','gold','gone','good','gown','led','leg','lend','lode','lone','long','look','lore','low','node','noel','owe','owed','owl','wed','woe','woke','wold','glowed','golden','looked','longed']},
+  {w:'CLASSROOM',s:['arc','arm','car','clam','coal','cool','log','loom','lore','oar','oral','roam','room','soar','arms','cars','coals','lasso','looms','morals','roams','rooms','solar']},
+  {w:'ASTRONAUT',s:['ant','art','oar','oat','our','out','ran','rat','rot','rut','sun','tan','tar','ton','tour','turn','arts','aunt','rant','rout','snot','sort','sour','star','torn','rust','ants','oars','oats','outs','rants','routs','snout','tours','turns','taunt']},
+  {w:'FOOTPRINT',s:['fit','foe','for','fort','into','iron','nit','nor','not','onto','opt','poor','port','pro','riot','rip','root','rot','tip','tin','tint','too','top','torn','trio','trip','font','foot','pint','trod','troop']},
+  {w:'SURPRISED',s:['die','dip','dire','does','due','dune','ire','pure','purse','ride','ripe','rise','ruse','side','sip','sir','sire','sped','spud','spire','sure','used','pride','prude','dried','prise','spider']},
+  {w:'LIBRARIES',s:['ail','air','ale','are','bare','bail','bar','bile','ear','era','isle','ire','lair','lairs','lase','lib','lie','rail','rails','real','rile','riles','rise','sail','sale','seal','sir','sire','aisle','liars','lairs','rails','serial','relies']},
+  {w:'DIFFERENT',s:['den','die','dig','din','dire','dirt','end','fen','fend','fern','fie','fin','find','fine','fir','fire','fit','fret','fried','grin','ride','rife','rind','ring','rite','tide','tier','tin','tire','tinder','trend','tried']},
+  {w:'EXPLORING',s:['ore','roe','ego','gin','leg','lip','log','lop','nor','oil','ore','pig','pin','poi','pro','rile','ring','ripe','roil','role','rope','gore','gore','grin','grope','lingo','liner','loner','pore','poring','lore','prion','proline']},
+  {w:'GATHERING',s:['age','ant','are','art','ate','ear','eat','era','gag','gain','gate','gear','gin','gnat','grab','gran','grate','great','grin','hair','hang','hare','hate','heat','hire','nag','near','rang','rant','rate','rein','ring','tan','tar','than','thin','tang','train','thing']},
+  {w:'HEADLINES',s:['aid','ail','ale','and','den','die','dine','end','had','hail','hale','hand','hail','heal','heel','hen','hide','hind','isle','laid','lain','land','lane','lash','lead','lean','lend','lied','lien','line','need','shed','shin','side','sled','slide','snail','snide']},
+  {w:'IMAGINING',s:['aim','gin','inn','man','nag','mania','naming','gaining','imaging','aiming','maiming']},
+  {w:'JUDGEMENT',s:['den','dug','due','dune','gem','get','gum','gun','gut','jet','jug','jut','men','met','mud','mug','net','ten','tug','dement','judge','nudge']},
+  {w:'KEYBOARDS',s:['are','ark','ask','bar','bay','bear','beak','bore','boy','dare','dark','days','dear','dory','dry','dye','ear','era','kay','oak','oar','ode','okay','rake','rayed','road','rode','rod','roe','rose','robe','soak','soar','soda','sore','soya','year','yore']},
+  {w:'LIGHTNING',s:['gin','gilt','glib','grin','hint','inn','knit','knight','ling','lining','lint','lion','loin','long','nil','night','thin','thing','tilting','tiling','tiling','lilt','lithe','nigh','gilet']},
+  {w:'MIGRATION',s:['aim','air','and','ant','arm','art','gain','gait','giant','grin','grit','groan','groin','iron','main','manor','margin','mint','moat','moan','moaning','moira','nation','noting','oration','ranting','rating','ratio','rain','rang','rant','rang','groan','rant']},
+  {w:'NARRATIVE',s:['ant','are','art','ate','ear','eat','era','ran','rat','rave','rent','riven','tan','tar','ten','tire','van','vane','vat','vent','vine','ire','native','retain','terrain','trainer']},
+  {w:'ORCHESTRA',s:['ace','arc','are','art','ash','ate','car','care','cart','cash','cast','cat','char','core','cost','cot','each','ear','earth','east','era','hare','harm','hart','hate','hear','heat','her','hose','host','hot','oar','rash','rate','rash','rota','scar','scot','score','short','shore','star','star','search','starch']},
+  {w:'PARTICLES',s:['ace','ail','air','ale','alp','apt','arc','are','art','cap','car','care','cast','cat','clip','earlap','earl','eat','era','lace','lair','last','late','lair','leap','liar','lip','list','lit','pail','pair','pal','part','past','pat','pear','pest','pier','pile','pita','place','plait','plate','race','rail','rapt','rate','rile','rip','rise','sail','sap','serial','slap','slip','spit','star','tail','tale','tape','tier','tile','tip','trap','trial']},
+  {w:'RECTANGLE',s:['ace','age','ale','ant','arc','are','art','ate','can','cane','car','care','cart','cat','cent','clan','clean','clear','crane','deal','earn','eat','era','glen','glean','grant','grate','great','lane','lace','lace','lancer','large','late','lean','learn','leg','nacre','near','neat','race','rang','rant','rate','regal','relent','rent','tang','tale','tar','tangle','tarn','tear','ten']},
+  {w:'STUPENDOUS',s:['den','doe','dost','dote','done','dose','dot','dune','dupe','dust','done','nod','node','not','note','nude','nut','ode','pend','pod','pond','post','pout','punt','push','snot','snout','sound','soup','sped','spend','spout','stone','stud','stun','stunk','stupe','suet','sun','tun','tune','undoes','upon','undo']},
+  {w:'TRAVELLER',s:['ale','alter','are','art','ate','aver','ear','earl','eat','era','era','larva','late','later','lave','laver','lea','learn','leave','level','ravel','real','reave','relate','revel','tale','tall','tar','tare','teal','tell','travel','vale','valet','valor','valve','veal','veer']},
+  {w:'UNIVERSAL',s:['ail','air','ale','alien','alnus','are','ear','earn','era','ire','isle','lain','lane','lase','lure','nail','nairu','near','nerve','nurl','rail','rein','rile','rise','ruin','rule','sail','sane','siren','slain','sliver','snail','urine','urinal','vain','vale','vane','veal','veil','vein','vial','via','vile','vine']},
+  {w:'VICTORIES',s:['cite','cot','core','cost','cot','cove','covert','cry','evict','ice','icy','ire','its','ore','over','rice','riot','rise','rite','roc','roe','rove','score','sect','serve','sir','site','sort','sore','sot','store','tie','tier','tire','tore','trice','trio','over','vote','voter','votive']},
+  {w:'WORKSHEET',s:['her','here','hew','hews','hoe','host','hot','how','ore','other','owe','rest','rho','roe','rot','rote','row','set','sew','shew','shoe','shore','short','shot','show','sow','store','stork','stow','threw','three','threw','tower','tow','who','whore','wore','work','works','worse','worst']},
+  {w:'XYLOPHONE',s:['eon','hen','hole','holy','home','hone','honey','hope','hypo','lone','lop','lope','lone','eon','only','open','one','phon','phone','phlox','ploy','pole','poly','pone','pony','yell','yon','yore']},
+  {w:'YESTERDAY',s:['are','art','aye','dare','day','dear','dry','dye','ear','era','estray','ray','rayed','read','ready','red','rest','resay','said','star','stare','stay','stray','tray','year','yore']},
+  {w:'COMPASSES',s:['ace','amp','ape','cam','cap','case','cams','cape','case','come','cop','cope','some','mass','mesa','mace','pace','map','maps','camp','camps','scope','comes','copes']},
+  {w:'DIPLOMACY',s:['aim','ail','clam','clap','clay','coal','coil','cold','calm','damp','dial','dim','dip','lad','laid','lamp','lap','lip','load','mail','map','mild','moil','mold','opal','paid','pal','palm','plod','ply','pod','yam','icy','imply','dopy','comp']},
+  {w:'ELECTRONS',s:['cent','corn','cornet','cost','elect','else','enter','lent','lore','lone','loner','lost','lot','nest','net','noel','nor','note','once','onset','ore','relent','rent','rest','role','rose','rote','slot','snore','sole','sort','stern','stone','stole','stone','tenor','tole','tone','tore','torn']},
+  {w:'FREQUENCY',s:['cure','cur','cue','fern','fur','fun','queue','run','rune','rune','rue','ufer','unce']},
+  {w:'GYMNASTIC',s:['aim','ant','any','cam','can','cast','city','cyst','gait','gam','gas','ism','magic','main','many','mast','mat','mica','mint','misty','mast','sat','scan','scam','sting','stay','stain','tang','tan','tiny','tiny','tics','gym']},
+  {w:'HAPPINESS',s:['ape','nap','naps','sap','spa','sip','snip','shin','pine','pine','pins','pane','pain','nip','hip','his','hiss','ash','apse','span','snap','pains','haps','napes','paise','pains','sepia','snipe','panes']},
+  {w:'INVISIBLE',s:['bile','vine','vibe','veil','vie','nil','nil','isle','lien','line','lisle','live','lives','oven','evil','evils','liens','limes','libs','nibs','nivel','snivel']},
+  {w:'JELLYFISH',s:['fill','file','files','fells','fell','fly','his','jell','jells','jelly','lies','life','lily','yell','yells','shell','shelf','self','sell','sill','sly','elf','elfin','elfish','flesh']},
+  {w:'LABYRINTH',s:['ail','air','ant','rail','rain','yarn','than','thin','train','trial','trail','birth','briny','brain','braid','bran','nib','nab','bit','bat','bail','bar','tab','tan','tar','nail','habit','tray','anti','lair','lain','lay']},
+  {w:'MECHANISM',s:['ace','acme','aim','amen','ash','came','can','cane','case','ham','hams','hem','hems','him','his','ice','ism','mace','maces','main','man','mane','manic','mash','mean','mice','mine','name','nice','same','sane','seam','shim','shin','shame']},
+  {w:'NARRATING',s:['air','and','ant','anting','arc','ant','gain','gin','grin','grant','grain','groan','nag','nit','rain','rang','rant','ranting','rating','ring','tan','tang','tar','train']},
+  {w:'OBSTACLES',s:['able','ace','aloe','also','alto','bolt','case','cast','coat','col','else','last','late','least','lobe','locate','lose','lose','lot','sable','slab','slob','slot','sole','sort','stab','stale','stable','stem','stoic','steal']},
+  {w:'QUARTERLY',s:['ale','alter','are','art','ate','early','earl','ear','era','late','later','lay','lure','lute','lye','Qatar','rate','real','rear','relay','rely','rule','rut','tar','tale','tall','tar','tare','teal','tell','ultra','year']},
+  {w:'SOMEWHERE',s:['ere','ewe','her','here','hew','hoe','how','memo','mere','mesh','mew','more','mow','ore','owe','rho','roe','row','seep','sew','shoe','shore','show','sow','swore','three','threw','wore','worm','worse']},
+  {w:'THEREFORE',s:['fee','feet','free','fret','her','here','rho','roe','rot','rote','tee','teeth','the','thee','there','three','toe','tor','tree']},
+  {w:'UNCERTAIN',s:['ace','ant','arc','are','art','ate','aunt','can','cane','car','care','cart','crane','cure','cut','ear','earn','era','ice','inure','nacre','near','nice','nine','nicer','nun','race','rain','ran','rant','rate','rent','ruin','rune','tan','tar','ten','tin','trace','train','tune','turn','ulcer','unce','urine']},
+  {w:'VOLCANOES',s:['ace','aloe','also','alone','cane','cave','cloak','coal','clan','cola','colon','cone','canoe','lace','lane','lean','loca','loco','lone','loosen','loose','nose','novel','ocean','ovals','oven','oval','vane','vale','vole','volcano']},
+  {w:'WANDERING',s:['age','and','anger','daring','dare','dear','den','din','dire','dinge','drag','drain','drew','earn','end','gain','gin','gird','grin','nag','nerd','rang','rend','reign','rein','ride','ring','rind','wade','wand','wane','ward','warn','warden','wine','wind','wren']},
+  {w:'EXCELLENT',s:['cent','eel','elect','eleven','else','excel','extent','extol','lent','let','lot','net','noel','tell','ten','text']},
+  {w:'COMBINING',s:['bin','bit','bog','bong','boning','cob','coin','con','comb','gibing','gin','gob','icing','ion','mob','mobi','mooing','nib','nimbi']},
+  {w:'DEDICATED',s:['acid','ace','aide','cited','date','dead','decade','dice','did','died','diet','edict','edic','edit','idea','iced','tad','tidal','tide','tied']},
+  {w:'EDUCATION',s:['ace','action','aide','anted','canoe','coated','coin','cone','count','coined','cute','date','dean','diet','dote','done','dote','dot','donut','dune','duo','dunce','icon','into','ion','node','not','note','notice','noted','nude','ode','once','toed','tone','tonic','tun','tune','undo','unite','unco']},
+  {w:'FOLLOWING',s:['eon','fill','fin','flinch','flog','fog','foil','folk','fond','fool','fowl','gill','glow','golf','goon','gown','ill','ion','lingo','lion','loan','loin','long','low','nil','noel','noon','nor','now','oil','own','win','wolf','won','wool']},
+  {w:'GRADUALLY',s:['ably','alga','algal','ardly','drag','dual','duly','dura','drab','glad','gala','gal','gaud','guard','grad','grub','lady','lag','lard','laud','rug','rugal','ural','yard']},
+  {w:'HIBERNATE',s:['ant','are','art','ate','bare','barn','bat','banter','bean','bear','beat','bent','bit','bite','brat','brain','bran','earn','eat','era','habit','hair','hare','heart','heat','hint','hire','inert','nab','nab','rain','ran','rant','rate','rent','rein','than','their','thin','tribe','tier','tire','tare']},
+  {w:'IMAGINARY',s:['aim','air','any','arm','army','gain','gin','grain','grim','grimly','main','man','mania','margin','rain','ram','ran','rang','yam','yarn','yin']},
+  {w:'JUSTIFIED',s:['die','diet','dike','dis','dust','edit','jest','jut','side','site','sued','suit','suite','tide','tie','tied','ties','use','used']},
+  {w:'MACHINERY',s:['ace','acme','air','arch','archly','are','arm','came','cane','car','care','chain','char','cherry','chin','hire','hymn','ice','inch','ire','larch','lyre','mace','main','man','manic','manly','march','mare','marine','name','near','nice','race','rain','ram','ranch','rein','rice','rich','rind','rime','rye','yarn']},
+  {w:'NIGHTMARE',s:['age','amen','ant','are','arm','art','ate','ear','earn','eat','era','gain','gate','gear','grain','grant','grate','great','grime','grin','grit','hair','hare','harm','hate','heart','heat','hint','hire','mane','mare','margin','math','mean','meat','merit','might','mine','mint','mire','nag','near','night','rain','rang','rant','rate','rein','rim','ring','tan','tang','tar','than','their','thing','thin','tier','time','tire','train']},
+  {w:'OPERATION',s:['air','ant','apt','are','art','ate','earn','eat','era','ion','iron','nap','near','not','oar','opt','oration','ore','pair','pan','pant','par','pat','patio','patron','per','pier','pine','pit','poet','poet','point','pot','protein','rain','ran','rant','rate','rein','rent','riot','rope','rot','rote','tan','tap','tar','ten','ton','top','tore','torn','pain','pore','pine','pan']},
+  {w:'PERMANENT',s:['ant','ape','apt','are','arm','art','ate','ear','earn','eat','era','man','mane','mare','mean','meat','men','nap','near','net','pan','pant','par','patent','pave','pear','pen','per','ran','rant','rape','rate','rent','repent','tam','tan','tap','tar','ten','term','tram','trap']},
+  {w:'QUALITIES',s:['ail','ale','alien','alts','ate','elf','elf','isle','lase','last','late','lats','laud','lust','lute','quasi','quilt','quit','quite','quail','rail','sail','sale','salt','sat','seal','set','silt','slit','slut','suit','suite','tail','tale','tales','tails','tile','tiles','tilt','tilts','toe','toile','toiles']},
+  {w:'RAINDROPS',s:['aid','air','and','and','rain','ran','rapid','rind','rip','road','rod','sand','snip','soar','snap','snobbish','nor','nod','rod','ran','pair','paid','rid','drop','drip','drips','drops','rains','roads','rods','rind','rinds','dip','dip','dips','nadir','Spain']},
+  {w:'SCULPTURE',s:['crest','cruet','cruel','cult','cup','cups','cure','curl','curse','cut','cuts','lure','lust','lute','lutes','puce','pure','purse','pus','put','puts','ruse','rust','rut','ruts','slur','slut','sore','sort','spurt','spur','spur','stem','stir','true','truce','ulcer','upset']},
+  {w:'TERRITORY',s:['ore','ire','tire','tier','riot','riot','rot','rot','rote','roe','tore','tore','torr','tor','retry','riot','terror','tory','tie','tier','try','trio','terry']},
+  {w:'UNDERLINE',s:['den','din','dine','dire','end','inn','ire','led','lend','lied','lien','line','lined','liner','lure','lured','nil','nine','noel','nip','nude','nerd','rein','rend','rid','ride','rile','rind','rind','rule','ruled','rune','rued','lined','under','ruled']},
+  {w:'VARIABLES',s:['ail','air','ale','albs','are','avail','bail','bale','bar','bare','bear','bile','bale','isle','lair','lairs','lase','liar','lire','live','rail','rails','real','rile','rise','sail','sale','seal','sir','sire','vail','vale','veal','veil','vile','viral','vires']},
+  {w:'WITNESSED',s:['den','die','diet','din','dine','dis','edit','end','ides','stein','stew','tide','tie','tied','ties','tin','tins','twin','twine','wed','wet','wits','wide','wise','wised','wish','wist','wit','wited','snide','snit','sited','dens','dies','diets','dins','nit','nits']},
+  {w:'XYLOGRAPH',s:['ago','gal','gap','gay','gory','grap','gray','grog','groh','gyre','hay','hoy','lop','lory','pay','play','plop','plop','poly','pray','pro','prop','ray','ropy','royal','yap','yore']},
+  {w:'YOUNGSTER',s:['eon','gnu','gore','gory','gets','gorge','gout','grey','grout','gust','gut','guts','noel','nor','note','nut','nuts','onto','ore','oust','outs','rent','rest','rogue','rote','roust','rout','rouge','roe','rue','rue','rune','rut','rust','set','snot','snout','sort','snore','stern','story','stun','sure','surge','tone','tore','torn','tour','true','tune','turn']},
+  {w:'ZIGZAGGED',s:['age','aged','adz','add','aide','gag','gagged','gig','gigged','dig','daze','dead','egg','edgy']},
+  {w:'PLENTIFUL',s:['elf','fell','felt','fife','fife','fill','fin','fine','flit','flip','flue','flute','fuel','full','fun','let','lie','life','lift','lip','lit','lute','lure','nil','null','pen','pile','pine','pint','pit','pit','pull','pun','punt','puff','pie','pin','tile','till','tin','tip','tune','unit']},
+  {w:'NIGHTFALL',s:['ail','align','all','ant','fill','final','fang','fall','fan','flag','flan','flat','flit','flog','gift','gist','gilt','glib','gnat','grill','gait','giant','gain','ail','all','halt','hall','hang','hint','hit','hill','ill','lag','laid','lain','laig','lath','light','lint','lift','nag','nail','nil','night','nigh','tan','tail','tall','thing','thin','till','tilt']},
+  {w:'POPULATED',s:['ado','alp','alto','aped','date','dale','deal','delta','depot','dot','dote','dual','dupe','late','laud','load','lope','lop','loud','lout','lot','ode','oped','opt','opal','paled','pad','pat','peat','plod','plot','plop','plop','pod','pole','poll','pose','post','pot','tad','tale','tall','told','tole','toped','toped','dup','dolt']},
+  {w:'SEPTEMBER',s:['beer','beet','best','bet','bee','met','mere','peer','pest','rep','see','set','seem','seep','step','stem','tree','beer','beet','beers','beets','beset','meets','peers','peels','steep','street','temper','term','trees']},
+  {w:'SCATTERED',s:['ace','acre','acted','adder','are','art','ate','cart','cast','cat','caste','cedar','crest','dare','dart','date','dear','ear','east','eat','era','race','raced','rate','red','rest','scar','scat','seat','star','stare','stead','tad','tar','tare','taste','tear','trace','traced','trade']},
+  {w:'EMERGENCY',s:['cream','crème','cry','cue','cur','cure','emery','emerge','eye','gem','green','gyre','mere','merge','mercy','rye']},
+  {w:'GEOGRAPHY',s:['age','ago','ape','apt','gap','gar','pay','pea','per','peg','prey','pro','pry','ray','rep','roe','rope','rye','year','yeoman','yore']},
+  {w:'DEMOCRACY',s:['ace','acme','arc','are','arm','cam','came','car','care','cod','code','coma','come','cord','core','coy','cry','dam','dare','dear','dome','door','dory','drama','dray','dream','drool','dry','dye','ear','era','mare','mode','molar','moody','more','mood','mace','race','roam','road','rode','roe','rye','yam','yore']},
+  {w:'BIOGRAPHY',s:['boa','bog','boar','boy','brag','bray','gab','gap','gar','grab','gray','grip','gyp','hag','hob','hop','irk','par','pay','phobia','pig','pry','prig','pro','rag','rap','ray','rib','rob','ropy','yob']},
+  {w:'WINDMILLS',s:['dim','dill','din','din','ill','ills','limn','loin','mild','mill','mills','mind','mils','nil','nil','slim','slid','slid','sill','swim','swill','wild','wield','wile','will','wills','wind','wins','wold']},
+  {w:'STAMPEDING',s:['ape','apt','aping','damp','date','dean','deep','dime','dinge','dip','edit','gem','imp','maps','mast','mead','mean','mind','mind','mine','mint','nap','nest','pant','past','peat','pied','pine','pint','ping','spit','stamp','stand','steam','stem','step','tamp','tamp','tide','tied','time','tips']},
+  {w:'CLOCKWISE',s:['ceil','wick','woke','wile','wide','wile','oils','wick','silk','sick','sloe','sole','coil','coils','close','click','clock','coke','coles','cols','cool','lice','lies','like','loci','lock','locks','lockwise']},
+  {w:'BLUEPRINT',s:['bile','bin','bit','bite','blur','blunt','born','brine','brine','brute','built','bun','burn','lint','line','liner','lune','lure','lute','nil','nip','nit','nut','pen','pine','pint','pit','print','pun','punt','pure','rile','rub','ruin','rule','rune','rut','tin','tip','tube','tulip','tune','turn','unlit','unpin']},
+  {w:'CAPTURING',s:['antic','apt','arc','cap','cat','cup','cur','cut','gain','gin','grin','grit','gut','nap','nip','nit','nut','pain','pair','pan','pant','par','pat','pig','pin','pit','pug','pun','punt','pure','rain','rang','rant','rut','tan','tap','tar','tin','tip','tug','turing']},
+  {w:'ARGUMENTS',s:['age','ant','arm','art','ate','aunt','ear','earn','eat','era','gust','guts','man','mare','mart','mast','mate','mean','meat','menu','mug','muse','must','mute','nag','near','nut','rage','ran','rang','rant','rate','rent','ruse','rust','rut','sage','sang','sane','sat','snag','star','steam','stern','stun','sure','tang','tar','team','term','true','tug','turn','tune']},
+  {w:'DOWNWARDS',s:['and','darn','dawn','draw','drawn','drop','drown','nor','nod','oar','odd','owe','own','raw','road','rod','rowan','soda','soar','swan','sword','wand','ward','wars','word','worn']},
+  {w:'FLASHBACK',s:['able','ash','back','bail','bale','bash','cake','calf','call','calm','clam','clap','clash','elk','fable','fail','fake','fall','lack','lace','lash','lask','slab','slack','slap','alack','flask','flask','black','balls','cable','labs','lac','lack','cab','cabs','scab']},
+  {w:'COMPUTING',s:['coil','coin','comp','con','cop','cop','cot','coup','cuing','cup','cut','gum','gun','gut','imp','ion','nip','nit','not','noun','nut','opt','pin','pit','pot','pout','pouting','pun','punt','put','tin','tip','ton','tonic','top','tug','tun','tunic']},
+  {w:'PLATFORMS',s:['aloft','also','alto','apart','arm','art','flat','flap','form','fort','fora','foam','oral','oar','palm','par','part','past','pat','plat','plot','port','post','pot','pro','rap','rapt','rat','roam','rot','raft','ramp','slap','slat','slop','soap','soar','sort','storm','stop','strap','tap','tar','trap','tram']},
+  {w:'SHIPWRECK',s:['chip','wick','wise','wish','wire','hire','rich','reck','rice','risk','ship','whip','whisk','heir','her','heck','chew','cheeks','shirk','hike','ripe','rise','rice','wreck','prick','prise','pick','wick','pier','pire','pick','rip']},
+  {w:'SPRINGBOK',s:['born','bore','bog','bong','bop','borg','brig','bring','brisk','brink','gob','grip','grin','gin','ink','iron','kin','king','knob','nib','nor','pin','pink','ping','pork','prig','ring','rink','rob','rob','robin','sink','skin','skip','sob','spin','sprig','spring','snob']},
+  {w:'FRAGMENTS',s:['age','ant','arm','ate','far','fan','fang','fare','farm','fast','feat','fern','fest','fret','fun','gem','get','gram','gran','grate','great','nag','near','nest','net','nag','rage','ram','rang','rant','raft','rate','rent','rest','sage','sang','sane','sang','snag','stem','stern','tang','tar','team','term','tram']},
+  {w:'BACKWARDS',s:['arc','ark','bad','bar','bark','bard','bars','back','cabs','card','cars','cask','dark','darn','draw','drab','scab','scar','sward','ward','war','wars','wads','cabs','arcs','dabs','carbs','rads','brads','backs','racks','cads']},
+  {w:'PACKAGING',s:['cake','cap','caking','camp','can','cap','cape','gap','gin','gnaw','image','king','knack','nag','nap','page','pack','packing','pacing','pain','pan','pang','pang','ping','piking','pig','can','can','pack','pack','gang','gag','king','kin']},
+  {w:'ELABORATE',s:['able','aloe','alter','are','art','ate','bare','bale','bat','bear','beat','beer','belt','bore','brat','ear','earl','eat','era','lace','late','label','lobe','lore','lot','lure','oral','rate','real','reel','role','rot','rote','tale','tar','tare','tare','tear','tree','true']},
+  {w:'FORGOTTEN',s:['ego','eon','foe','fog','fond','foe','fore','forge','forte','got','gore','goner','gone','grotto','noel','nor','note','not','ore','rot','rote','rotten','tore','torn','toe','ton','tone','tong','tore','goner','gotten','forget','groton']},
+  {w:'SUBMARINE',s:['aim','air','amber','are','arm','ban','bar','bare','barium','barn','bean','bear','brain','bran','brine','burn','ear','earn','era','mane','mare','mean','mine','mire','nab','near','rein','rub','ruin','rune','same','sane','snare','snub','sure','bream','basin','brain','marine','amen','amine','mares','ramen']},
+  {w:'TELESCOPE',s:['eel','else','lee','peel','eel','let','lop','lope','lot','pest','pet','poet','pol','pole','pot','scope','sect','seep','sleet','sleep','sloe','slot','sole','sot','steel','steep','step','stop','stole','tee','teel','toe','toll','top']},
+  {w:'CLOCKWORK',s:['clod','cor','cork','cool','loco','lock','look','lore','low','owl','rock','role','roll','rook','rook','root','row','work','woo','wool','word','wore','work']},
+  {w:'PROGRAMME',s:['ape','are','age','arm','gore','gram','mare','more','mop','more','ore','rag','ram','rap','rare','rope','roam','romp','ramp','par','pore','pram','pro','prog','grope','repro','rearm']},
+  {w:'PATCHWORK',s:['cap','car','cart','carp','char','chap','chow','coat','cop','cop','cot','crow','crop','hack','hark','hat','hatch','hawk','hot','oar','par','park','part','pat','path','pot','raw','rap','rat','roc','rock','rot','row','tap','tar','tow','two','wok','wop','wrap']},
+  {w:'NATURALLY',s:['ant','any','arc','art','aunt','lay','lure','lull','lust','lute','lyre','nab','nar','nary','nut','rant','rat','ray','rut','run','rural','rut','tan','tar','tray','truly','try','turn','yarn']},
+  {w:'SANDSTORM',s:['and','ant','arm','art','dam','darn','dart','dorm','don','dot','mast','moat','moan','nod','nor','not','nor','oar','rad','ram','ran','rod','rot','sand','snort','soar','soma','sort','star','storm','strand','tan','tan','tar','ton','toad','torn','tram']},
+  {w:'WINDSWEPT',s:['den','dew','diet','dim','din','dip','dis','drip','edit','end','nit','nip','pew','pie','pine','pins','pit','sew','set','side','stein','stew','swipe','tide','tie','tied','tin','tip','twin','wed','wept','wide','wind','wine','wisp','wined','wined','spit','snip','snide','spent','spin','step']},
+  {w:'BLACKBIRD',s:['bail','bald','ball','bard','bark','bid','bird','black','blade','bland','blab','braid','brick','lair','lad','laid','lard','lid','rail']},
+  {w:'PAINTBALL',s:['ail','bail','bait','ball','ban','pin','nail','nil','pail','paint','pan','pant','pat','pit','plan','plait','plain','plait','plain','tab','tail','tan','tap']},
+  {w:'CHAMPAGNE',s:['ace','ache','age','amen','amp','ape','cage','came','camp','cane','cape','champ','change','cheap','each','game','gap','gem','gnash','ham','heap','hem','hemp','hen','mace','mage','man','mane','mange','map','mean','nag','name','nap','nape','pang','pea','peace','peach']},
+  {w:'BUTTERFLY',s:['belt','blurt','blur','buff','bulk','bull','bully','buoy','burly','bury','butter','buy','fell','felt','fly','fuel','full','fury','left','let','lure','lute','rub','ruble','rue','rule','rut','tell','truly','try','tub','tube','tuft','truly']},
+  {w:'PERFECTLY',s:['elf','eel','fee','feel','feel','flee','fly','free','fret','peel','peel','pep','per','reel','rely','rep','repel','rye','tee','type','yell']}
+];
+
+// ═══════════════════════════════════════════════════════════
+// ANAGRAM BANK — sets of [main word, hint, ...bonus words+hints]
+// Each entry: {main, mainHint, bonus:[{w,hint}]}
+// ═══════════════════════════════════════════════════════════
+const ANAGRAM_BANK=[
+  {main:'SPRINGS',mainHint:'a season',bonus:[{w:'COMET',hint:'in space'},{w:'OCEAN',hint:'huge sea'},{w:'BLASTER',hint:'big boom'}]},
+  {main:'PLANETS',mainHint:'in space',bonus:[{w:'STEAM',hint:'hot vapour'},{w:'TRAIL',hint:'path left behind'},{w:'CARPET',hint:'floor covering'}]},
+  {main:'HISTORY',mainHint:'studying the past',bonus:[{w:'RINSE',hint:'wash off'},{w:'CANOE',hint:'small boat'},{w:'GARDEN',hint:'outside space'}]},
+  {main:'FRACTIONS',mainHint:'parts of a whole',bonus:[{w:'SHOUT',hint:'loud voice'},{w:'FLAME',hint:'fire part'},{w:'PRINCE',hint:'royal son'}]},
+  {main:'TRIANGLE',mainHint:'a 2D shape',bonus:[{w:'CREAM',hint:'dairy topping'},{w:'BLOWN',hint:'moved by wind'},{w:'GRAPES',hint:'fruit on vines'}]},
+  {main:'PERIMETER',mainHint:'distance around a shape',bonus:[{w:'STONE',hint:'rock'},{w:'GROAN',hint:'unhappy sound'},{w:'CARPET',hint:'floor covering'}]},
+  {main:'VOLCANOES',mainHint:'erupting mountains',bonus:[{w:'NOTES',hint:'written reminders'},{w:'CRANE',hint:'tall bird or machine'},{w:'SPRAWL',hint:'spread out messily'}]},
+  {main:'NUMERATOR',mainHint:'top of a fraction',bonus:[{w:'MANOR',hint:'large house'},{w:'STERN',hint:'strict or back of boat'},{w:'PLIANT',hint:'easy to bend'}]},
+  {main:'RAINFOREST',mainHint:'tropical jungle',bonus:[{w:'FROST',hint:'icy coating'},{w:'RAINS',hint:'water from clouds'},{w:'FOREST',hint:'lots of trees'}]},
+  {main:'CHOCOLATE',mainHint:'sweet treat',bonus:[{w:'LOACH',hint:'type of fish'},{w:'TEACH',hint:'help someone learn'},{w:'CLOAKS',hint:'disguises'}]},
+  {main:'PYRAMIDS',mainHint:'ancient structures',bonus:[{w:'PRISM',hint:'3D shape'},{w:'DIARY',hint:'daily journal'},{w:'SPIDER',hint:'eight-legged creature'}]},
+  {main:'TRIBUTARY',mainHint:'joins a river',bonus:[{w:'BURY',hint:'put underground'},{w:'TRAIL',hint:'path to follow'},{w:'BINARY',hint:'system using 0s and 1s'}]},
+  {main:'VERTEBRAE',mainHint:'bones in your back',bonus:[{w:'BRAVE',hint:'showing courage'},{w:'BERATE',hint:'tell off'},{w:'TREBLE',hint:'three times'}]},
+  {main:'SYMMETRY',mainHint:'equal on both sides',bonus:[{w:'TERMS',hint:'parts of a school year'},{w:'MERCY',hint:'kind forgiveness'},{w:'MYSTIC',hint:'mysterious person'}]},
+  {main:'EQUATOR',mainHint:'line around the Earth',bonus:[{w:'QUOTE',hint:"someone's words"},{w:'OUTER',hint:'on the outside'},{w:'TORQUE',hint:'twisting force'}]},
+  {main:'MIGRATION',mainHint:'animals moving seasons',bonus:[{w:'GRAIN',hint:'seeds for bread'},{w:'TAMING',hint:'making less wild'},{w:'MOANING',hint:'complaining'}]},
+  {main:'SEDIMENTS',mainHint:'layers of rock or earth',bonus:[{w:'MISTED',hint:'blurry with water'},{w:'TIMED',hint:'measured duration'},{w:'TINSEL',hint:'sparkly decoration'}]},
+  {main:'DIGESTION',mainHint:'how body processes food',bonus:[{w:'DOTING',hint:'very loving'},{w:'GOING',hint:'taking action'},{w:'ODINGS',hint:'to excess'}]},
+  {main:'PREDATORS',mainHint:'animals that hunt',bonus:[{w:'DOORS',hint:'entry points'},{w:'DRAPES',hint:'curtains'},{w:'DEPARTS',hint:'leaves'}]},
+  {main:'LONGITUDE',mainHint:'east-west map lines',bonus:[{w:'UNTOLD',hint:'not yet said'},{w:'LOUNGE',hint:'relax or living room'},{w:'DUNGEON',hint:'underground prison'}]},
+  {main:'SUBTRACTED',mainHint:'taken away in maths',bonus:[{w:'CRATES',hint:'wooden boxes'},{w:'DEBATE',hint:'argument'},{w:'ABSTRACT',hint:'not concrete'}]},
+  {main:'CONSONANT',mainHint:'a non-vowel letter',bonus:[{w:'CANNON',hint:'large gun'},{w:'NONSTOP',hint:'without pause'},{w:'ANTON',hint:'a name'}]},
+  {main:'CONTINENT',mainHint:'large land mass',bonus:[{w:'CONTENT',hint:'happy or inside a box'},{w:'NOTICE',hint:'to see something'},{w:'INTONE',hint:'to chant'}]},
+  {main:'PARAGRAPH',mainHint:'section of writing',bonus:[{w:'GRAPH',hint:'a chart'},{w:'HARPY',hint:'a mythical creature'},{w:'RAPPING',hint:'speaking in rhythm'}]},
+  {main:'SEMICOLON',mainHint:'a punctuation mark',bonus:[{w:'INCOME',hint:'money earned'},{w:'LEMON',hint:'sour yellow fruit'},{w:'MONOCLE',hint:'single eyeglass'}]},
+  {main:'POLLUTION',mainHint:'harmful to environment',bonus:[{w:'TULIP',hint:'a flower'},{w:'POTION',hint:'a magic drink'},{w:'OPINION',hint:'a personal view'}]},
+  {main:'ECOSYSTEM',mainHint:'living things and habitat',bonus:[{w:'COMES',hint:'arrives'},{w:'TOMES',hint:'large books'},{w:'SOCIETY',hint:'a group of people'}]},
+  {main:'CLOCKWISE',mainHint:'direction hands turn',bonus:[{w:'WOKE',hint:'became aware'},{w:'SILKWORM',hint:'produces silk'},{w:'COWLIKE',hint:'resembling a cow'}]},
+  {main:'ADVENTURE',mainHint:'an exciting journey',bonus:[{w:'DUNE',hint:'sand hill'},{w:'VENTURE',hint:'a risky plan'},{w:'TENDURE',hint:'(rearrange me!)'}]},
+  {main:'DETECTIVE',mainHint:'solves mysteries',bonus:[{w:'EVICT',hint:'force someone to leave'},{w:'DEVICE',hint:'a useful gadget'},{w:'DECEIT',hint:'dishonesty'}]},
+  {main:'MAGNETIC',mainHint:'attracts metal',bonus:[{w:'TAMING',hint:'making gentle'},{w:'MANTIC',hint:'prophetic'},{w:'GAMET',hint:'a reproductive cell'}]},
+  {main:'HIBERNATE',mainHint:'sleep through winter',bonus:[{w:'BREATH',hint:'air in lungs'},{w:'ITHER',hint:'one or the other'},{w:'INHABIT',hint:'to live somewhere'}]},
+  {main:'CARTILAGE',mainHint:'flexible body tissue',bonus:[{w:'GLACIAL',hint:'very cold or icy'},{w:'ARTICLE',hint:'a piece of writing'},{w:'AGRICAL',hint:'(rearrange me!)'}]},
+  {main:'CAMOUFLAGE',mainHint:'blend into background',bonus:[{w:'MAGICAL',hint:'like magic'},{w:'FAUCAL',hint:'throat-related'},{w:'MOCHA',hint:'a coffee drink'}]},
+  {main:'DEMOCRACY',mainHint:'voted by the people',bonus:[{w:'CAMEO',hint:'a small role'},{w:'MORAY',hint:'type of eel'},{w:'COMEDY',hint:'something funny'}]},
+  {main:'AMPHIBIAN',mainHint:'lives in water and land',bonus:[{w:'MANIA',hint:'extreme enthusiasm'},{w:'HAMPI',hint:'a historic city'},{w:'BAMBINI',hint:'Italian for children'}]},
+  {main:'HERBIVORE',mainHint:'plant-eating animal',bonus:[{w:'HOOVER',hint:'brand of vacuum'},{w:'BEHOVE',hint:'to be appropriate'},{w:'HERBS',hint:'cooking plants'}]},
+  {main:'VERTEBRATE',mainHint:'has a backbone',bonus:[{w:'BRAVER',hint:'more courageous'},{w:'BEATER',hint:'mixing device'},{w:'RETREAT',hint:'to go back'}]},
+  {main:'CARNIVORE',mainHint:'meat-eating animal',bonus:[{w:'CORNEA',hint:'part of the eye'},{w:'CARVE',hint:'to cut shapes'},{w:'NOVICE',hint:'a beginner'}]},
+  {main:'STALACTITE',mainHint:'hangs from cave roof',bonus:[{w:'ELASTIC',hint:'stretchy'},{w:'CASTLE',hint:'medieval fort'},{w:'LATTICE',hint:'criss-cross pattern'}]},
+  {main:'STALAGMITE',mainHint:'rises from cave floor',bonus:[{w:'MAGPIES',hint:'black and white birds'},{w:'GEMIST',hint:'(rearrange!)'},{w:'STALEMATE',hint:'a draw in chess'}]},
+  {main:'DECOMPOSE',mainHint:'to rot and break down',bonus:[{w:'COMPOSE',hint:'to create music'},{w:'COMPOST',hint:'rotted garden waste'},{w:'DECODE',hint:'to find hidden meaning'}]},
+  {main:'PREDICATE',mainHint:'verb part of a sentence',bonus:[{w:'PIRATED',hint:'stolen illegally'},{w:'DIAPER',hint:'a nappy'},{w:'CATERED',hint:'provided food'}]},
+  {main:'CONDUCTOR',mainHint:'leads an orchestra',bonus:[{w:'DOCTOR',hint:'medical professional'},{w:'CONDOR',hint:'a large bird'},{w:'CURD',hint:'part of milk'}]},
+  {main:'ADJECTIVE',mainHint:'describes a noun',bonus:[{w:'DEVICE',hint:'a gadget'},{w:'AVID',hint:'keen and enthusiastic'},{w:'EVICT',hint:'to remove someone'}]},
+  {main:'INFERENCE',mainHint:'reading between the lines',bonus:[{w:'FENCER',hint:'sport swordsman'},{w:'FIERCE',hint:'very strong or scary'},{w:'REFINE',hint:'to improve'}]},
+  {main:'EXCLAMATION',mainHint:'showing strong feeling',bonus:[{w:'MALICE',hint:'wish to harm'},{w:'CLIMAX',hint:'the highest point'},{w:'ACCLAIM',hint:'praise'}]},
+  {main:'CUMULATIVE',mainHint:'adding up over time',bonus:[{w:'CLIMATE',hint:'long term weather'},{w:'MALLET',hint:'a type of hammer'},{w:'EMULATE',hint:'copy someone'}]},
+  {main:'EVAPORATE',mainHint:'liquid turning to gas',bonus:[{w:'OPERATE',hint:'to carry out surgery'},{w:'PERVADE',hint:'spread through'},{w:'PARTAKE',hint:'to take part in'}]},
+  {main:'CONDENSATION',mainHint:'gas turning to liquid',bonus:[{w:'DONATION',hint:'a gift of money'},{w:'DISTANCE',hint:'how far away'},{w:'ANECDOTE',hint:'a short story'}]},
+  {main:'ATMOSPHERE',mainHint:'layer of air around Earth',bonus:[{w:'METAPHOR',hint:'a comparison in writing'},{w:'SHOPPER',hint:'one who shops'},{w:'THEATRE',hint:'a place for plays'}]},
+  {main:'RESPIRATION',mainHint:'breathing process',bonus:[{w:'OPERATION',hint:'medical procedure'},{w:'IRATION',hint:'(rearrange me!)'},{w:'PORTIONS',hint:'parts of a meal'}]},
+  {main:'CHROMOSOME',mainHint:'carries genetic info',bonus:[{w:'COMMOSER',hint:'(rearrange!)'},{w:'CHROMOS',hint:'coloured things'},{w:'HEROISM',hint:'acts of bravery'}]},
+  {main:'PHOTOSYNTHESIS',mainHint:'plants making food',bonus:[{w:'SYNTHESIS',hint:'combining parts'},{w:'TYPHOONS',hint:'tropical storms'},{w:'HOSPITES',hint:'(rearrange!)'}]},
+  {main:'EQUIVALENT',mainHint:'equal in value',bonus:[{w:'QUAINT',hint:'old-fashioned cute'},{w:'LIQUID',hint:'runny substance'},{w:'QUINTET',hint:'group of five'}]},
+  {main:'PERIMETER',mainHint:'boundary of a shape',bonus:[{w:'TREMPER',hint:'(rearrange!)'},{w:'PRIMET',hint:'(rearrange!)'},{w:'EMPIRE',hint:'a large territory'}]},
+  {main:'COORDINATE',mainHint:'point on a grid',bonus:[{w:'DECOR',hint:'decoration'},{w:'RAINED',hint:'past tense of rain'},{w:'ORDINATE',hint:'y-axis value'}]},
+  {main:'PROPERTIES',mainHint:'features of a shape',bonus:[{w:'PERSIST',hint:'to keep going'},{w:'POITERS',hint:'(rearrange!)'},{w:'REPOSIT',hint:'to put back'}]},
+  {main:'PARLIAMENT',mainHint:'where laws are made',bonus:[{w:'TRAMPOLINE',hint:'bouncy apparatus'},{w:'PLAINER',hint:'more simple'},{w:'PALMIER',hint:'(rearrange!)'}]},
+  {main:'RHINOCEROS',mainHint:'large horned animal',bonus:[{w:'CORNISH',hint:'from Cornwall'},{w:'HEROICS',hint:'brave actions'},{w:'ORCHIDS',hint:'exotic flowers'}]},
+  {main:'TELESCOPE',mainHint:'for viewing stars',bonus:[{w:'SLOPE',hint:'an angle'},{w:'CREEP',hint:'to move slowly'},{w:'PEOPLE',hint:'human beings'}]},
+  {main:'LIGHTNING',mainHint:'electrical storm flash',bonus:[{w:'TINGLING',hint:'pins and needles feeling'},{w:'TILTING',hint:'leaning to one side'},{w:'GLINTING',hint:'sparkling'}]},
+  {main:'FORBIDDEN',mainHint:'not allowed',bonus:[{w:'BOREDOM',hint:'feeling of boredom'},{w:'BONFIRE',hint:'outdoor fire'},{w:'INFERRED',hint:'concluded from evidence'}]},
+  {main:'ALGORITHM',mainHint:'step by step instructions',bonus:[{w:'THERMAL',hint:'related to heat'},{w:'LOAM',hint:'fertile soil'},{w:'MIRTHFUL',hint:'happy and laughing'}]},
+  {main:'NUTRITION',mainHint:'food and healthy eating',bonus:[{w:'INTROIT',hint:'a church hymn'},{w:'TURMOIL',hint:'great confusion'},{w:'UNITON',hint:'(rearrange!)'}]},
+  {main:'PENINSULA',mainHint:'land almost surrounded by sea',bonus:[{w:'PUPILS',hint:'students in school'},{w:'PLANES',hint:'flat surfaces or aircraft'},{w:'PINNACLE',hint:'the highest point'}]},
+  {main:'QUADRILATERAL',mainHint:'four sided shape',bonus:[{w:'RITUAL',hint:'a regular ceremony'},{w:'LATERAL',hint:'sideways'},{w:'GRADUAL',hint:'slowly increasing'}]},
+  {main:'SUBTRACTION',mainHint:'taking away in maths',bonus:[{w:'CAUTIOUS',hint:'careful'},{w:'TURNTABLE',hint:'spinning record player'},{w:'RUBRIC',hint:'marking guide'}]},
+  {main:'CONJUNCTION',mainHint:'joining word like and or but',bonus:[{w:'CONTINUE',hint:'to carry on'},{w:'JUNCTION',hint:'where roads meet'},{w:'CONTUSION',hint:'a bruise'}]},
+  {main:'ABBREVIATION',mainHint:'shortened form of a word',bonus:[{w:'VIBRATION',hint:'shaking motion'},{w:'VARIATION',hint:'a different version'},{w:'AVIATION',hint:'flying aircraft'}]},
+  {main:'EXPLANATION',mainHint:'making something clear',bonus:[{w:'AIRPLANE',hint:'flying vehicle'},{w:'NATIONAL',hint:'belonging to a country'},{w:'EXPLANT',hint:'to remove from a body'}]},
+  {main:'ENDANGERED',mainHint:'at risk of extinction',bonus:[{w:'DANGER',hint:'possibility of harm'},{w:'ENDARGER',hint:'(rearrange!)'},{w:'GRENADE',hint:'an explosive device'}]},
+  {main:'SETTLEMENT',mainHint:'a place where people live',bonus:[{w:'NETTLE',hint:'a stinging plant'},{w:'ELEMENT',hint:'a substance in chemistry'},{w:'SETTLE',hint:'to make a home'}]},
+  {main:'MANUFACTURE',mainHint:'to make goods in a factory',bonus:[{w:'FRACTURE',hint:'a break or crack'},{w:'MATURER',hint:'more fully grown'},{w:'FURNITURE',hint:'chairs and tables'}]},
+  {main:'PARLIAMENT',mainHint:'UK law making building',bonus:[{w:'PLANT',hint:'a living organism'},{w:'MINERAL',hint:'a natural substance'},{w:'IMPLANT',hint:'to fix something inside'}]},
+  {main:'EXCAVATION',mainHint:'digging to find ancient things',bonus:[{w:'VACATION',hint:'a holiday'},{w:'ACTIVE',hint:'busy and energetic'},{w:'NOVICE',hint:'a beginner'}]},
+  {main:'DEMOCRACY',mainHint:'rule by the people',bonus:[{w:'COMEDY',hint:'something funny'},{w:'DECOY',hint:'a lure or distraction'},{w:'COMMODE',hint:'a type of toilet'}]},
+  {main:'MONARCHY',mainHint:'ruled by a king or queen',bonus:[{w:'MARCH',hint:'to walk in step'},{w:'RHOMBUS',hint:'a diamond shape'},{w:'ARCHON',hint:'a Greek ruler'}]},
+  {main:'EXPEDITION',mainHint:'a journey of exploration',bonus:[{w:'EDITION',hint:'a version of a book'},{w:'PETITION',hint:'a formal request'},{w:'POSITION',hint:'a place or location'}]},
+  {main:'HIBERNATION',mainHint:'sleeping through winter',bonus:[{w:'VIBRATION',hint:'rapid shaking'},{w:'OBTAIN',hint:'to get something'},{w:'INHABIT',hint:'to live in a place'}]},
+  {main:'INVESTIGATION',mainHint:'looking for information',bonus:[{w:'NAVIGATION',hint:'finding your way'},{w:'INVITATION',hint:'a request to come'},{w:'STAGNATION',hint:'not moving forward'}]},
+  {main:'CLASSIFICATION',mainHint:'sorting into groups',bonus:[{w:'SATISFACTION',hint:'a feeling of pleasure'},{w:'FASCINATION',hint:'great interest'},{w:'PLANTATION',hint:'a large farm'}]},
+  {main:'CONSTELLATION',mainHint:'group of stars',bonus:[{w:'TRANSLATION',hint:'converting language'},{w:'INSTALLATION',hint:'setting up equipment'},{w:'CONSOLATION',hint:'comfort in sadness'}]},
+  {main:'MULTIPLICATION',mainHint:'repeated addition',bonus:[{w:'CAPITULATION',hint:'giving up'},{w:'MANIPULATION',hint:'controlling cleverly'},{w:'APPLICATION',hint:'a software program'}]},
+  {main:'PHOTOSYNTHESIS',mainHint:'plants making food with light',bonus:[{w:'SYNTHESIS',hint:'combining things'},{w:'APOSTROPHE',hint:'punctuation mark'},{w:'HYPOTHESIS',hint:'a scientific guess'}]},
+  {main:'CIRCUMFERENCE',mainHint:'distance around a circle',bonus:[{w:'CONFERENCE',hint:'a large meeting'},{w:'REFERENCE',hint:'a source of information'},{w:'RECURRENCE',hint:'happening again'}]},
+  {main:'PERPENDICULAR',mainHint:'at right angles to',bonus:[{w:'REPUBLICAN',hint:'a type of government'},{w:'PARTICULAR',hint:'specific'},{w:'PENDICULAR',hint:'(rearrange!)'}]},
+  {main:'PARLIAMENTARY',mainHint:'relating to parliament',bonus:[{w:'PRIMARILY',hint:'mainly'},{w:'PLANETARY',hint:'relating to planets'},{w:'MILITARILY',hint:'in a military way'}]},
+  {main:'ONOMATOPOEIA',mainHint:'words that sound like the noise',bonus:[{w:'ANIMATION',hint:'moving pictures'},{w:'MATRIMONIAL',hint:'related to marriage'},{w:'OPTIMA',hint:'best conditions'}]},
+  {main:'COMMUNICATION',mainHint:'sharing information',bonus:[{w:'MOTIVATION',hint:'reason to do something'},{w:'AUTOMATION',hint:'using machines'},{w:'IMPLICATION',hint:'a possible meaning'}]},
+  {main:'PHOTOSYNTHESIS',mainHint:'how plants make food',bonus:[{w:'SYNTHESES',hint:'combinations'},{w:'APOSTROPHE',hint:'a punctuation mark'},{w:'ANTIPODES',hint:'the opposite side of Earth'}]},
+  {main:'INVERTEBRATE',mainHint:'no backbone',bonus:[{w:'VIBRATE',hint:'to shake fast'},{w:'RETRIEVE',hint:'to fetch something'},{w:'LIBERTINE',hint:'a free-thinking person'}]},
+  {main:'SYMMETRICAL',s:['symmetric'],mainHint:'same on both sides',bonus:[{w:'CLERICAL',hint:'relating to office work'},{w:'ARTICLES',hint:'pieces of writing'},{w:'METRICS',hint:'measurements'}]},
+  {main:'CONSECUTIVE',mainHint:'one after another',bonus:[{w:'CONSTIVE',hint:'(rearrange!)'},{w:'EVICTION',hint:'being forced to leave'},{w:'CUTENESS',hint:'being adorable'}]},
+  {main:'POPULATION',mainHint:'total number of people',bonus:[{w:'POLLUTION',hint:'harmful substances in nature'},{w:'PULSION',hint:'a drive or urge'},{w:'OPTIONAL',hint:'not required'}]},
+  {main:'MICROORGANISM',mainHint:'tiny living thing',bonus:[{w:'ORGANISMS',hint:'living things'},{w:'MOROCCAN',hint:'from Morocco'},{w:'AMORISM',hint:'love of love'}]},
+  {main:'GRAVITATIONAL',mainHint:'related to gravity',bonus:[{w:'STAGNATION',hint:'lack of movement'},{w:'LAVATORIAL',hint:'of a toilet'},{w:'ALTERATION',hint:'a change'}]},
+  {main:'CAMOUFLAGE',mainHint:'disguise by blending in',bonus:[{w:'MAGICAL',hint:'like a magic trick'},{w:'FAUCAL',hint:'of the throat'},{w:'MEGALOMANIAC',hint:'craves power'}]},
+  {main:'DEFORESTATION',mainHint:'cutting down forests',bonus:[{w:'FEDERATION',hint:'a union of states'},{w:'AFFORESTATION',hint:'planting new forests'},{w:'ATTESTATION',hint:'giving witness'}]},
+  {main:'BIODIVERSITY',mainHint:'variety of living things',bonus:[{w:'DIVERSITY',hint:'variety'},{w:'AIRDROP',hint:'delivery from aircraft'},{w:'VIRIDITY',hint:'greenness'}]},
+  {main:'PREHISTORIC',mainHint:'before written records',bonus:[{w:'RHIZOSPHERE',hint:'soil around roots'},{w:'CHOREIST',hint:'(rearrange!)'},{w:'HISTORIES',hint:'past records'}]},
+  {main:'CIRCUMNAVIGATE',mainHint:'travel all the way around',bonus:[{w:'NAVIGATE',hint:'to plan a route'},{w:'VIGILANCE',hint:'watchfulness'},{w:'ANTIQUE',hint:'very old object'}]},
+  {main:'CATASTROPHE',mainHint:'a terrible disaster',bonus:[{w:'AEROSPACE',hint:'aircraft industry'},{w:'ATMOSPHERE',hint:'air around Earth'},{w:'APOSTROPHE',hint:'punctuation mark'}]},
+  {main:'RENEWABLE',mainHint:'energy that wont run out',bonus:[{w:'WEARABLE',hint:'can be worn'},{w:'LABORER',hint:'a worker'},{w:'BELOW',hint:'underneath'}]},
+  {main:'ADAPTATION',mainHint:'changes to suit environment',bonus:[{w:'DONATION',hint:'a gift of money'},{w:'ATONAL',hint:'without a key in music'},{w:'PANTOLAND',hint:'(rearrange!)'}]},
+  {main:'HYPOTHESIS',mainHint:'a scientific prediction',bonus:[{w:'HOTPOTS',hint:'stewed dishes'},{w:'TYPHOS',hint:'(rearrange!)'},{w:'SPOTS',hint:'circles or places'}]},
+  {main:'DENOMINATOR',mainHint:'bottom number of fraction',bonus:[{w:'ORDINATOR',hint:'one who ordains'},{w:'DOMINATOR',hint:'one who dominates'},{w:'NOMINATION',hint:'being put forward'}]},
+  {main:'EQUIVALENT',mainHint:'of the same value',bonus:[{w:'QUENITAL',hint:'(rearrange!)'},{w:'QUILTS',hint:'bed coverings'},{w:'VENTAIL',hint:'part of a helmet'}]},
+  {main:'FIGURATIVE',mainHint:'non-literal language',bonus:[{w:'FUGITIVE',hint:'someone on the run'},{w:'FIRE',hint:'burning flames'},{w:'NARRATIVE',hint:'telling a story'}]},
+  {main:'PERSONIFICATION',mainHint:'giving human traits to objects',bonus:[{w:'NOTIFICATION',hint:'an alert'},{w:'FORTIFICATION',hint:'making something stronger'},{w:'SPECIFICATION',hint:'exact details'}]},
+  {main:'ALLITERATION',mainHint:'repeated consonant sounds',bonus:[{w:'ALTERATION',hint:'a change'},{w:'LIBERATION',hint:'setting free'},{w:'NARRATION',hint:'telling a story'}]},
+  {main:'SIMILE',mainHint:'comparison using like or as',bonus:[{w:'SMILE',hint:'happy expression'},{w:'LIMES',hint:'sour green fruit'},{w:'SLIME',hint:'sticky substance'}]},
+  {main:'METAPHOR',mainHint:'direct comparison',bonus:[{w:'THERAPY',hint:'treatment for illness'},{w:'TRAMPHOR',hint:'(rearrange!)'},{w:'HAMPER',hint:'a gift basket'}]},
+  {main:'ACROSTIC',mainHint:'first letters make a word',bonus:[{w:'COATS',hint:'outer garments'},{w:'STOIC',hint:'unemotional'},{w:'ATTICS',hint:'rooms in roof space'}]},
+  {main:'APOSTROPHE',mainHint:'punctuation mark for omission',bonus:[{w:'ATMOSPHERE',hint:'air around Earth'},{w:'TOPSOIL',hint:'upper layer of earth'},{w:'HOARFROST',hint:'frozen dew'}]},
+  {main:'CONNECTIVE',mainHint:'word linking sentences',bonus:[{w:'CONVICT',hint:'to find guilty'},{w:'EVICTION',hint:'removing from home'},{w:'INCITE',hint:'to encourage action'}]},
+  {main:'PREPOSITION',mainHint:'word showing position',bonus:[{w:'OPPOSITION',hint:'the other side'},{w:'PROPOSITION',hint:'an offer or plan'},{w:'DEPOSITION',hint:'removing from power'}]},
+  {main:'SUBORDINATE',mainHint:'secondary or dependent',bonus:[{w:'BANISTER',hint:'stair railing'},{w:'ORBITS',hint:'paths around stars'},{w:'BANDITS',hint:'robbers'}]},
+  {main:'PARENTHESIS',mainHint:'brackets in a sentence',bonus:[{w:'ANTHESIS',hint:'flowering time'},{w:'APOTHESIS',hint:'highest point'},{w:'PARENTS',hint:'mum and dad'}]},
+  {main:'SUFFIXES',mainHint:'letters added to word endings',bonus:[{w:'FUSSIER',hint:'more fussy'},{w:'FUSES',hint:'melts together'},{w:'SUFFIX',hint:'a word ending'}]},
+  {main:'PREFIXES',mainHint:'letters added to beginnings',bonus:[{w:'FIXER',hint:'someone who repairs'},{w:'FRIES',hint:'fried potatoes'},{w:'PIXELS',hint:'dots on a screen'}]},
+  {main:'LONGITUDE',mainHint:'vertical map lines',bonus:[{w:'LOUDING',hint:'(rearrange!)'},{w:'LOUNGE',hint:'a relaxing room'},{w:'GLINTED',hint:'reflected light briefly'}]},
+  {main:'LATITUDE',mainHint:'horizontal map lines',bonus:[{w:'DILATE',hint:'to expand'},{w:'DETAIL',hint:'a small part'},{w:'AUDIBLE',hint:'can be heard'}]},
+  {main:'TROPOSPHERE',s:['troposphere'],mainHint:'lowest layer of atmosphere',bonus:[{w:'OSPHERE',hint:'a ball shape'},{w:'THEORIES',hint:'explanations'},{w:'SHOPPER',hint:'someone buying things'}]},
+  {main:'PHOTOSYNTHESIS',mainHint:'how plants make food from light',bonus:[{w:'SYNTHESIS',hint:'combining elements'},{w:'TOOTHPICKS',hint:'small sticks for teeth'},{w:'HYPOTHESES',hint:'multiple guesses'}]},
+  {main:'RENEWABLE',mainHint:'energy that wont run out',bonus:[{w:'WEARABLE',hint:'can be worn'},{w:'LABORER',hint:'a worker'},{w:'BELOW',hint:'underneath'}]},
+  {main:'CAMOUFLAGE',mainHint:'disguise by blending in',bonus:[{w:'MAGICAL',hint:'like magic'},{w:'FAUCAL',hint:'of the throat'},{w:'MOCHA',hint:'a coffee flavour'}]},
+  {main:'VERTEBRATE',mainHint:'has a backbone',bonus:[{w:'VIBRATE',hint:'to shake fast'},{w:'RETRIEVE',hint:'to fetch'},{w:'AVERTED',hint:'prevented'}]},
+  {main:'ENDANGERED',mainHint:'at risk of dying out',bonus:[{w:'GRENADE',hint:'a small bomb'},{w:'DANDER',hint:'small flakes of skin'},{w:'ENGAGED',hint:'involved or betrothed'}]},
+  {main:'PERMUTATION',mainHint:'different arrangement of items',bonus:[{w:'AMPUTATION',hint:'removal of a limb'},{w:'PERM',hint:'curly hairstyle'},{w:'EMOTION',hint:'feeling'}]},
+  {main:'EXPONENTS',mainHint:'powers in maths',bonus:[{w:'PONENT',hint:'part of a system'},{w:'EXPOSED',hint:'uncovered'},{w:'NEXTPOT',hint:'(rearrange!)'}]},
+  {main:'REFLECTION',mainHint:'mirror image or thought',bonus:[{w:'CONFETTI',hint:'coloured party paper'},{w:'ELECTION',hint:'a vote'},{w:'INFLECT',hint:'to change word form'}]},
+  {main:'TRANSLATION',mainHint:'sliding a shape without turning',bonus:[{w:'STAGNATION',hint:'no progress'},{w:'PLANTATION',hint:'a large farm'},{w:'SALINATION',hint:'making salty'}]},
+  {main:'OCTAGON',mainHint:'eight sided shape',bonus:[{w:'TANGO',hint:'a dance'},{w:'CONTAGION',hint:'spreading disease'},{w:'GOAT',hint:'farm animal'}]},
+  {main:'HEXAGON',mainHint:'six sided shape',bonus:[{w:'GONE',hint:'departed'},{w:'OAKEN',hint:'made of oak'},{w:'HOG',hint:'a pig'}]},
+  {main:'PENTAGON',mainHint:'five sided shape',bonus:[{w:'PANT',hint:'to breathe fast'},{w:'ATONE',hint:'to make amends'},{w:'NOPE',hint:'a word for no'}]},
+  {main:'DODECAGON',mainHint:'twelve sided shape',bonus:[{w:'DECADE',hint:'ten years'},{w:'CONGEALED',hint:'solidified'},{w:'DECAGON',hint:'ten sided shape'}]},
+  {main:'ISOSCELES',mainHint:'triangle with two equal sides',bonus:[{w:'CLOISTERS',hint:'covered walkways'},{w:'CLOSETS',hint:'small cupboards'},{w:'COSSETED',hint:'pampered'}]},
+  {main:'RHOMBUS',mainHint:'diamond shaped quadrilateral',bonus:[{w:'SHRUB',hint:'a small bush'},{w:'RUMBA',hint:'a dance'},{w:'THUMBS',hint:'the short fingers'}]},
+  {main:'TRAPEZIUM',mainHint:'shape with one pair of parallel sides',bonus:[{w:'IMPOSTER',hint:'a fake'},{w:'PRIMATE',hint:'monkey or ape'},{w:'OPTIMISM',hint:'positive outlook'}]},
+  {main:'PARALLELOGRAM',mainHint:'shape with two pairs of parallel sides',bonus:[{w:'AMPERAGE',hint:'measure of electricity'},{w:'GLAMOUR',hint:'sparkle and attractiveness'},{w:'PLUMBER',hint:'fixes pipes'}]},
+  {main:'PROBABILITY',mainHint:'likelihood of something happening',bonus:[{w:'NOBILITY',hint:'upper class'},{w:'ABILITY',hint:'being able to do something'},{w:'POSSIBLY',hint:'perhaps'}]},
+  {main:'STATISTICS',mainHint:'collecting and analysing data',bonus:[{w:'TACTICS',hint:'clever plans'},{w:'STATIC',hint:'not moving'},{w:'ATTICS',hint:'rooms in the roof'}]},
+  {main:'HYPOTHESIS',mainHint:'a scientific guess',bonus:[{w:'HYPNOTISE',hint:'to put in a trance'},{w:'PHYSICIST',hint:'studies physics'},{w:'SYNTHESIS',hint:'combining parts'}]},
+  {main:'CONDENSATION',mainHint:'water forming on cold surfaces',bonus:[{w:'DONATIONS',hint:'gifts of money'},{w:'STAGNATION',hint:'lack of movement'},{w:'CONATIONS',hint:'(rearrange!)'}]},
+  {main:'DEFORESTATION',mainHint:'removing forests',bonus:[{w:'REFORESTATION',hint:'regrowing forests'},{w:'AFFORESTATION',hint:'planting new forests'},{w:'FOUNDATIONS',hint:'the base of a building'}]},
+  {main:'CAMOUFLAGE',mainHint:'hiding by blending in',bonus:[{w:'MAGICAL',hint:'like a spell'},{w:'GLAMOUR',hint:'attractiveness'},{w:'DECIMAL',hint:'relating to tenths'}]},
+  {main:'BIODIVERSITY',mainHint:'range of life forms',bonus:[{w:'DIVERSITY',hint:'great variety'},{w:'ADVISERS',hint:'people who give advice'},{w:'DEBRIS',hint:'scattered fragments'}]},
+  {main:'TECTONIC',mainHint:'relating to plate movement',bonus:[{w:'CONTENT',hint:'satisfied or material inside'},{w:'NOTICE',hint:'to observe'},{w:'TONICS',hint:'strengthening drinks'}]},
+  {main:'NUTRIENTS',mainHint:'needed for healthy growth',bonus:[{w:'RUINETS',hint:'(rearrange!)'},{w:'TURQUOISE',hint:'blue-green colour'},{w:'NEUTRONS',hint:'particles in an atom'}]}
+];
+
+// ═══════════════════════════════════════════════════════════
+// DEFAULT TWO TRUTHS & A LIE BANK
+// lie: 1-indexed position of the lie
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_TT=[
+  {topic:'Ancient Maya',stmts:['The Maya used a number system based on 20','The Maya built their pyramids using iron tools','The Maya had a calendar with 365 days'],lie:2},
+  {topic:'Rivers',stmts:['Rivers always flow from high ground to low ground','The mouth of a river is where it begins','A tributary is a smaller river joining a larger one'],lie:2},
+  {topic:'Fractions',stmts:['A half is bigger than a quarter','The numerator is the top number of a fraction','Three quarters is the same as 0.75'],lie:1},
+  {topic:'The Romans',stmts:['The Romans invaded Britain in AD 43','Roman soldiers were called centurions','The Romans built straight roads across Britain'],lie:2},
+  {topic:'Rainforests',stmts:['Rainforests are found near the equator','The Amazon rainforest is in Africa','Rainforests are home to more than half of all species on Earth'],lie:2},
+  {topic:'Space',stmts:['The Sun is a star','Jupiter is the largest planet in our solar system','The Moon produces its own light'],lie:3},
+  {topic:'Ancient Egypt',stmts:['The Nile flows northwards into the Mediterranean Sea','Pharaohs were buried in the Valley of the Kings','Hieroglyphics were invented by the Romans'],lie:3},
+  {topic:'Food chains',stmts:['A producer is always a plant','Apex predators have no natural enemies','All herbivores are also predators'],lie:3},
+  {topic:'States of matter',stmts:['Solids keep a fixed shape','Gases can be compressed','Liquids always stay the same shape as their container'],lie:3},
+  {topic:'Human body',stmts:['Adults have 206 bones','The heart pumps blood around the body','The brain is found in the chest'],lie:3},
+  {topic:'Geography — UK',stmts:['The River Severn is the longest river in the UK','Edinburgh is the capital of Scotland','The Lake District is in Wales'],lie:3},
+  {topic:'Volcanoes',stmts:['Lava is the name for magma once it leaves a volcano','Volcanoes can only form on land','The Ring of Fire is an area with many volcanoes'],lie:2},
+  {topic:'Plants',stmts:['Plants make their own food using sunlight','Roots absorb water and minerals from soil','Flowers are the part of the plant that absorbs sunlight'],lie:3},
+  {topic:'Multiplication',stmts:['7 × 8 = 56','Any number multiplied by 0 equals itself','9 × 6 = 54'],lie:2},
+  {topic:'Vikings',stmts:['Vikings came from Scandinavia','Vikings always wore helmets with horns','The Vikings were skilled sailors and navigators'],lie:2},
+  {topic:'Weather and climate',stmts:['Weather is what happens day to day','Climate describes patterns over many years','The UK has a tropical climate'],lie:3},
+  {topic:'Animals',stmts:['Dolphins are mammals','Sharks are fish','Penguins are found naturally in the Arctic'],lie:3},
+  {topic:'Map skills',stmts:['A compass has four main directions','Contour lines on a map show height','A larger scale map shows less detail'],lie:3},
+  {topic:'Grammar — nouns and pronouns',stmts:['A noun is a naming word','A pronoun replaces a noun in a sentence','Adjectives are a type of noun'],lie:3},
+  {topic:'Grammar — verbs',stmts:['A verb is a doing or being word','Every sentence must contain a verb','Verbs can never appear at the start of a sentence'],lie:3},
+  {topic:'Grammar — adjectives and adverbs',stmts:['An adjective describes a noun','An adverb modifies a verb, adjective or another adverb','Adverbs can only end in -ly'],lie:3},
+  {topic:'Grammar — punctuation',stmts:['A comma can be used to separate items in a list','An apostrophe can show possession or omission','A full stop is used to ask a question'],lie:3},
+  {topic:'Grammar — sentence types',stmts:['A statement ends with a full stop','An exclamation sentence starts with "What" or "How"','A question always ends with a full stop'],lie:3},
+  {topic:'Grammar — clauses',stmts:['A main clause makes sense on its own','A subordinate clause depends on the main clause','A subordinating conjunction connects two main clauses'],lie:3},
+  {topic:'Grammar — word classes',stmts:['Prepositions show the relationship between a noun and something else','Conjunctions join words, phrases or clauses','Determiners always come after the noun they relate to'],lie:3},
+  {topic:'Grammar — tense',stmts:['Simple past tense describes something that already happened','Progressive tense describes an ongoing action','Future tense always uses the word "will"'],lie:3},
+  {topic:'Spelling rules',stmts:['Adding -ing to a short vowel word usually means doubling the final consonant','Words ending in a silent e usually drop the e before adding -ing','You always add -s to make a word plural'],lie:3},
+  {topic:'Spelling — prefixes',stmts:['"Un-" is a prefix meaning not or opposite','The prefix "mis-" means wrongly or badly','The prefix "re-" always changes the meaning of a word to its opposite'],lie:3},
+  {topic:'Spelling — suffixes',stmts:['Adding -ful to a word means full of something','The suffix -less means without','The suffix -tion always makes a word into a verb'],lie:3},
+  {topic:'Spelling — silent letters',stmts:['"Knight" contains a silent k','The w is silent in the word "write"','The word "lamb" contains a silent b'],lie:1},
+  {topic:'Homophones',stmts:['"There", "their" and "they\'re" all sound the same','A homophone is a word that sounds like another but has a different meaning','Homophones always have identical spellings'],lie:3},
+  {topic:'2D shapes',stmts:['A regular polygon has all sides and angles equal','A quadrilateral is any shape with four sides','A pentagon has six sides'],lie:3},
+  {topic:'3D shapes',stmts:['A cube has 6 faces, 12 edges and 8 vertices','A sphere has no edges or vertices','A cylinder has two flat faces and one curved face'],lie:1},
+  {topic:'Angles',stmts:['A right angle is exactly 90°','An obtuse angle is between 90° and 180°','A reflex angle is less than 90°'],lie:3},
+  {topic:'Perimeter and area',stmts:['Perimeter is the distance around the outside of a shape','Area is measured in square units','The perimeter and area of a shape always have the same value'],lie:3},
+  {topic:'Lines and symmetry',stmts:['Parallel lines never meet','Perpendicular lines meet at a right angle','A square has two lines of symmetry'],lie:3},
+  {topic:'Triangles',stmts:['An equilateral triangle has three equal sides and angles','A right-angled triangle contains one 90° angle','An isosceles triangle has no equal sides'],lie:3},
+  {topic:'Place value',stmts:['In the number 4,372 the digit 3 represents 300','Ten hundreds make one thousand','The digit in the tens column is always larger than the digit in the units column'],lie:3},
+  {topic:'Fractions and decimals',stmts:['0.25 is the same as one quarter','One half is equivalent to two quarters','0.1 is the same as one hundredth'],lie:3},
+  {topic:'Multiplication and division',stmts:['Multiplication and division are inverse operations','Any number multiplied by 1 stays the same','Dividing by 2 is the same as multiplying by 2'],lie:3},
+  {topic:'Roman numerals',stmts:['V represents 5 in Roman numerals','X represents 10 in Roman numerals','L represents 100 in Roman numerals'],lie:3},
+  {topic:'Negative numbers',stmts:['Negative numbers are less than zero','-5 is smaller than -2','The difference between -3 and 3 is 3'],lie:3},
+  {topic:'Continents and oceans',stmts:['There are seven continents on Earth','The Pacific is the largest ocean','Africa is the smallest continent'],lie:3},
+  {topic:'Climate zones',stmts:['Polar regions are found near the equator','Tropical regions are hot and wet all year','Temperate regions have four seasons'],lie:1},
+  {topic:'The water cycle',stmts:['Evaporation is when water turns from liquid to gas','Precipitation includes rain, snow and hail','Condensation is when water vapour turns into clouds'],lie:3},
+  {topic:'Biomes',stmts:['Deserts receive very little rainfall','Tundra biomes are found near the poles','Coral reefs are a type of desert biome'],lie:3},
+  {topic:'Rivers — features',stmts:['The source of a river is where it starts','A meander is a bend in a river','The upper course of a river is where the river is widest'],lie:3},
+  {topic:'UK geography',stmts:['England, Scotland, Wales and Northern Ireland make up the United Kingdom','London is the capital city of the United Kingdom','The Pennines are a mountain range in southern England'],lie:3},
+  {topic:'Ancient Greece',stmts:['The ancient Greeks invented the Olympic Games','Athens was a powerful city-state in ancient Greece','The ancient Greeks built the Great Wall of China'],lie:3},
+  {topic:'The Tudors',stmts:['Henry VIII had six wives','Elizabeth I was the daughter of Henry VIII','The Tudors ruled England during the 1900s'],lie:3},
+  {topic:'World War Two',stmts:['World War Two began in 1939','Adolf Hitler led Nazi Germany during the war','The war ended in 1918'],lie:3},
+  {topic:'Stone Age to Iron Age',stmts:['Hunter-gatherers moved around to find food','Stonehenge was built during the Stone Age period','Iron is stronger than bronze'],lie:2},
+  {topic:'The Great Fire of London',stmts:['The Great Fire of London started in 1666','The fire started in a bakery on Pudding Lane','The fire destroyed most of London including St Paul\'s Cathedral'],lie:3},
+  {topic:'Forces',stmts:['Gravity pulls objects towards the Earth','Friction slows down moving objects','Magnetic forces can only attract, never repel'],lie:3},
+  {topic:'Light',stmts:['Light travels in straight lines','We see objects because light reflects off them into our eyes','Light travels more slowly than sound'],lie:3},
+  {topic:'Sound',stmts:['Sound travels as vibrations','Sound cannot travel through solids','Higher pitch sounds have more frequent vibrations'],lie:2},
+  {topic:'Electricity',stmts:['A circuit must be complete for electricity to flow','Metals are usually good conductors of electricity','Rubber is a good conductor of electricity'],lie:3},
+  {topic:'Materials',stmts:['Thermal insulators slow down the transfer of heat','Glass is transparent because it lets light through','All metals are magnetic'],lie:3},
+  {topic:'Animals — classification',stmts:['Mammals give birth to live young and feed them milk','Amphibians can live both in water and on land','All reptiles are warm-blooded'],lie:3},
+  {topic:'Rocks',stmts:['Igneous rocks are formed from cooled magma','Sedimentary rocks are formed from layers of sediment','Metamorphic rocks are always formed near the surface of the Earth'],lie:3},
+  {topic:'The digestive system',stmts:['Digestion begins in the mouth','The stomach produces acid to break down food','The large intestine is where most nutrients are absorbed into the blood'],lie:3},
+  {topic:'Apostrophes',stmts:['An apostrophe shows that letters are missing','The apostrophe in "it\'s" shows possession','Apostrophes can show possession in nouns'],lie:2},
+  {topic:'Direct speech',stmts:['Speech marks go around the words actually spoken','A new speaker always starts on a new line','You should never use a comma before closing speech marks'],lie:3},
+  {topic:'Relative clauses',stmts:['A relative clause adds more information about a noun','Relative clauses can begin with who, which or that','A relative clause is always a main clause'],lie:3},
+  {topic:'Fronted adverbials',stmts:['A fronted adverbial comes at the beginning of a sentence','Fronted adverbials are always followed by a comma','A fronted adverbial must always describe time'],lie:3},
+  {topic:'Parenthesis',stmts:['Parenthesis adds extra information to a sentence','Brackets, dashes and commas can all be used to show parenthesis','Parenthesis changes the main meaning of a sentence'],lie:3},
+  {topic:'Active and passive voice',stmts:['In an active sentence the subject does the action','In a passive sentence the object receives the action','Passive sentences are more common in fiction than in reports'],lie:3},
+  {topic:'Modal verbs',stmts:['Modal verbs include could, should, would and might','Modal verbs show possibility or obligation','Modal verbs can be used as the main verb in a sentence on their own'],lie:3},
+  {topic:'Conjunctions',stmts:['Conjunctions join clauses or sentences together','Subordinating conjunctions include although, because and while','Coordinating conjunctions include for, and, nor, but, or, yet and so'],lie:1},
+  {topic:'Determiners',stmts:['The, a and an are determiners','Determiners come before a noun','Determiners can never come before an adjective that comes before a noun'],lie:3},
+  {topic:'Synonyms and antonyms',stmts:['Synonyms are words with similar meanings','Antonyms are words with opposite meanings','Every word has at least one synonym'],lie:3},
+  {topic:'The i before e rule',stmts:['The rule "i before e except after c" applies most of the time','The word "weird" is an exception to the i before e rule','The word "receive" follows the i before e rule'],lie:1},
+  {topic:'Plurals',stmts:['Most words add -s to form the plural','Words ending in -ch, -sh, -s, -x or -z add -es','All words ending in -f just add -s to form the plural'],lie:3},
+  {topic:'Word families',stmts:['Words in the same family share the same root','The words sign, signal and signature are in the same word family','Word families always sound exactly the same'],lie:3},
+  {topic:'Etymology',stmts:['Etymology is the study of word origins','Many English words have Latin or Greek roots','All English words come from French'],lie:3},
+  {topic:'Compound words',stmts:['A compound word is made of two or more smaller words','Sunshine, football and bedroom are compound words','Compound words are always written as one single word'],lie:3},
+  {topic:'Fractions — adding',stmts:['To add fractions with the same denominator you add the numerators','½ + ¼ = ¾','To add fractions with different denominators you must find a common denominator'],lie:2},
+  {topic:'Fractions — multiplying',stmts:['To multiply fractions you multiply the numerators and the denominators','½ × ½ = ¼','Multiplying a fraction by a whole number always makes it larger'],lie:3},
+  {topic:'Percentages',stmts:['Per cent means out of 100','50% is the same as one half','25% of 80 is 25'],lie:3},
+  {topic:'Prime numbers',stmts:['A prime number has exactly two factors','1 is a prime number','2 is the only even prime number'],lie:2},
+  {topic:'Square numbers',stmts:['A square number is the result of multiplying a number by itself','16 is a square number','The first five square numbers are 1, 4, 9, 16 and 25'],lie:1},
+  {topic:'Factors and multiples',stmts:['A factor divides exactly into a number','12 is a multiple of 4','Every number is a factor of itself'],lie:1},
+  {topic:'Order of operations',stmts:['Brackets should be calculated first','Multiplication is done before addition','Addition is done before subtraction'],lie:3},
+  {topic:'Rounding',stmts:['When rounding to the nearest 10, you look at the units digit','5 or more means you round up','3,456 rounded to the nearest 100 is 3,500'],lie:1},
+  {topic:'Division',stmts:['The dividend is the number being divided','The divisor is the number you are dividing by','The quotient is the number you divide by'],lie:3},
+  {topic:'Coordinates',stmts:['Coordinates are always written as (x, y)','The x axis is horizontal','The y axis is horizontal'],lie:3},
+  {topic:'Measurement — area',stmts:['Area is measured in square units','The area of a rectangle is length × width','A 3cm × 4cm rectangle has an area of 14cm²'],lie:3},
+  {topic:'Measurement — volume',stmts:['Volume is measured in cubic units','A cube with sides of 3cm has a volume of 27cm³','Volume and capacity mean exactly the same thing'],lie:3},
+  {topic:'Time',stmts:['There are 60 minutes in an hour','There are 24 hours in a day','There are 8 days in a week'],lie:3},
+  {topic:'Money',stmts:['There are 100 pence in one pound','£3.45 means three pounds and forty-five pence','£2.50 + £1.75 = £4.35'],lie:1},
+  {topic:'Angles in shapes',stmts:['The angles in a triangle add up to 180°','The angles in a quadrilateral add up to 360°','The angles in a pentagon add up to 360°'],lie:3},
+  {topic:'Fractions — equivalent',stmts:['⅓ is equivalent to 2/6','Equivalent fractions have the same value','To find an equivalent fraction you can only add to the numerator and denominator'],lie:3},
+  {topic:'Data — charts',stmts:['A bar chart is good for comparing categories','A pie chart shows parts of a whole','A line graph is best for showing data that does not change over time'],lie:3},
+  {topic:'Averages',stmts:['The mean is found by adding all values and dividing by how many there are','The mode is the most common value','The median is always the middle value in any list'],lie:3},
+  {topic:'Earthquakes',stmts:['Earthquakes happen at tectonic plate boundaries','The Richter scale measures earthquake strength','All earthquakes are felt at the surface'],lie:3},
+  {topic:'World rivers',stmts:['The Amazon is the longest river in the world','The Nile is in Africa','The Ganges flows through India'],lie:1},
+  {topic:'Mountain ranges',stmts:['The Himalayas are in Asia','The Andes are in South America','The Alps are in North America'],lie:3},
+  {topic:'Countries and capitals',stmts:['Paris is the capital of France','Madrid is the capital of Spain','Lisbon is the capital of Italy'],lie:3},
+  {topic:'Population',stmts:['China has the largest population in the world','The UK has a larger population than Australia','The population of the world is approximately 8 billion'],lie:1},
+  {topic:'Deserts',stmts:['Deserts are always hot','The Sahara is the largest hot desert in the world','Deserts receive less than 25cm of rain per year'],lie:1},
+  {topic:'Oceans',stmts:['The Atlantic Ocean separates Europe from America','The Indian Ocean is the largest ocean','The Arctic Ocean is the smallest ocean'],lie:2},
+  {topic:'Grid references',stmts:['You always read a grid reference across first then up','A four-figure grid reference identifies a grid square','A six-figure grid reference is more precise than a four-figure one'],lie:1},
+  {topic:'Types of settlement',stmts:['A hamlet is smaller than a village','A city is always larger than a town','A conurbation is where two or more cities have grown together'],lie:2},
+  {topic:'Land use',stmts:['Residential land use is for housing','Industrial land use is for factories and warehouses','Agricultural land is mainly found in city centres'],lie:3},
+  {topic:'Trade and industry',stmts:['Primary industry involves extracting natural resources','Secondary industry involves making or manufacturing things','Tertiary industry involves growing food'],lie:3},
+  {topic:'Natural disasters',stmts:['A tsunami is a giant wave often caused by an earthquake','A hurricane and a typhoon are different types of the same phenomenon','Tornadoes are most common in Antarctica'],lie:3},
+  {topic:'The Aztecs',stmts:['The Aztec empire was in Central Mexico','The Aztec capital was called Tenochtitlan','The Spanish conquered the Aztecs in the 20th century'],lie:3},
+  {topic:'World War One',stmts:['World War One began in 1914','The assassination of Archduke Franz Ferdinand triggered the war','The war was fought mainly in the Pacific Ocean'],lie:3},
+  {topic:'The Victorians',stmts:['Queen Victoria reigned from 1837 to 1901','The Industrial Revolution happened during the Victorian era','Children in Victorian times were not allowed to work'],lie:3},
+  {topic:'The Civil Rights Movement',stmts:['Rosa Parks refused to give up her seat on a bus in 1955','Martin Luther King Jr delivered his "I Have a Dream" speech in 1963','The Civil Rights Act in America was passed in 1964'],lie:1},
+  {topic:'Ancient Rome',stmts:['The Roman Empire was ruled by emperors','Julius Caesar was the first Emperor of Rome','Rome is said to have been founded in 753 BC'],lie:2},
+  {topic:'The Plague',stmts:['The Black Death reached England in 1348','The plague was spread by fleas on rats','The Black Death killed over half of Europe\'s population'],lie:1},
+  {topic:'The Gunpowder Plot',stmts:['The Gunpowder Plot took place in 1605','Guy Fawkes planned to blow up the Houses of Parliament','The plot was discovered when a letter was sent to warn a member of Parliament'],lie:1},
+  {topic:'Exploration',stmts:['Christopher Columbus reached the Americas in 1492','Vasco da Gama was the first European to sail to India','Francis Drake was the first person to circumnavigate the globe'],lie:3},
+  {topic:'The Industrial Revolution',stmts:['The Industrial Revolution began in Britain','Steam power was an important invention during this period','The Industrial Revolution made working conditions better for most people'],lie:3},
+  {topic:'The Suffragettes',stmts:['The Suffragettes campaigned for women\'s right to vote','Emmeline Pankhurst was a key Suffragette leader','Women in Britain first got the right to vote in 1950'],lie:3},
+  {topic:'World War Two — key events',stmts:['D-Day took place in June 1944','The Battle of Britain was fought in the air','The atomic bomb was dropped on France to end the war'],lie:3},
+  {topic:'Ancient China',stmts:['The Great Wall of China was built to keep out invaders','Paper was invented in ancient China','The compass was invented in ancient Rome'],lie:3},
+  {topic:'The Incas',stmts:['The Inca empire was in South America','Machu Picchu was an important Inca city','The Incas had a written alphabet that used symbols'],lie:3},
+  {topic:'The solar system',stmts:['The Earth is the third planet from the Sun','There are eight planets in our solar system','Saturn is the planet closest to the Sun'],lie:3},
+  {topic:'The Moon',stmts:['The Moon orbits the Earth','A lunar month is approximately 28 days','The Moon has a thick atmosphere'],lie:3},
+  {topic:'Gravity',stmts:['Gravity is the force that pulls objects together','Everything with mass has gravity','The Moon has no gravitational pull'],lie:3},
+  {topic:'The circulatory system',stmts:['The heart pumps blood around the body','Arteries carry blood away from the heart','Veins carry oxygen-rich blood to the body'],lie:3},
+  {topic:'The skeletal system',stmts:['Bones provide structure and support for the body','The femur is the longest bone in the body','Babies are born with fewer bones than adults'],lie:3},
+  {topic:'Evolution',stmts:['Charles Darwin developed the theory of natural selection','Organisms that are better adapted to their environment are more likely to survive','Evolution can only happen over a few years'],lie:3},
+  {topic:'Habitats',stmts:['A habitat provides food, water and shelter for animals','Animals are adapted to survive in their habitats','Every animal can survive in any habitat on Earth'],lie:3},
+  {topic:'Food webs',stmts:['A food web shows how many food chains are connected','Energy passes from producers to consumers','The Sun is the ultimate source of energy in most food webs'],lie:1},
+  {topic:'Adaptation',stmts:['Polar bears have white fur to blend into their snowy habitat','Cacti have thick waxy skin to reduce water loss','Fish breathe through their skin instead of gills'],lie:3},
+  {topic:'Micro-organisms',stmts:['Bacteria, viruses and fungi are all micro-organisms','Not all micro-organisms are harmful','Micro-organisms can only be seen with a microscope'],lie:1},
+  {topic:'Electricity and circuits',stmts:['Current flows from the positive to the negative terminal','Resistors reduce the flow of electrical current','Switches only work when the circuit is open'],lie:3},
+  {topic:'Magnets',stmts:['Opposite poles of magnets attract each other','Like poles of magnets attract each other','Magnetic force can act through some materials'],lie:2},
+  {topic:'The water cycle',stmts:['Water evaporates from oceans, lakes and rivers','Clouds form when water vapour condenses','Rain is the only form of precipitation'],lie:3},
+  {topic:'Properties of materials',stmts:['Hardness, flexibility and transparency are properties of materials','A material can only have one property','Materials are chosen for their properties'],lie:2},
+  {topic:'Reversible changes',stmts:['Melting and freezing are reversible changes','Dissolving is a reversible change','Burning is a reversible change'],lie:3},
+  {topic:'Irreversible changes',stmts:['Cooking is an irreversible change','Rusting is an irreversible change','Dissolving sugar in water is irreversible'],lie:3},
+  {topic:'Scientists and inventors',stmts:['Isaac Newton described the laws of gravity','Marie Curie discovered penicillin','Albert Einstein developed the theory of relativity'],lie:2},
+  {topic:'Teeth and digestion',stmts:['Incisors are used for cutting food','Molars are used for grinding food','Humans have three sets of teeth in their lifetime'],lie:3},
+  {topic:'The nervous system',stmts:['The brain is the control centre of the nervous system','Nerves carry electrical signals around the body','The spinal cord is part of the nervous system'],lie:1},
+  {topic:'Light and shadows',stmts:['Shadows are formed when light is blocked','The closer an object is to a light source the smaller the shadow','Transparent materials let light pass through'],lie:2},
+  {topic:'Story structure',stmts:['Most stories have an opening, build-up, conflict, resolution and ending','The climax is usually at the beginning of a story','The resolution is where the problem is usually solved'],lie:2},
+  {topic:'Character',stmts:['Writers show character through actions, dialogue and description','A protagonist is the main character in a story','A villain is always clearly described as evil from the beginning'],lie:3},
+  {topic:'Setting',stmts:['Setting describes where and when a story takes place','Setting can affect how characters behave','Setting descriptions must always be very long'],lie:3},
+  {topic:'Genre',stmts:['Mystery, adventure and fantasy are all genres of fiction','Non-fiction books can also have genres','A biography is a type of poetry'],lie:3},
+  {topic:'Poetry',stmts:['Poems often use rhyme and rhythm','Free verse poetry does not have to rhyme','All poems must have exactly four lines in each stanza'],lie:3},
+  {topic:'Non-fiction texts',stmts:['Non-fiction texts present real information','A report and a diary are both types of non-fiction text','Non-fiction texts can never include any opinions'],lie:3},
+  {topic:'Persuasive writing',stmts:['Persuasive texts aim to change the reader\'s opinion','Rhetorical questions are often used in persuasive writing','Persuasive texts always present both sides fairly'],lie:3},
+  {topic:'Explanation texts',stmts:['Explanation texts describe how or why something happens','They are usually written in the present tense','Explanation texts always use first person throughout'],lie:3},
+  {topic:'Newspaper reports',stmts:['Newspaper reports answer who, what, where, when and why','Headlines are used to grab the reader\'s attention','Newspaper reports are always written in the first person'],lie:3},
+  {topic:'Diary writing',stmts:['Diary writing is written in the first person','Diaries are written in the past tense','Diary entries should never include any feelings or opinions'],lie:3},
+  {topic:'Instructions',stmts:['Instructions are written in the second person using "you"','Instructions use imperative verbs as commands','Instructions always include diagrams'],lie:3}
+];
+
+// ═══════════════════════════════════════════════════════════
+// NUMBER PUZZLE ENGINE
+// ═══════════════════════════════════════════════════════════
+function combos(a,k){if(!k)return[[]];if(a.length<k)return[];const[h,...t]=a;return[...combos(t,k-1).map(c=>[h,...c]),...combos(t,k)]}
+function reach(n){if(n.length===1)return new Set([n[0]]);const o=new Set();for(let i=0;i<n.length;i++)for(let j=0;j<n.length;j++){if(i===j)continue;const a=n[i],b=n[j],r=n.filter((_,x)=>x!==i&&x!==j),p=v=>r.length?reach([v,...r]).forEach(x=>o.add(x)):o.add(v);p(a+b);p(a-b);p(a*b);if(b!==0&&Number.isInteger(a/b))p(a/b)}return o}
+function fexpr(it,tgt){if(it.length===1)return it[0].val===tgt?it[0]:null;for(let i=0;i<it.length;i++)for(let j=0;j<it.length;j++){if(i===j)continue;const a=it[i],b=it[j],rest=it.filter((_,x)=>x!==i&&x!==j),ops=[['+',a.val+b.val],['−',a.val-b.val],['×',a.val*b.val],...(b.val!==0&&Number.isInteger(a.val/b.val)?[['÷',a.val/b.val]]:[])];for(const[op,v]of ops){if(!Number.isFinite(v)||!Number.isInteger(v))continue;const ni={val:v,tree:{op,l:a.tree,r:b.tree}};const f=rest.length?fexpr([ni,...rest],tgt):(v===tgt?ni:null);if(f)return f}}return null}
+function estr(t){if(typeof t==='number')return''+t;const w=x=>typeof x==='number'?''+x:'('+estr(x)+')';return w(t.l)+' '+t.op+' '+w(t.r)}
+function solveNum(g,tgt,k){for(const c of combos(g,k)){const r=fexpr(c.map(n=>({val:n,tree:n})),tgt);if(r)return estr(r.tree)+' = '+tgt}return'—'}
+function genNum(tr=0){if(tr>50)return null;const pool=Array.from({length:14},(_,i)=>i+2);for(let i=pool.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[pool[i],pool[j]]=[pool[j],pool[i]]}const g=pool.slice(0,9);const s={2:new Set(),3:new Set(),4:new Set()},cap={2:80,3:150,4:300};for(const k of[2,3,4])for(const c of combos(g,k))reach(c).forEach(v=>{if(v>0&&Number.isInteger(v)&&v<=cap[k])s[k].add(v)});if(s[2].size<5||s[3].size<5||s[4].size<2)return genNum(tr+1);const pick=(set,n)=>[...set].sort(()=>Math.random()-.5).slice(0,n).sort((a,b)=>a-b);return{grid:g,targets:{two:pick(s[2],5),three:pick(s[3],5),four:pick(s[4],2)}}}
+
+// ═══════════════════════════════════════════════════════════
+// ODD ONE OUT BANK
+// Each set: {label, items:[4 items], odd: index of odd one (0-based), reason}
+// ═══════════════════════════════════════════════════════════
+const ODD_ONE_OUT=[
+  {items:['shark','salmon','dolphin','cod'],odd:2,reason:'dolphin is a mammal, not a fish'},
+  {items:['25','36','49','54'],odd:3,reason:'54 is not a square number'},
+  {items:['Amazon','Nile','Thames','Sahara'],odd:3,reason:'Sahara is a desert, not a river'},
+  {items:['½','¼','⅔','0.5'],odd:3,reason:'⅔ cannot be written as a terminating decimal unlike the others'},
+  {items:['Rome','Paris','London','Barcelona'],odd:3,reason:'Barcelona is not a capital city'},
+  {items:['Venus','Mars','Jupiter','Moon'],odd:3,reason:'the Moon is a natural satellite, not a planet'},
+  {items:['2','5','7','9'],odd:3,reason:'9 is not a prime number'},
+  {items:['oak','rose','daisy','daffodil'],odd:0,reason:'oak is a tree, not a flower'},
+  {items:['lion','tiger','wolf','eagle'],odd:3,reason:'eagle is a bird, not a mammal'},
+  {items:['12','18','24','26'],odd:3,reason:'26 is not in the 6 times table'},
+  {items:['pyramid','cube','sphere','rectangle'],odd:3,reason:'rectangle is 2D, the others are 3D shapes'},
+  {items:['France','Germany','Brazil','Italy'],odd:2,reason:'Brazil is in South America, not Europe'},
+  {items:['evaporation','condensation','precipitation','migration'],odd:3,reason:'migration is not part of the water cycle'},
+  {items:['herbivore','carnivore','omnivore','predator'],odd:3,reason:'predator describes hunting behaviour, not diet type'},
+  {items:['40','55','70','80'],odd:1,reason:'55 is not a multiple of 10'},
+  {items:['Maya','Aztec','Inca','Viking'],odd:3,reason:'Vikings are from northern Europe, not the Americas'},
+  {items:['root','stem','leaf','seed'],odd:3,reason:'seed is for reproduction, not a main structural part of the plant'},
+  {items:['solid','liquid','gas','plasma'],odd:3,reason:'plasma is not one of the three main states of matter taught at primary level'},
+  {items:['3','6','9','14'],odd:3,reason:'14 is not in the 3 times table'},
+  {items:['noun','verb','adjective','sentence'],odd:3,reason:'sentence is not a word class'},
+  {items:['Atlantic','Pacific','Arctic','Amazon'],odd:3,reason:'Amazon is a river, not an ocean'},
+  {items:['copper','iron','wood','gold'],odd:2,reason:'wood is not a metal'},
+  {items:['translation','rotation','reflection','multiplication'],odd:3,reason:'multiplication is not a type of geometric transformation'},
+  {items:['heart','lungs','brain','femur'],odd:3,reason:'femur is a bone, not an organ'},
+  {items:['herbivore','carnivore','omnivore','decomposer'],odd:3,reason:'decomposer is not a diet type based on what organisms eat when alive'},
+  {items:['Mars','Venus','Mercury','Moon'],odd:3,reason:'the Moon is not a planet, it is a natural satellite'},
+  {items:['igneous','sedimentary','metamorphic','volcanic'],odd:3,reason:'volcanic describes how rock forms, not a rock type category'},
+  {items:['photosynthesis','respiration','digestion','evaporation'],odd:3,reason:'evaporation is a physical process, not a biological life process'},
+  {items:['aorta','vein','artery','capillary'],odd:0,reason:'the aorta is a specific vessel, not a type — the others are types of blood vessel'},
+  {items:['Newton','Watt','Metre','Joule'],odd:2,reason:'metre is a unit of length, the others are units named after scientists'},
+  {items:['polar','temperate','tropical','continental'],odd:3,reason:'continental is not one of the main climate zone types'},
+  {items:['nucleus','mitochondria','cell wall','ribosome'],odd:2,reason:'cell wall is found in plant cells but not animal cells — the others are in both'},
+  {items:['oxygen','carbon dioxide','nitrogen','hydrogen'],odd:1,reason:'carbon dioxide is a compound, the others are elements'},
+  {items:['friction','gravity','magnetism','velocity'],odd:3,reason:'velocity is not a force, it is a measure of speed with direction'},
+  {items:['reptile','amphibian','mammal','insect'],odd:3,reason:'insect is an invertebrate, the others are all vertebrate classes'},
+  {items:['root','stem','leaf','petal'],odd:3,reason:'petals are for reproduction, the others carry out the main life processes of the plant'},
+  {items:['conduction','convection','radiation','reflection'],odd:3,reason:'reflection is not a method of heat transfer'},
+  {items:['proton','neutron','electron','molecule'],odd:3,reason:'a molecule is made of atoms — the others are subatomic particles'},
+  {items:['transparent','translucent','opaque','reflective'],odd:3,reason:'reflective is about bouncing light, the others describe how light passes through materials'},
+  {items:['predator','prey','producer','consumer'],odd:2,reason:'producer is not an animal-role term — it applies to plants'},
+  {items:['hibernation','migration','adaptation','camouflage'],odd:2,reason:'adaptation is a long-term evolutionary process; the others are specific survival behaviours'},
+  {items:['Jupiter','Saturn','Uranus','Neptune'],odd:0,reason:'Jupiter has no rings visible from Earth — the others are well known for their ring systems'},
+  {items:['acid','alkali','neutral','solid'],odd:3,reason:'solid describes a state of matter, not a position on the pH scale'},
+  {items:['switch','wire','bulb','magnet'],odd:3,reason:'a magnet is not a component of a simple electrical circuit'},
+  {items:['16','25','36','40'],odd:3,reason:'40 is not a square number'},
+  {items:['7','11','13','15'],odd:3,reason:'15 is not prime (divisible by 3 and 5)'},
+  {items:['1','2','4','8'],odd:0,reason:'1 is not a power of 2 in the standard doubling sequence'},
+  {items:['triangle','pentagon','hexagon','octagon'],odd:0,reason:'triangle has 3 sides — the others all have 5 or more sides'},
+  {items:['¼','0.25','25%','2.5'],odd:3,reason:'2.5 is not equivalent to one quarter'},
+  {items:['perimeter','area','volume','weight'],odd:3,reason:'weight is a force (measured in Newtons), the others are geometric measurements'},
+  {items:['acute','obtuse','reflex','perpendicular'],odd:3,reason:'perpendicular describes two lines, not a type of angle'},
+  {items:['factor','multiple','prime','product'],odd:3,reason:'product is the result of multiplication, the others are types of numbers'},
+  {items:['mean','mode','median','measure'],odd:3,reason:'measure is a general word, the others are specific types of average'},
+  {items:['kilo','centi','milli','deci'],odd:0,reason:'kilo means 1000, the others are all fractions of a unit (less than 1)'},
+  {items:['parallel','perpendicular','diagonal','horizontal'],odd:1,reason:'perpendicular describes two lines meeting at 90°, the others are types of line direction'},
+  {items:['equilateral','isosceles','scalene','rhombus'],odd:3,reason:'rhombus is a quadrilateral, the others are types of triangle'},
+  {items:['0.1','0.01','0.001','0.0001'],odd:0,reason:'0.1 is one tenth — the others are hundredths, thousandths and ten-thousandths'},
+  {items:['litre','gram','metre','kilometre'],odd:1,reason:'gram is a unit of mass — the others are units of length or volume'},
+  {items:['sum','difference','product','fraction'],odd:3,reason:'fraction is not a result of a calculation — the others are answers to operations'},
+  {items:['numerator','denominator','decimal','equivalent'],odd:2,reason:'decimal is not specifically a fraction term like the others'},
+  {items:['clockwise','anticlockwise','horizontal','rotation'],odd:2,reason:'horizontal is a direction of line — the others relate to turning or rotation'},
+  {items:['2D','3D','4D','HD'],odd:2,reason:'4D and HD are not mathematical shape dimensions — 2D and 3D are'},
+  {items:['cube','cuboid','cylinder','circle'],odd:3,reason:'circle is a 2D shape — the others are all 3D shapes'},
+  {items:['polygon','pentagon','hexagon','circle'],odd:3,reason:'circle is not a polygon because it has no straight sides'},
+  {items:['½','2/4','3/6','3/4'],odd:3,reason:'3/4 is not equivalent to one half — the others all are'},
+  {items:['100','1000','10','10000'],odd:2,reason:'10 is not a power of 100 in the same pattern — the others follow ×10 pattern from 10'},
+  {items:['addition','subtraction','multiplication','algebra'],odd:3,reason:'algebra is a branch of maths, not an arithmetic operation'},
+  {items:['probability','statistics','geometry','language'],odd:3,reason:'language is not a branch of mathematics'},
+  {items:['yard','foot','inch','metre'],odd:3,reason:'metre is a metric unit — the others are imperial units of length'},
+  {items:['noun','pronoun','adjective','preposition'],odd:1,reason:'pronoun is a separate word class that replaces a noun, not the same as noun'},
+  {items:['full stop','comma','exclamation mark','alphabet'],odd:3,reason:'alphabet is not a punctuation mark'},
+  {items:['simile','metaphor','personification','paragraph'],odd:3,reason:'paragraph is a structural feature, not a language device'},
+  {items:['alliteration','onomatopoeia','rhyme','genre'],odd:3,reason:'genre is a text type category, not a language technique'},
+  {items:['because','although','however','since'],odd:2,reason:'however is a connective or adverb, not a subordinating conjunction like the others'},
+  {items:['past','present','future','progressive'],odd:3,reason:'progressive is an aspect of tense, not a tense itself'},
+  {items:['biography','autobiography','diary','thesaurus'],odd:3,reason:'a thesaurus is a reference book, not a type of personal writing'},
+  {items:['haiku','sonnet','limerick','fable'],odd:3,reason:'fable is a type of prose story, not a poetry form'},
+  {items:['report','recount','recipe','riddle'],odd:3,reason:'riddle is a word puzzle, not an informational text type'},
+  {items:['vowel','consonant','syllable','digit'],odd:3,reason:'digit is a number symbol, not part of phonics or literacy'},
+  {items:['prefix','suffix','root','rhyme'],odd:3,reason:'rhyme is a sound effect, not a part of word structure'},
+  {items:['speech marks','brackets','ellipsis','capital letter'],odd:3,reason:'capital letter is not a punctuation mark — it is a letter form'},
+  {items:['alliteration','assonance','consonance','punctuation'],odd:3,reason:'punctuation is a grammatical tool, not a sound-based literary device'},
+  {items:['narrator','protagonist','antagonist','author'],odd:3,reason:'author is the real writer, not a role within the story'},
+  {items:['stanza','verse','chorus','sentence'],odd:3,reason:'sentence belongs to prose, the others are structural units of poetry or song'},
+  {items:['fjord','delta','canyon','skyscraper'],odd:3,reason:'skyscraper is a man-made structure, not a natural landform'},
+  {items:['lava','magma','ash','tide'],odd:3,reason:'tide is caused by the Moon, not associated with volcanoes'},
+  {items:['estuary','meander','floodplain','glacier'],odd:3,reason:'glacier is made of ice and not a river feature'},
+  {items:['tropic of Cancer','tropic of Capricorn','equator','prime meridian'],odd:3,reason:'prime meridian measures longitude, the others are lines of latitude'},
+  {items:['evergreen','deciduous','coniferous','volcanic'],odd:3,reason:'volcanic describes a landscape, not a type of forest'},
+  {items:['monsoon','drought','tsunami','tornado'],odd:2,reason:'tsunami is caused by undersea events, the others are atmospheric weather events'},
+  {items:['North America','South America','Antarctica','Atlantic'],odd:3,reason:'Atlantic is an ocean, not a continent'},
+  {items:['altitude','latitude','longitude','attitude'],odd:3,reason:'attitude is not a geographical measurement'},
+  {items:['urban','rural','suburban','pastoral'],odd:3,reason:'pastoral describes farming or a style, not an official settlement type'},
+  {items:['Brazil','Argentina','Chile','Portugal'],odd:3,reason:'Portugal is in Europe, not South America'},
+  {items:['savanna','tundra','taiga','suburb'],odd:3,reason:'suburb is a human settlement area, not a biome'},
+  {items:['population','density','terrain','emigration'],odd:2,reason:'terrain is a physical geography term, the others all relate to people and movement'},
+  {items:['renewable','fossil fuel','sustainable','recyclable'],odd:1,reason:'fossil fuel is non-renewable — the others all relate to sustainability or renewability'},
+  {items:['Nile','Congo','Mississippi','Everest'],odd:3,reason:'Everest is a mountain, not a river'},
+  {items:['carbon dioxide','methane','oxygen','nitrous oxide'],odd:2,reason:'oxygen is not a greenhouse gas — the others all contribute to the greenhouse effect'},
+  {items:['Julius Caesar','Augustus','Nero','Napoleon'],odd:3,reason:'Napoleon was a French Emperor, not a Roman one'},
+  {items:['1066','1776','1918','1536'],odd:1,reason:'1776 is the American Declaration of Independence, not a British historical date'},
+  {items:['Boudicca','Queen Victoria','Cleopatra','Henry VIII'],odd:2,reason:'Cleopatra was an Egyptian ruler, not British'},
+  {items:['pyramid','sphinx','Colosseum','papyrus'],odd:2,reason:'the Colosseum is Roman, not ancient Egyptian'},
+  {items:['Normans','Saxons','Vikings','Aztecs'],odd:3,reason:'Aztecs were in Central America, not part of British medieval history'},
+  {items:['plague','smallpox','cholera','gravity'],odd:3,reason:'gravity is not a disease or illness'},
+  {items:['Suffragette','Chartist','Luddite','Knight'],odd:3,reason:'Knight is medieval, the others are 19th/20th century reform movements'},
+  {items:['spear','sword','trebuchet','musket'],odd:3,reason:'musket is a firearm from a later era — the others are pre-gunpowder weapons'},
+  {items:['Pompeii','Troy','Stonehenge','New York'],odd:3,reason:'New York is a modern city, not an ancient or archaeological site'},
+  {items:['trade','taxation','agriculture','aviation'],odd:3,reason:'aviation did not exist in ancient or medieval civilisations being studied'},
+  {items:['monastery','castle','mill','skyscraper'],odd:3,reason:'skyscraper is modern — the others are features of medieval or pre-industrial life'},
+  {items:['hieroglyphs','cuneiform','Latin','Morse code'],odd:3,reason:'Morse code is a modern signalling system, not an ancient writing system'},
+  {items:['census','treaty','constitution','podcast'],odd:3,reason:'podcast is a modern media format, not a historical document type'},
+  {items:['BC','AD','BCE','CE'],odd:0,reason:'BC is the older term for BCE — they mean the same thing, but BC is not the modern scholarly preferred form'},
+  {items:['gladiator','senator','centurion','pharaoh'],odd:3,reason:'pharaoh is ancient Egyptian, not Roman'},
+  {items:['piano','violin','trumpet','paintbrush'],odd:3,reason:'paintbrush is an art tool, not a musical instrument'},
+  {items:['crotchet','quaver','minim','treble'],odd:3,reason:'treble refers to a clef or voice, not a note duration'},
+  {items:['primary','secondary','tertiary','complementary'],odd:3,reason:'complementary is a specific colour relationship, not a stage of colour mixing'},
+  {items:['watercolour','oil paint','acrylic','charcoal'],odd:3,reason:'charcoal is a drawing medium, not a paint medium'},
+  {items:['tempo','rhythm','pitch','canvas'],odd:3,reason:'canvas is a material used in art, not a musical element'},
+  {items:['portrait','landscape','still life','abstract'],odd:3,reason:'abstract is a style, the others are specific genres of visual art'},
+  {items:['major','minor','chord','paragraph'],odd:3,reason:'paragraph belongs to literacy, not music'},
+  {items:['flute','oboe','bassoon','drum'],odd:3,reason:'drum is a percussion instrument — the others are all woodwind'},
+  {items:['violin','viola','cello','trumpet'],odd:3,reason:'trumpet is a brass instrument — the others are all strings'},
+  {items:['herbivore','omnivore','carnivore','nocturnal'],odd:3,reason:'nocturnal describes when an animal is active, not what it eats'},
+  {items:['democracy','monarchy','republic','geography'],odd:3,reason:'geography is a subject, not a type of government'},
+  {items:['parliament','senate','congress','library'],odd:3,reason:'library is not a governing body'},
+  {items:['biodegradable','recyclable','renewable','erosion'],odd:3,reason:'erosion is a natural process, not an environmental property of materials'},
+  {items:['import','export','trade','erosion'],odd:3,reason:'erosion is a geography term, not an economics term'},
+  {items:['simile','metaphor','hyperbole','comma'],odd:3,reason:'comma is a punctuation mark, not a figure of speech'},
+  {items:['habitat','ecosystem','biome','sentence'],odd:3,reason:'sentence is a literacy term, not an ecology term'},
+  {items:['precipitation','condensation','erosion','evaporation'],odd:2,reason:'erosion is not part of the water cycle'},
+  {items:['mammal','reptile','amphibian','vegetation'],odd:3,reason:'vegetation refers to plants, not an animal class'},
+  {items:['longitude','latitude','altitude','gratitude'],odd:3,reason:'gratitude is a feeling, not a geographical measurement'},
+  {items:['virus','bacteria','fungi','mineral'],odd:3,reason:'mineral is not a micro-organism or living thing'},
+  {items:['Jupiter','Pluto','Saturn','Neptune'],odd:1,reason:'Pluto was reclassified as a dwarf planet, not one of the eight official planets'},
+  {items:['photosynthesis','transpiration','respiration','pollution'],odd:3,reason:'pollution is a human impact, not a plant biological process'},
+  {items:['tectonic plate','fault line','epicentre','biography'],odd:3,reason:'biography is a text type, not a geology term'},
+  {items:['conductor','insulator','resistor','narrator'],odd:3,reason:'narrator is a literacy term, not an electrical concept'},
+  {items:['delta','meander','tributary','glacier'],odd:3,reason:'glacier is made of ice, not a river feature'},
+  {items:['monarchy','democracy','oligarchy','onomatopoeia'],odd:3,reason:'onomatopoeia is a language technique, not a form of government'},
+  {items:['axis','orbit','rotation','revolution'],odd:0,reason:'axis is what the Earth rotates around, not a motion — the others are all types of movement'},
+  {items:['herbivore','carnivore','omnivore','invertebrate'],odd:3,reason:'invertebrate describes body structure, not diet'},
+  {items:['comma','colon','semicolon','hyphen'],odd:3,reason:'hyphen is used within words, the others are sentence-level punctuation marks'},
+  {items:['atlas','globe','map','novel'],odd:3,reason:'novel is a fiction book, not a geographical reference tool'},
+  {items:['tundra','savanna','rainforest','motorway'],odd:3,reason:'motorway is a man-made road, not a biome'},
+  {items:['gravity','friction','magnetism','erosion'],odd:3,reason:'erosion is a process, not a force'},
+  {items:['solstice','equinox','eclipse','biography'],odd:3,reason:'biography is a text type, not an astronomical event'},
+  {items:['migrate','hibernate','camouflage','evaporate'],odd:3,reason:'evaporate is a physical process, not an animal survival behaviour'},
+  {items:['peninsula','island','archipelago','motorway'],odd:3,reason:'motorway is man-made, the others are natural land formations'},
+  {items:['Roald Dahl','Shakespeare','Charles Dickens','Isaac Newton'],odd:3,reason:'Isaac Newton was a scientist, not an author or playwright'},
+  {items:['alliteration','simile','onomatopoeia','paragraph'],odd:3,reason:'paragraph is a structural unit of writing, not a language or sound technique'},
+  {items:['sedimentary','igneous','metamorphic','alliterative'],odd:3,reason:'alliterative is a literary term, not a rock type'},
+  {items:['vertebrate','invertebrate','mammal','fiction'],odd:3,reason:'fiction is a text type, not a biological classification'},
+  {items:['thermal','solar','wind','fossil'],odd:3,reason:'fossil (fuel) is non-renewable — the others are all renewable energy sources'},
+  {items:['parliament','monarchy','democracy','novel'],odd:3,reason:'novel is a type of book, not a political term'},
+  {items:['habitat','niche','predator','sonnet'],odd:3,reason:'sonnet is a poem type, not an ecology term'},
+  {items:['camouflage','mimicry','warning colouration','photosynthesis'],odd:3,reason:'photosynthesis is a food-making process, not a defence or survival strategy'},
+  {items:['photosynthesis','germination','pollination','excavation'],odd:3,reason:'excavation is an archaeological process, not a plant biology process'},
+  {items:['lava','magma','tectonic','metamorphic'],odd:1,reason:'tectonic describes plate movement, not a type of geological material'},
+  {items:['deforestation','pollution','erosion','migration'],odd:3,reason:'migration is a natural process, not a form of environmental damage'},
+  {items:['circumference','diameter','radius','angle'],odd:3,reason:'angle is a measure of turn, the others specifically describe parts of a circle'},
+  {items:['synonym','antonym','homophone','simile'],odd:3,reason:'simile is a figure of speech, the others are all types of word relationships'},
+  {items:['verb','adverb','adjective','vowel'],odd:3,reason:'vowel is a type of letter, not a word class'},
+  {items:['habitat','food chain','food web','paragraph'],odd:3,reason:'paragraph is a text structure unit, not an ecology concept'},
+  {items:['ocean','sea','lake','mountain'],odd:3,reason:'mountain is land, the others are all bodies of water'},
+  {items:['crotchet','minim','semibreve','octave'],odd:3,reason:'octave is an interval between two notes, not a note duration'},
+  {items:['biography','autobiography','diary','encyclopaedia'],odd:3,reason:'encyclopaedia is a reference work, not a type of personal narrative'},
+  {items:['photosynthesis','respiration','locomotion','combustion'],odd:2,reason:'locomotion is movement from place to place, not a chemical or biological process in the same category'},
+  {items:['simile','metaphor','alliteration','capital letter'],odd:3,reason:'capital letter is a spelling convention, not a literary technique'},
+  {items:['orbit','rotate','revolve','erode'],odd:3,reason:'erode means to wear away, the others all describe circular or orbital movement'},
+  {items:['prime meridian','equator','tropic of Capricorn','Arctic Circle'],odd:0,reason:'the prime meridian measures longitude, the others are all lines of latitude'},
+  {items:['igneous','sedimentary','metamorphic','renewable'],odd:3,reason:'renewable is an energy term, not a rock type'},
+  {items:['chlorophyll','chloroplast','nucleus','appendix'],odd:3,reason:'appendix is a body part, not a cell structure'},
+  {items:['pyramid','cone','prism','pentagon'],odd:3,reason:'pentagon is a 2D shape — the others are all 3D solid shapes'},
+  {items:['velocity','speed','acceleration','volume'],odd:3,reason:'volume is a measure of space, the others are all measures related to motion'},
+  {items:['trench','ridge','plain','skyscraper'],odd:3,reason:'skyscraper is a building, not an ocean floor feature'},
+  {items:['noun','adjective','adverb','font'],odd:3,reason:'font is a typographical term, not a word class'},
+  {items:['democracy','dictatorship','monarchy','democracy'],odd:3,reason:'dictatorship is a form of authoritarian rule, others are more established governmental systems'},
+  {items:['constellation','asteroid','comet','mountain'],odd:3,reason:'mountain is on Earth, the others are astronomical features'},
+  {items:['tsunami','earthquake','volcano','drought'],odd:3,reason:'drought is a prolonged lack of water, not a sudden geological event'},
+  {items:['alliteration','assonance','onomatopoeia','equation'],odd:3,reason:'equation is a maths term, not a sound-based literary device'},
+  {items:['chlorophyll','glucose','oxygen','magnet'],odd:3,reason:'magnet is a physics object, not a product or substance from photosynthesis'},
+  {items:['coast','cliff','beach','skyscraper'],odd:3,reason:'skyscraper is man-made, the others are natural coastal features'},
+  {items:['metaphor','simile','hyperbole','definition'],odd:3,reason:'definition is a dictionary explanation, not a figure of speech'},
+  {items:['mosque','cathedral','temple','library'],odd:3,reason:'library is not a place of worship'},
+  {items:['jazz','classical','pop','watercolour'],odd:3,reason:'watercolour is an art medium, not a music genre'},
+  {items:['producer','consumer','decomposer','narrator'],odd:3,reason:'narrator is a literacy role, not part of a food chain'},
+  {items:['delta','tributary','meander','avalanche'],odd:3,reason:'avalanche is a snow event, not a river feature'},
+  {items:['deciduous','evergreen','coniferous','portable'],odd:3,reason:'portable means easy to carry, not a type of tree or forest'},
+  {items:['cuboid','prism','cylinder','rhombus'],odd:3,reason:'rhombus is a 2D shape — the others are all 3D shapes'},
+  {items:['vertebra','tibia','femur','chloroplast'],odd:3,reason:'chloroplast is a plant cell structure, not a human bone'},
+  {items:['acid rain','deforestation','pollution','migration'],odd:3,reason:'migration is a natural process, not a form of environmental damage caused by humans'},
+  {items:['sun','photosynthesis','producer','decomposer'],odd:0,reason:'the sun is the energy source, not a living organism in the chain'},
+  {items:['simile','metaphor','analogy','decimal'],odd:3,reason:'decimal is a number type, not a figure of speech'},
+  {items:['orbit','axis','equinox','chorus'],odd:3,reason:'chorus is part of a song, not an astronomical term'},
+  {items:['Spain','Italy','Greece','Brazil'],odd:3,reason:'Brazil is in South America, not Europe'},
+  {items:['semicircle','hemisphere','half-time','diameter'],odd:2,reason:'half-time is a sports term, not a mathematical term about halves'},
+  {items:['deforestation','erosion','habitat loss','fossil fuel'],odd:3,reason:'fossil fuel is a type of energy source, not a direct consequence of human impact on land'},
+  {items:['copper','aluminium','steel','wood'],odd:3,reason:'wood is not a metal'},
+  {items:['continent','country','city','sentence'],odd:3,reason:'sentence is a literacy term, not a geographical unit'}
+];
+
+function getOOOSets(){
+  const shuffled=[...ODD_ONE_OUT].sort(()=>Math.random()-0.5);
+  return shuffled.slice(0,2);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SEQUENCE GENERATOR
+// ═══════════════════════════════════════════════════════════
+function genSequences(){
+  const types=[
+    ()=>{const s=rnd(2,8),m=rnd(2,4);return{nums:[s,s*m,s*m*m,s*m*m*m],next:s*m*m*m*m,rule:`× ${m}`}},
+    ()=>{const s=rnd(2,15),d=rnd(3,9);return{nums:[s,s+d,s+2*d,s+3*d],next:s+4*d,rule:`+ ${d}`}},
+    ()=>{const s=rnd(50,120),d=rnd(5,15);return{nums:[s,s-d,s-2*d,s-3*d],next:s-4*d,rule:`− ${d}`}},
+    ()=>{const s=rnd(1,4);const inc=rnd(2,4);return{nums:[s,s+inc,s+inc+(inc+2),s+inc+(inc+2)+(inc+4)],next:s+inc+(inc+2)+(inc+4)+(inc+6),rule:`add increasing amounts`}},
+    ()=>{const b=rnd(2,5);const ns=[b*b,(b+1)*(b+1),(b+2)*(b+2),(b+3)*(b+3)];return{nums:ns,next:(b+4)*(b+4),rule:`square numbers`}},
+  ];
+  const used=new Set();const seqs=[];
+  while(seqs.length<3){const i=Math.floor(Math.random()*types.length);if(used.has(i))continue;used.add(i);seqs.push(types[i]())}
+  return seqs;
+}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function todayStr(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
+function getMon(ds){const dt=new Date(ds+'T12:00:00');const d=dt.getDay();dt.setDate(dt.getDate()-(d===0?6:d-1));return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`}
+function getDK(ds){return DAYS[new Date(ds+'T12:00:00').getDay()]}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function getMenu(){
+  const ts=todayStr(),dk=getDK(ts);
+  if(!['Mon','Tue','Wed','Thu','Fri'].includes(dk))return['No school today',''];
+  const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+  const saved=JSON.parse(localStorage.getItem('ml_menu')||'{}');
+  const mon=getMon(ts);
+  // check saved overrides first, then new menu, then fallback
+  let base;
+  if(saved[mon]&&saved[mon][dk])base=saved[mon][dk];
+  else if(MENU_BY_WEEK[mon])base=MENU_BY_WEEK[mon][dk]||['Menu not set',''];
+  else base=['Menu not yet set',''];
+  return[ov.meal1||base[0],ov.meal2||base[1]];
+}
+function getMsg(){
+  const ts=todayStr(),dk=getDK(ts);
+  const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+  if(ov.hasOwnProperty('msg'))return ov.msg;
+  return AUTO_MSGS[dk]||'';
+}
+function getTTSet(){
+  const ts=todayStr();
+  const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+  if(ov.tt&&ov.tt.topic){return ov.tt}
+  const userBank=JSON.parse(localStorage.getItem('ml_tt_bank')||'[]');
+  const combined=[...DEFAULT_TT,...userBank];
+  return combined[Math.floor(Math.random()*combined.length)];
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE & INIT
+// ═══════════════════════════════════════════════════════════
+let pType='boggle',cur=null,solsOpen=false;
+
+function init(){
+  renderDate();renderLunch();renderMsg();loadImg();
+  const d=new Date().getDate();
+  pType=d%3===0?'boggle':d%3===1?'number':'combined';
+  newPuzzle();updateDot();
+}
+
+function renderDate(){
+  const n=new Date();
+  document.getElementById('date-hdr').textContent=`${DAYNAMES[n.getDay()]},  ${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+}
+function renderLunch(){
+  const[m1,m2]=getMenu();
+  document.getElementById('lc0').textContent=m1;
+  document.getElementById('lc1').textContent=m2;
+}
+function renderMsg(){
+  const text=getMsg();
+  const el=document.getElementById('msg-body');
+  if(text)el.innerHTML=text.split('\n').map(l=>`<div>${l||'&nbsp;'}</div>`).join('');
+  else el.innerHTML='';
+  el.onblur=()=>{
+    const ts=todayStr();
+    const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+    ov.msg=el.innerText.trim();
+    localStorage.setItem('ml_ov_'+ts,JSON.stringify(ov));updateDot();
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// PUZZLES
+// ═══════════════════════════════════════════════════════════
+function newPuzzle(){
+  if(pType==='boggle'){
+    const e=BOGGLE[Math.floor(Math.random()*BOGGLE.length)];
+    cur={type:'boggle',word:e.w,letters:[...e.w].sort(()=>Math.random()-.5),sols:e.s};
+    renderBoggle(cur);
+  } else if(pType==='number'){
+    cur={type:'number',...genNum()};renderNum(cur);
+  } else {
+    cur={type:'combined'};renderCombined();
+  }
+  closeSols();
+}
+function toggleType(){
+  const types=['boggle','number','combined'];
+  pType=types[(types.indexOf(pType)+1)%3];
+  newPuzzle();
+}
+
+function renderBoggle(p){
+  document.getElementById('puzzle-panel').style.display='flex';
+  document.getElementById('puzzle-panel').innerHTML=
+    `<div class="pgrid">${p.letters.map(l=>`<div class="pcell">${l.toLowerCase()}</div>`).join('')}</div>
+     <div class="ptitle">How Many Words Can You Make?</div>`;
+  let cp=document.getElementById('combined-panel');if(cp)cp.remove();
+}
+function renderNum(p){
+  document.getElementById('puzzle-panel').style.display='flex';
+  document.getElementById('puzzle-panel').innerHTML=
+    `<div class="pgrid">${p.grid.map(n=>`<div class="pcell">${n}</div>`).join('')}</div>
+     <table class="num-tbl">
+       <thead><tr><th class="th-2">2 Numbers</th><th class="th-3">3 Numbers</th><th class="th-4">4 Numbers</th></tr></thead>
+       <tbody>${[0,1,2,3,4].map(i=>`<tr><td class="td-2">${p.targets.two[i]??''}</td><td class="td-3">${p.targets.three[i]??''}</td><td class="td-4">${p.targets.four[i]??''}</td></tr>`).join('')}</tbody>
+     </table>`;
+  let cp=document.getElementById('combined-panel');if(cp)cp.remove();
+}
+
+function renderCombined(){
+  document.getElementById('puzzle-panel').style.display='none';
+  let cp=document.getElementById('combined-panel');
+  if(!cp){cp=document.createElement('div');cp.id='combined-panel';document.getElementById('puzzle-panel').parentNode.insertBefore(cp,document.getElementById('puzzle-panel'));}
+
+  // pick anagram set
+  const aSet=ANAGRAM_BANK[Math.floor(Math.random()*ANAGRAM_BANK.length)];
+  const scrambleMain=shuffle([...aSet.main]).join('');
+  const bonusHtml=aSet.bonus.map(b=>{
+    const scr=shuffle([...b.w]).join('');
+    return`<div class="ana-bonus-row">
+      <div class="ana-bonus-word">${scr}</div>
+      <div class="ana-bonus-blanks">${[...b.w].map(()=>'<div class="ana-bonus-blank"></div>').join('')}</div>
+    </div>`;
+  }).join('');
+
+  // sequences
+  const seqs=genSequences();
+  cur.seqs=seqs;
+  const seqHtml=seqs.map((s,i)=>`
+    <div class="seq-row">
+      ${s.nums.map(n=>`<div class="seq-n">${n}</div><div class="seq-arr">→</div>`).join('')}
+      <div class="seq-n q">?</div>
+    </div>
+    ${i<seqs.length-1?'<div class="seq-divider"></div>':''}`).join('');
+
+  // two truths
+  const tt=getTTSet();
+  cur.tt=tt;
+  const ttHtml=tt.stmts.map((s,i)=>`
+    <div class="tt-item">
+      <div class="tt-num">${i+1}</div>
+      <div class="tt-text">${s}</div>
+    </div>`).join('');
+
+  // odd one out
+  const oooSets=getOOOSets();
+  cur.oooSets=oooSets;
+  const oooHtml=oooSets.map((set,si)=>`
+    <div class="ooo-set">
+      <div class="ooo-grid">${set.items.map(item=>`<div class="ooo-item">${item}</div>`).join('')}</div>
+    </div>`).join('');
+
+  // store for solutions
+  cur.anaSet=aSet;
+  cur.scrambleMain=scrambleMain;
+
+  cp.innerHTML=`
+    <div class="cpanel">
+      <div class="cpanel-hdr">Anagram</div>
+      <div class="cpanel-body">
+        <div class="ana-main">${scrambleMain}</div>
+        <div class="ana-blanks">${[...aSet.main].map(()=>'<div class="ana-blank"></div>').join('')}</div>
+        <div class="ana-hint">${aSet.mainHint}</div>
+        <div class="ana-bonus-list">${bonusHtml}</div>
+      </div>
+    </div>
+    <div class="cpanel">
+      <div class="cpanel-hdr">Sequences</div>
+      <div class="cpanel-body">
+        ${seqHtml}
+        <div class="seq-instr">Write the next number and the rule</div>
+      </div>
+    </div>
+    <div class="cpanel">
+      <div class="cpanel-hdr">Two Truths &amp; a Lie</div>
+      <div class="cpanel-body">
+        <div class="tt-topic">${tt.topic}</div>
+        ${ttHtml}
+        <div class="tt-instr">Write the number and explain the lie</div>
+      </div>
+    </div>
+    <div class="cpanel">
+      <div class="cpanel-hdr">Odd One Out</div>
+      <div class="cpanel-body">
+        ${oooHtml}
+        <div class="ooo-instr">Write which and why for each set</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SOLUTIONS
+// ═══════════════════════════════════════════════════════════
+function toggleSols(){
+  if(solsOpen){closeSols();return}
+  const t=document.getElementById('sol-title'),c=document.getElementById('sol-content');
+  if(cur.type==='boggle'){
+    t.textContent=`Boggle — ${cur.word}`;
+    c.innerHTML=`<div class="sol-words">${[...cur.sols].sort((a,b)=>a.length-b.length||a.localeCompare(b)).map(w=>`<span class="sol-w">${w}</span>`).join('')}</div>`;
+  } else if(cur.type==='number'){
+    t.textContent='Number puzzle — solutions';
+    const cols=[{lbl:'2 Numbers',items:cur.targets.two.map(t=>solveNum(cur.grid,t,2))},{lbl:'3 Numbers',items:cur.targets.three.map(t=>solveNum(cur.grid,t,3))},{lbl:'4 Numbers',items:cur.targets.four.map(t=>solveNum(cur.grid,t,4))}];
+    c.innerHTML=`<div class="sol-cols">${cols.map(col=>`<div><div class="sol-cl">${col.lbl}</div>${col.items.map(s=>`<div class="sol-ci">${s}</div>`).join('')}</div>`).join('')}</div>`;
+  } else {
+    t.textContent='Combined puzzle — solutions';
+    const anaLines=`<b>Main:</b> ${cur.anaSet.main}<br>`+cur.anaSet.bonus.map(b=>`<b>Bonus:</b> ${b.w}`).join('<br>');
+    const seqLines=cur.seqs.map(s=>`Next: <b>${s.next}</b> — rule: ${s.rule}`).join('<br>');
+    const ttLie=cur.tt.stmts[cur.tt.lie-1];
+    const ttLine=`Statement <b>${cur.tt.lie}</b> is the lie: "${ttLie}"`;
+    const oooLines=cur.oooSets.map(s=>`<b>${s.label}:</b> ${s.items[s.odd]} — ${s.reason}`).join('<br>');
+    c.innerHTML=`
+      <p style="font-weight:800;margin-bottom:4px">Anagrams</p><p style="font-size:0.9rem;margin-bottom:12px;line-height:1.8">${anaLines}</p>
+      <p style="font-weight:800;margin-bottom:4px">Sequences</p><p style="font-size:0.9rem;margin-bottom:12px;line-height:1.8">${seqLines}</p>
+      <p style="font-weight:800;margin-bottom:4px">Two truths &amp; a lie — ${cur.tt.topic}</p><p style="font-size:0.9rem;margin-bottom:12px;line-height:1.6">${ttLine}</p>
+      <p style="font-weight:800;margin-bottom:4px">Odd one out</p><p style="font-size:0.9rem;line-height:1.8">${oooLines}</p>`;
+  }
+  document.getElementById('sol-ov').classList.add('on');
+  document.getElementById('solbtn').textContent='Hide solutions';solsOpen=true;
+}
+function closeSols(){document.getElementById('sol-ov').classList.remove('on');document.getElementById('solbtn').textContent='Solutions';solsOpen=false}
+
+// ═══════════════════════════════════════════════════════════
+// IMAGE
+// ═══════════════════════════════════════════════════════════
+function handleImgFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>showImg(ev.target.result);r.readAsDataURL(f);e.target.value='';}
+function showImg(src){document.getElementById('img-el').src=src;document.getElementById('img-pane').classList.add('visible');try{sessionStorage.setItem('ml_img',src)}catch(e){}}
+function removeImg(){document.getElementById('img-el').src='';document.getElementById('img-pane').classList.remove('visible');try{sessionStorage.removeItem('ml_img')}catch(e){}}
+function loadImg(){try{const s=sessionStorage.getItem('ml_img');if(s)showImg(s)}catch(e){}}
+
+// ═══════════════════════════════════════════════════════════
+// OVERRIDE
+// ═══════════════════════════════════════════════════════════
+function openOverride(){
+  const ts=todayStr(),dk=getDK(ts);
+  const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+  document.getElementById('ov-meal1').value=ov.meal1||'';
+  document.getElementById('ov-meal2').value=ov.meal2||'';
+  document.getElementById('ov-msg').value=ov.hasOwnProperty('msg')?ov.msg:'';
+  const tt=ov.tt||{};
+  document.getElementById('ov-tt-topic').value=tt.topic||'';
+  document.getElementById('ov-tt-1').value=tt.stmts?tt.stmts[0]:'';
+  document.getElementById('ov-tt-2').value=tt.stmts?tt.stmts[1]:'';
+  document.getElementById('ov-tt-3').value=tt.stmts?tt.stmts[2]:'';
+  document.getElementById('ov-tt-lie').value=tt.lie||1;
+  const auto=AUTO_MSGS[dk];
+  document.getElementById('ov-auto-preview').textContent=auto?`Auto for ${DAYNAMES[new Date(ts+'T12:00:00').getDay()]}: "${auto}"`:'No automatic message today.';
+  document.getElementById('ov-overlay').classList.add('on');
+}
+function closeOverride(){document.getElementById('ov-overlay').classList.remove('on')}
+function saveOverride(){
+  const ts=todayStr();
+  const ov=JSON.parse(localStorage.getItem('ml_ov_'+ts)||'{}');
+  const m1=document.getElementById('ov-meal1').value.trim();
+  const m2=document.getElementById('ov-meal2').value.trim();
+  if(m1)ov.meal1=m1; else delete ov.meal1;
+  if(m2)ov.meal2=m2; else delete ov.meal2;
+  ov.msg=document.getElementById('ov-msg').value;
+  const topic=document.getElementById('ov-tt-topic').value.trim();
+  if(topic){
+    ov.tt={topic,stmts:[document.getElementById('ov-tt-1').value,document.getElementById('ov-tt-2').value,document.getElementById('ov-tt-3').value],lie:parseInt(document.getElementById('ov-tt-lie').value)};
+  } else delete ov.tt;
+  localStorage.setItem('ml_ov_'+ts,JSON.stringify(ov));
+  closeOverride();renderLunch();renderMsg();updateDot();
+}
+function clearOverride(){localStorage.removeItem('ml_ov_'+todayStr());closeOverride();renderLunch();renderMsg();updateDot();}
+function updateDot(){const ov=JSON.parse(localStorage.getItem('ml_ov_'+todayStr())||'{}');document.getElementById('override-dot').style.display=Object.keys(ov).length?'inline-block':'none';}
+
+// ═══════════════════════════════════════════════════════════
+// SETUP (menu + TT bank)
+// ═══════════════════════════════════════════════════════════
+let pendingTTBank=[];
+
+function openSetup(){
+  const saved=JSON.parse(localStorage.getItem('ml_menu')||'{}');
+  const days=['Mon','Tue','Wed','Thu','Fri'];
+  const weeks=Object.keys(MENU_BY_WEEK).sort();
+  let html='';
+  for(const mon of weeks){
+    const d=new Date(mon+'T12:00:00');
+    const label=`w/c ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    html+=`<div class="menu-wk">${label}</div><div class="mrow"><div></div><div class="col-hdr">Hot option 1 (red)</div><div class="col-hdr">Hot option 2 (green)</div></div>`;
+    for(const day of days){
+      const v=(saved[mon]&&saved[mon][day])||MENU_BY_WEEK[mon][day]||['',''];
+      html+=`<div class="mrow"><label>${day}</label><input id="mn_${mon}_${day}_0" value="${(v[0]||'').replace(/"/g,'&quot;')}"><input id="mn_${mon}_${day}_1" value="${(v[1]||'').replace(/"/g,'&quot;')}"></div>`;
+    }
+  }
+  document.getElementById('menu-form').innerHTML=html;
+  pendingTTBank=JSON.parse(JSON.stringify(JSON.parse(localStorage.getItem('ml_tt_bank')||'[]')));
+  renderTTBank();
+  document.getElementById('setup-ov').classList.add('on');
+}
+function closeSetup(){document.getElementById('setup-ov').classList.remove('on')}
+
+function renderTTBank(){
+  const el=document.getElementById('tt-bank-list');
+  if(pendingTTBank.length===0){el.innerHTML=`<p style="font-size:0.82rem;color:#AAA;margin-bottom:8px">No custom sets yet — 62 built-in sets are always available.</p>`;return}
+  el.innerHTML=pendingTTBank.map((s,i)=>`
+    <div class="tt-bank-item">
+      <button class="tt-bank-del" onclick="deleteTT(${i})">✕</button>
+      <div class="tt-bank-topic">${s.topic}</div>
+      <div class="tt-bank-stmts">
+        ${s.stmts.map((st,j)=>`<span class="${j+1===s.lie?'tt-bank-lie':''}">• ${st}</span>`).join('<br>')}
+        <br><span style="font-size:0.78rem;color:#AAA">Lie: statement ${s.lie}</span>
+      </div>
+    </div>`).join('');
+}
+function deleteTT(i){pendingTTBank.splice(i,1);renderTTBank()}
+function addTTSet(){
+  const topic=document.getElementById('tt-new-topic').value.trim();
+  const s1=document.getElementById('tt-new-1').value.trim();
+  const s2=document.getElementById('tt-new-2').value.trim();
+  const s3=document.getElementById('tt-new-3').value.trim();
+  const lie=parseInt(document.getElementById('tt-new-lie').value);
+  if(!topic||!s1||!s2||!s3){alert('Please fill in all fields.');return}
+  pendingTTBank.push({topic,stmts:[s1,s2,s3],lie});
+  document.getElementById('tt-new-topic').value='';
+  document.getElementById('tt-new-1').value='';
+  document.getElementById('tt-new-2').value='';
+  document.getElementById('tt-new-3').value='';
+  renderTTBank();
+}
+function saveSetup(){
+  const saved={};
+  const days=['Mon','Tue','Wed','Thu','Fri'];
+  const weeks=Object.keys(MENU_BY_WEEK).sort();
+  for(const mon of weeks){
+    saved[mon]={};
+    for(const day of days){
+      saved[mon][day]=[document.getElementById(`mn_${mon}_${day}_0`)?.value||'',document.getElementById(`mn_${mon}_${day}_1`)?.value||''];
+    }
+  }
+  localStorage.setItem('ml_menu',JSON.stringify(saved));
+  localStorage.setItem('ml_tt_bank',JSON.stringify(pendingTTBank));
+  closeSetup();renderLunch();
+}
+
+init();
+</script>
+</body>
+</html>
