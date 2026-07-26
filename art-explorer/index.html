@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Art Institute of Chicago — Collection Explorer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f5f0e8; font-family: system-ui, sans-serif; min-height: 100vh; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Header */
+  .header { background: #1a1208; padding: 26px 30px 22px; }
+  .header-inner { max-width: 900px; margin: 0 auto; }
+  .eyebrow { font-size: 10px; letter-spacing: .14em; color: #8b7355; text-transform: uppercase; margin-bottom: 5px; }
+  h1 { font-family: Georgia, serif; color: #f5f0e8; font-size: 28px; font-weight: 400; margin-bottom: 16px; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input { flex: 1; padding: 9px 13px; background: #2d2416; border: 1px solid #4a3c28; border-radius: 4px; color: #f5f0e8; font-size: 14px; outline: none; }
+  .search-row input::placeholder { color: #7a6e5f; }
+  .search-btn { padding: 9px 18px; background: #b8860b; border: none; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { padding: 4px 12px; background: transparent; border: 1px solid #4a3c28; border-radius: 20px; color: #c4a97a; font-size: 12px; cursor: pointer; transition: all .15s; }
+  .chip.active, .chip:hover { background: #b8860b; border-color: #b8860b; color: #fff; }
+
+  /* Grid */
+  .main { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+  .empty { text-align: center; padding: 60px 0; }
+  .empty-title { font-family: Georgia, serif; font-size: 17px; color: #5a4a32; }
+  .empty-sub { font-size: 13px; color: #8b7355; margin-top: 5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+
+  /* Card */
+  .card { background: #fff; border: 1px solid #e0d9d0; border-radius: 4px; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+  .card-img { width: 100%; height: 190px; object-fit: cover; display: block; background: #e8e2d8; }
+  .card-img-placeholder { width: 100%; height: 190px; background: #e8e2d8; display: flex; align-items: center; justify-content: center; }
+  .card-body { padding: 11px 13px; }
+  .card-title { font-family: Georgia, serif; font-size: 13px; font-weight: 600; color: #1a1208; line-height: 1.3; margin-bottom: 3px; }
+  .card-artist { font-size: 11px; color: #7a6e5f; }
+  .card-date { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(10,8,5,.78); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+  .modal { background: #faf7f3; border-radius: 6px; max-width: 740px; width: 100%; max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+  .modal-hero { background: #1a1208; display: flex; justify-content: center; align-items: center; min-height: 80px; max-height: 370px; overflow: hidden; }
+  .modal-hero img { max-height: 370px; max-width: 100%; object-fit: contain; display: block; }
+  .modal-body { padding: 22px 26px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+  .modal-title { font-family: Georgia, serif; font-size: 19px; color: #1a1208; line-height: 1.2; flex: 1; }
+  .close-btn { background: none; border: none; font-size: 24px; color: #aaa; cursor: pointer; margin-left: 10px; padding: 0; line-height: 1; }
+  .modal-artist { font-size: 13px; color: #7a6e5f; margin-bottom: 3px; }
+  .modal-meta { font-size: 12px; color: #b0a090; margin-bottom: 14px; }
+  .explanation { background: #fff; border: 1px solid #e8e2d8; border-radius: 4px; padding: 14px 16px; font-size: 14px; line-height: 1.75; color: #2d2416; font-family: Georgia, serif; }
+  .aic-link { display: inline-block; margin-top: 14px; font-size: 12px; color: #8b7355; text-decoration: none; }
+  .aic-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="eyebrow">Art Institute of Chicago</div>
+    <h1>Collection Explorer</h1>
+    <div class="search-row">
+      <input type="text" id="search" placeholder="Search title or artist…" oninput="onSearch()" onkeydown="if(event.key==='Enter')onSearch()">
+      <button class="search-btn" onclick="onSearch()">Search</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="content"></div>
+</div>
+
+<div class="overlay" id="modal" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hero" id="modal-hero"></div>
+    <div class="modal-body">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title"></div>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-artist" id="modal-artist"></div>
+      <div class="modal-meta" id="modal-meta"></div>
+      <div class="explanation" id="modal-expl"></div>
+      <a class="aic-link" id="modal-link" target="_blank" rel="noreferrer"></a>
+    </div>
+  </div>
+</div>
+
+<script>
+const WIKI = p => `https://upload.wikimedia.org/wikipedia/commons/thumb/${p}`;
+
+const COLLECTION = [
+  // IMPRESSIONISM
+  { id:27992, title:"A Sunday on La Grande Jatte — 1884", artist:"Georges Seurat", date:"1884–86", medium:"Oil on canvas", topics:["impressionism"],
+    img: WIKI("7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/800px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg"),
+    expl: "Millions of tiny dots of colour make up this enormous painting — up close it looks like a mosaic, but step back and a sunny park full of people appears. Seurat spent two years painting it, placing each dot so carefully that the colours seem to glow. Look closely and you will spot a monkey on a lead, a top hat, fishing rods, and a little girl in white standing perfectly still." },
+
+  { id:20684, title:"Paris Street; Rainy Day", artist:"Gustave Caillebotte", date:"1877", medium:"Oil on canvas", topics:["impressionism","landscape"],
+    img: WIKI("1/1f/Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg/800px-Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg"),
+    expl: "This painting feels almost like a photograph — you can almost hear the clatter of boots on wet cobblestones and smell the Paris rain. Caillebotte painted people walking past as if he had caught them by surprise, mid-stride, without posing. The huge umbrellas and the wide boulevard were both brand new in Paris when this was painted, part of a giant rebuilding project that changed the city forever." },
+
+  { id:16568, title:"Water Lilies", artist:"Claude Monet", date:"1906", medium:"Oil on canvas", topics:["impressionism","landscape"],
+    img: WIKI("a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/800px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg"),
+    expl: "Monet painted his garden pond over 250 times, yet each painting looks completely different depending on the light, the season, and the weather. By 1906 his eyesight was failing, which is why the brushstrokes are broad and blurry — and yet many people say these later paintings are his most beautiful. There is no sky, no bank, no horizon: just water, reflections, and floating flowers stretching in every direction." },
+
+  { id:64818, title:"Stacks of Wheat (End of Summer)", artist:"Claude Monet", date:"1890–91", medium:"Oil on canvas", topics:["impressionism","landscape"],
+    img: WIKI("5/5b/Monet_-_Haystacks%2C_end_of_summer.jpg/800px-Monet_-_Haystacks%2C_end_of_summer.jpg"),
+    expl: "These are not haystacks but stacks of wheat left to dry in Monet's neighbour's field in Normandy. Monet painted the same stacks again and again through every season, rushing outside with fresh canvases whenever the light changed. The stacks themselves are almost beside the point — what Monet was really painting was the way light and atmosphere transform something as ordinary as a pile of grain into something magical." },
+
+  { id:28560, title:"The Bedroom", artist:"Vincent van Gogh", date:"1889", medium:"Oil on canvas", topics:["impressionism"],
+    img: WIKI("7/76/Vincent_van_Gogh_-_De_slaapkamer_-_Google_Art_Project.jpg/800px-Vincent_van_Gogh_-_De_slaapkamer_-_Google_Art_Project.jpg"),
+    expl: "Van Gogh painted his small bedroom in Arles three times because he wanted the picture to feel restful — but the bold colours and tilting lines make it feel anything but calm to modern eyes. The room was real: that narrow bed, those wooden chairs, and those portraits on the wall all belonged to him. Van Gogh wrote to his brother that he wanted the colours to express absolute rest, the way a lullaby does." },
+
+  { id:14620, title:"The Millinery Shop", artist:"Edgar Degas", date:"1879/86", medium:"Oil on canvas", topics:["impressionism","portraits"],
+    img: WIKI("7/74/Degas_-_The_Millinery_Shop.jpg/600px-Degas_-_The_Millinery_Shop.jpg"),
+    expl: "Degas loved painting people at work, caught in a private moment without performing for anyone. This woman is either a shop assistant arranging hats or a wealthy customer trying one on — art historians still disagree. The towering hats in vivid pinks and oranges almost steal the show, which is very typical of Degas, who always found unusual angles and surprising compositions." },
+
+  { id:111442, title:"The Child's Bath", artist:"Mary Cassatt", date:"1893", medium:"Oil on canvas", topics:["impressionism","portraits"],
+    img: WIKI("6/69/Mary_Cassatt_-_The_Child%27s_Bath_-_1893.jpg/600px-Mary_Cassatt_-_The_Child%27s_Bath_-_1893.jpg"),
+    expl: "Mary Cassatt was one of the very few women accepted into the Impressionist circle in Paris, and she often painted the quiet, everyday moments between mothers and children. The striped dress, the child's chubby feet in the bowl, and the tipping jug of water are painted in bold flat shapes inspired by Japanese woodblock prints. Cassatt was American but spent most of her life in France, and her paintings helped introduce Impressionism to collectors back home." },
+
+  { id:16571, title:"Arrival of the Normandy Train, Gare Saint-Lazare", artist:"Claude Monet", date:"1877", medium:"Oil on canvas", topics:["impressionism","landscape"],
+    img: WIKI("e/e2/Monet_-_Gare_Saint-Lazare.jpg/800px-Monet_-_Gare_Saint-Lazare.jpg"),
+    expl: "Steam engines were brand new and thrilling when Monet painted this, and he was fascinated by the clouds of smoke and steam billowing under the great iron roof of Paris's busiest station. Monet actually persuaded the railway company to delay trains and pump extra steam into the engines so he could capture exactly the effect he wanted. The hazy, shimmering atmosphere makes the station feel almost dreamlike, even though it is packed with rushing commuters." },
+
+  // LANDSCAPES
+  { id:24645, title:"Under the Wave off Kanagawa (The Great Wave)", artist:"Katsushika Hokusai", date:"1830/33", medium:"Colour woodblock print", topics:["landscape"],
+    img: WIKI("0/0d/Great_Wave_off_Kanagawa2.jpg/800px-Great_Wave_off_Kanagawa2.jpg"),
+    expl: "This is probably the most famous image ever made in Japan — a colossal wave about to crash down on three fishing boats, with Mount Fuji tiny and calm in the background. Hokusai made it using carved wooden blocks, pressing each colour separately onto the paper, which is why thousands of identical copies exist around the world. He made this print when he was in his seventies and signed it 'the old man mad about drawing'." },
+
+  { id:111628, title:"Nighthawks", artist:"Edward Hopper", date:"1942", medium:"Oil on canvas", topics:["landscape","modern"],
+    img: WIKI("a/a8/Nighthawks_by_Edward_Hopper_1942.jpg/800px-Nighthawks_by_Edward_Hopper_1942.jpg"),
+    expl: "Four people sit in an all-night diner on an empty city street, each lost in their own thoughts even though they are inches apart. Hopper painted this just after America entered World War Two, and many people feel the loneliness of the picture captures the mood of that uncertain moment. The bright diner and the dark street create a dramatic contrast, and there is no visible door — you cannot get in, and the people inside cannot easily get out." },
+
+  { id:null, title:"The Hay Wain", artist:"John Constable", date:"1821", medium:"Oil on canvas", topics:["landscape"],
+    img: WIKI("6/64/John_Constable_-_The_Hay_Wain_%281821%29.jpg/800px-John_Constable_-_The_Hay_Wain_%281821%29.jpg"),
+    expl: "This scene of a cart crossing a shallow Suffolk river on a summer's day became one of the most loved paintings in Britain. Constable painted the sky with such accuracy that meteorologists today can identify the exact type of cloud he was looking at. When it was shown in Paris in 1824, French artists were astonished — they had never seen landscapes painted with such fresh, natural colour." },
+
+  // MODERN ART
+  { id:6565, title:"American Gothic", artist:"Grant Wood", date:"1930", medium:"Oil on beaver board", topics:["modern","portraits"],
+    img: WIKI("c/cc/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg/600px-Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg"),
+    expl: "Despite the serious faces, this painting is not of a farmer and his wife — the man and woman are actually Grant Wood's sister and his dentist, both of whom he persuaded to pose. Wood was inspired by a small wooden house with a Gothic-style window that he spotted in Iowa, and he wanted to paint the kind of people he imagined might live there. It became one of America's most recognised images, and people have been dressing up as this pair for fancy dress ever since." },
+
+  { id:null, title:"Christina's World", artist:"Andrew Wyeth", date:"1948", medium:"Tempera on panel", topics:["modern"],
+    img: WIKI("a/a1/Andrew_Wyeth%27s_%22Christina%27s_World%22.jpg/800px-Andrew_Wyeth%27s_%22Christina%27s_World%22.jpg"),
+    expl: "A woman lies in a golden field, reaching toward a distant farmhouse on the horizon — but the picture is far more complicated than it first appears. Christina Olson, Wyeth's neighbour, had a muscle disease that meant she could not walk, and she is pulling herself across the field using only her arms. Wyeth wanted to capture her extraordinary spirit rather than her difficulty, and he spent months painting every single blade of dry grass by hand." },
+
+  // ANCIENT EGYPT
+  { id:null, title:"Bust of Nefertiti", artist:"Ancient Egyptian (Thutmose)", date:"c. 1345 BCE", medium:"Painted limestone", topics:["egypt","portraits"],
+    img: WIKI("f/f0/Nofretete_Neues_Museum.jpg/400px-Nofretete_Neues_Museum.jpg"),
+    expl: "This portrait of Queen Nefertiti was carved over 3,000 years ago and has barely changed — the colours of her crown are still vivid and her left eye still sparkles. It was found buried in a sculptor's workshop in Egypt in 1912, hidden away and forgotten for over three thousand years. Her name means 'the beautiful one has come', and this sculpture is considered one of the finest portraits ever made in the ancient world." },
+
+  { id:null, title:"The Rosetta Stone", artist:"Ancient Egyptian", date:"196 BCE", medium:"Granodiorite", topics:["egypt"],
+    img: WIKI("b/bf/Rosetta_Stone.JPG/400px-Rosetta_Stone.JPG"),
+    expl: "This dark stone slab cracked the code of Ancient Egypt — it has the same text written three times, in hieroglyphics, in another Egyptian script, and in Greek. Because scholars could already read Greek, they used it like a key to work out what the hieroglyphic symbols meant for the very first time. Without the Rosetta Stone, we might still not be able to read the writing on tombs, temples, and papyrus scrolls that Egyptians left behind." },
+
+  { id:null, title:"The Great Sphinx of Giza", artist:"Ancient Egyptian", date:"c. 2500 BCE", medium:"Limestone", topics:["egypt"],
+    img: WIKI("f/f6/All_Gizah_Pyramids.jpg/800px-All_Gizah_Pyramids.jpg"),
+    expl: "The Great Sphinx is the largest stone sculpture ever carved from a single piece of rock, stretching as long as a city block. It has the body of a lion and the head of a pharaoh — probably Khafre, who built the middle pyramid behind it. For thousands of years it was buried up to its neck in sand, which actually helped preserve it, and its nose was already missing by the time Napoleon arrived in Egypt in 1798." },
+
+  // ANCIENT GREECE
+  { id:null, title:"Venus de Milo", artist:"Ancient Greek (attributed to Alexandros)", date:"c. 100 BCE", medium:"Marble", topics:["greece"],
+    img: WIKI("4/4e/07_Venus_de_Milo_Louvre.jpg/400px-07_Venus_de_Milo_Louvre.jpg"),
+    expl: "This marble goddess was found buried in pieces on the Greek island of Milos in 1820, and nobody knows exactly what her missing arms were doing. She is over two metres tall and carved from two separate blocks of marble joined so perfectly that the join is nearly invisible. When she was first made, she would have been painted in bright colours — the pale white stone we see today is just the undercoat." },
+
+  { id:null, title:"Bust of Homer", artist:"Ancient Greek (Roman copy)", date:"2nd century CE", medium:"Marble", topics:["greece","portraits"],
+    img: WIKI("a/a6/Homer_British_Museum.jpg/400px-Homer_British_Museum.jpg"),
+    expl: "Homer was the ancient Greek poet who wrote the Iliad and the Odyssey — two of the oldest and most influential stories ever told. No one knows what Homer actually looked like, or even if he was one person or many, so all ancient portraits of him are simply imagined. The blind, bearded, elderly face became a standard image used across the Greek and Roman world to represent wisdom and poetic genius." },
+
+  { id:null, title:"The Elgin Marbles: Horsemen", artist:"Ancient Greek (Pheidias workshop)", date:"c. 447–438 BCE", medium:"Marble relief", topics:["greece"],
+    img: WIKI("2/2b/Elgin_marbles_frieze_British_Museum.jpg/800px-Elgin_marbles_frieze_British_Museum.jpg"),
+    expl: "These carved marble panels once wrapped around the outside of the Parthenon temple in Athens, showing a great procession of horses and riders that seemed to move and breathe. The horses are carved so skilfully that you can see their muscles straining and their manes flying, even though the whole scene is only a few centimetres deep. They have been in the British Museum since 1816, and Greece has been asking for them back ever since." },
+
+  // ANIMALS
+  { id:6596, title:"Young Hare", artist:"Albrecht Dürer", date:"1502", medium:"Watercolour and gouache", topics:["animals"],
+    img: WIKI("b/b8/D%C3%BCrer_Young_Hare_1502.jpg/600px-D%C3%BCrer_Young_Hare_1502.jpg"),
+    expl: "Every single hair on this hare was painted by hand over 500 years ago, and it still looks so real that you feel you could reach out and touch the fur. Dürer painted it in watercolour straight from life, carefully observing every whisker, every claw, and the tiny reflection in the animal's dark eye. This painting was so treasured that it was locked away and almost never shown to anyone for hundreds of years." },
+
+  { id:null, title:"Whistlejacket", artist:"George Stubbs", date:"c. 1762", medium:"Oil on canvas", topics:["animals"],
+    img: WIKI("a/a1/George_Stubbs_-_Whistlejacket_-_Google_Art_Project.jpg/600px-George_Stubbs_-_Whistlejacket_-_Google_Art_Project.jpg"),
+    expl: "This enormous painting — taller than two people standing on each other's shoulders — shows a racehorse rearing up against a plain background with no rider, no landscape, and no distraction. Whistlejacket was one of the most famous racehorses in England, and his owner wanted a portrait that treated him with the same dignity as any human nobleman. Stubbs was so obsessed with painting horses accurately that he spent years dissecting dead ones to understand exactly how they moved." },
+
+  { id:null, title:"The Monarch of the Glen", artist:"Edwin Landseer", date:"1851", medium:"Oil on canvas", topics:["animals"],
+    img: WIKI("6/69/Landseer_monarch_of_the_glen.jpg/600px-Landseer_monarch_of_the_glen.jpg"),
+    expl: "A red deer stag stands alone in a misty Scottish glen, antlers held high and nostrils flaring in the cold mountain air — it became one of the most famous animal paintings in history. Landseer was Queen Victoria's favourite artist and she collected dozens of his paintings, which helped make the Scottish Highlands wildly fashionable across Victorian Britain. The stag on the Jura whisky bottle and various Scottish crests is directly based on this painting." },
+
+  { id:60523, title:"Peaceable Kingdom", artist:"Edward Hicks", date:"c. 1833", medium:"Oil on canvas", topics:["animals"],
+    img: WIKI("f/f2/Peaceable_Kingdom_by_Edward_Hicks%2C_1826.jpg/800px-Peaceable_Kingdom_by_Edward_Hicks%2C_1826.jpg"),
+    expl: "A lion, a leopard, a wolf, and an ox all sit peacefully together with lambs and little children — a scene from the Bible where the prophet Isaiah describes a future world without violence. Edward Hicks was a Quaker preacher who painted this subject over 60 times across his life because he believed in it so deeply. In the background you can just make out William Penn, the Quaker founder of Pennsylvania, making a peace treaty with Native Americans." },
+
+  // MEDIEVAL
+  { id:6738, title:"Saint George and the Dragon", artist:"Bernat Martorell", date:"1430/35", medium:"Tempera on panel", topics:["medieval","animals"],
+    img: WIKI("e/e1/Saint_George_and_the_Dragon_by_Bernat_Martorell%2C_1434-35.jpg/400px-Saint_George_and_the_Dragon_by_Bernat_Martorell%2C_1434-35.jpg"),
+    expl: "George's white horse rears up as the knight drives his lance straight into the dragon's open mouth — all while a princess watches calmly from the rocks, as though she has complete confidence in the outcome. Martorell painted every detail with extraordinary precision: the scales on the dragon, the princess's fashionable hat, and George's gleaming armour. The real George was a Roman soldier who may never have fought any dragons at all, but his legend spread across Europe during the Crusades." },
+
+  { id:null, title:"The Lady and the Unicorn: Sight", artist:"French (Flemish)", date:"c. 1500", medium:"Wool and silk tapestry", topics:["medieval","animals"],
+    img: WIKI("d/d6/La_dame_%C3%A0_la_licorne_%28Sight%29.jpg/500px-La_dame_%C3%A0_la_licorne_%28Sight%29.jpg"),
+    expl: "This tapestry is one of six famous hangings made in the Netherlands around 500 years ago, each one representing one of the senses — this one shows sight, with the unicorn gazing at its own reflection in a mirror. The red background is filled with thousands of tiny flowers and animals, all woven by hand from coloured wool and silk thread. Unicorns in medieval times symbolised purity and were thought to be real animals that could only be tamed by a kind person." },
+
+  { id:null, title:"Bayeux Tapestry: Battle Scene", artist:"English/Norman", date:"c. 1070–80", medium:"Embroidered linen", topics:["medieval"],
+    img: WIKI("6/6c/Tapisserie_de_Bayeux_-_Sc%C3%A8ne_50_%28d%C3%A9tail%29.jpg/800px-Tapisserie_de_Bayeux_-_Sc%C3%A8ne_50_%28d%C3%A9tail%29.jpg"),
+    expl: "The Bayeux Tapestry is not actually a tapestry but a 70-metre-long strip of linen embroidered with the story of the Norman Conquest of England in 1066 — it is like a comic strip you could unroll across a football pitch. It was almost certainly sewn by English needleworkers, possibly in Canterbury, even though it tells the story from the Norman point of view. Harold's death at the Battle of Hastings is shown at the very end, though whether the arrow in the eye is really him is still debated by historians." },
+
+  // PORTRAITS
+  { id:null, title:"Mona Lisa", artist:"Leonardo da Vinci", date:"c. 1503–19", medium:"Oil on poplar panel", topics:["portraits"],
+    img: WIKI("e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/400px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"),
+    expl: "Leonardo took this small painting everywhere with him for years and kept adding to it, which is why it was never delivered to whoever commissioned it. Her mysterious expression comes from a technique called sfumato, where Leonardo blurred the corners of her mouth and eyes so your brain can never quite decide whether she is smiling. Scientific scans have revealed that Leonardo changed the position of her fingers, her collar, and the landscape behind her multiple times while working on it." },
+
+  { id:null, title:"Girl with a Pearl Earring", artist:"Johannes Vermeer", date:"c. 1665", medium:"Oil on canvas", topics:["portraits"],
+    img: WIKI("d/d7/Meisje_met_de_parel.jpg/400px-Meisje_met_de_parel.jpg"),
+    expl: "This painting is sometimes called the Dutch Mona Lisa because, like the Mona Lisa, nobody knows who the girl is or why she is looking over her shoulder with that slightly parted-lip expression. The enormous earring she wears may not even be a pearl — some researchers think it could be glass or polished tin, since a real pearl that size would have been extraordinarily expensive. Vermeer painted in a tiny Dutch city and only about 34 of his paintings survive, yet he is considered one of the greatest artists who ever lived." },
+
+  { id:23972, title:"Self-Portrait", artist:"Rembrandt van Rijn", date:"1636/38", medium:"Oil on panel", topics:["portraits"],
+    img: WIKI("b/bd/Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg/500px-Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg"),
+    expl: "Rembrandt painted himself more than 80 times across his life, making him the most self-examined artist in history — his self-portraits track every decade from confident young man to troubled old age. He used a technique of building up thick layers of paint to make faces look solid and three-dimensional, sometimes mixing his paint with sand or sawdust to get the exact texture he wanted. This early self-portrait shows him at the height of his fame, wealthy and fashionably dressed." },
+
+  { id:9512, title:"Portrait of Giovanna Tornabuoni", artist:"Domenico Ghirlandaio", date:"1489/90", medium:"Tempera on panel", topics:["portraits","medieval"],
+    img: WIKI("a/a6/Ghirlandaio%2C_ritratto_di_giovanna_tornabuoni%2C_1488.jpg/400px-Ghirlandaio%2C_ritratto_di_giovanna_tornabuoni%2C_1488.jpg"),
+    expl: "Giovanna Tornabuoni was a member of one of Florence's richest banking families, and this portrait was painted just months before she died in childbirth at the age of 20. The pearl necklace and the brooch pinned to her dress were not just decorations but an inventory of the family's wealth, worth a fortune in their own right. In the background you can see a tiny prayer book and a string of coral beads — reminders of her religious faith." },
+];
+
+const TOPICS = [
+  { label:"Impressionism", key:"impressionism" },
+  { label:"Landscapes",    key:"landscape"     },
+  { label:"Modern Art",    key:"modern"        },
+  { label:"Ancient Egypt", key:"egypt"         },
+  { label:"Ancient Greece",key:"greece"        },
+  { label:"Animals",       key:"animals"       },
+  { label:"Medieval",      key:"medieval"      },
+  { label:"Portraits",     key:"portraits"     },
+];
+
+let activeTopic = null;
+
+function init() {
+  const chipsEl = document.getElementById("chips");
+  TOPICS.forEach(t => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.textContent = t.label;
+    btn.onclick = () => selectTopic(t.key, btn);
+    chipsEl.appendChild(btn);
+  });
+  renderEmpty();
+}
+
+function selectTopic(key, btn) {
+  activeTopic = key;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("search").value = "";
+  const results = COLLECTION.filter(a => a.topics.includes(key)).slice(0, 9);
+  renderGrid(results);
+}
+
+function onSearch() {
+  activeTopic = null;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  const q = document.getElementById("search").value.toLowerCase().trim();
+  if (!q) { renderEmpty(); return; }
+  const results = COLLECTION.filter(a =>
+    a.title.toLowerCase().includes(q) ||
+    a.artist.toLowerCase().includes(q) ||
+    a.topics.some(t => t.includes(q))
+  ).slice(0, 9);
+  renderGrid(results);
+}
+
+function renderEmpty() {
+  document.getElementById("content").innerHTML = `
+    <div class="empty">
+      <div class="empty-title">Browse the Art Institute of Chicago</div>
+      <div class="empty-sub">Pick a topic above or search by title or artist</div>
+    </div>`;
+}
+
+function renderGrid(items) {
+  if (!items.length) {
+    document.getElementById("content").innerHTML = `<div class="empty"><div class="empty-sub">No matches.</div></div>`;
+    return;
+  }
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  items.forEach((a, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.onclick = () => openModal(a);
+    card.innerHTML = `
+      <div id="img-${i}" class="card-img-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${a.title}</div>
+        <div class="card-artist">${a.artist}</div>
+        <div class="card-date">${a.date}</div>
+      </div>`;
+    grid.appendChild(card);
+    if (a.img) loadImg(a.img, `img-${i}`);
+  });
+  document.getElementById("content").innerHTML = "";
+  document.getElementById("content").appendChild(grid);
+}
+
+function loadImg(url, containerId) {
+  const img = new Image();
+  img.onload = () => {
+    const el = document.getElementById(containerId);
+    if (el) { img.className = "card-img"; el.replaceWith(img); }
+  };
+  img.src = url;
+}
+
+function openModal(a) {
+  document.getElementById("modal-title").textContent = a.title;
+  document.getElementById("modal-artist").textContent = a.artist;
+  document.getElementById("modal-meta").textContent = `${a.date} · ${a.medium}`;
+  document.getElementById("modal-expl").textContent = a.expl || "";
+  const link = document.getElementById("modal-link");
+  if (a.id) { link.href = `https://www.artic.edu/artworks/${a.id}`; link.textContent = "View on Art Institute of Chicago website →"; }
+  else { link.href = `https://www.artic.edu/collection?q=${encodeURIComponent(a.title)}`; link.textContent = "Search on Art Institute of Chicago website →"; }
+
+  const hero = document.getElementById("modal-hero");
+  hero.innerHTML = "";
+  if (a.img) {
+    const img = new Image();
+    img.style.cssText = "max-height:370px;max-width:100%;object-fit:contain;display:block;";
+    img.src = a.img;
+    hero.appendChild(img);
+  }
+  document.getElementById("modal").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+init();
+</script>
+</body>
+</html>
