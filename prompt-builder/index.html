@@ -679,7 +679,7 @@
           <input type="text" id="e-subject" placeholder="e.g. the Roman invasion of Britain" oninput="build()">
         </div>
         <div class="field" id="e-items-field">
-          <label id="e-items-label">Key events / branches <span class="hint">comma-separated</span></label>
+          <label id="e-items-label">Key events / branches <span class="hint">optional — Claude uses its own knowledge if left blank</span></label>
           <textarea id="e-items" placeholder="e.g. 55 BC — Caesar's first landing, 54 BC — second invasion…" oninput="build()"></textarea>
         </div>
         <div class="field">
@@ -807,7 +807,7 @@
     const cfg = EXCALI_CONFIG[type];
     document.getElementById('e-subject-label').textContent = cfg.subject;
     document.getElementById('e-subject').placeholder = cfg.subjectP;
-    document.getElementById('e-items-label').innerHTML = cfg.itemsLabel + ' <span class="hint">comma-separated</span>';
+    document.getElementById('e-items-label').innerHTML = cfg.itemsLabel + ' <span class="hint">optional — Claude uses its own knowledge if left blank</span>';
     document.getElementById('e-items').placeholder = cfg.itemsP;
   }
 
