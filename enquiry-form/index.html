@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enquiry Brief Builder — WFA</title>
+  <title>Enquiry Briefing Tool — WFA</title>
   <style>
     :root {
       --wfa-blue: #DEECF8;
@@ -120,12 +120,20 @@
     section.active { display: block; }
 
     @media (max-width: 580px) { .g2 { grid-template-columns: 1fr; } .steps { flex-wrap: wrap; } }
+
+    /* Topic chips */
+    .topic-chip { display: inline-flex; align-items: center; padding: 0.4rem 0.75rem; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.82rem; transition: all 0.12s; user-select: none; background: white; }
+    .topic-chip:hover { border-color: var(--accent); background: #eff6ff; }
+    .topic-chip.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+    .chip-actions { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .chip-actions button { font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 5px; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Enquiry Brief Builder</h1>
+  <h1>Enquiry Briefing Tool</h1>
   <p>Wallscourt Farm Academy · Cabot Learning Federation</p>
 </header>
 
@@ -200,21 +208,33 @@
   <section id="s2">
     <div class="card">
       <h2>About this enquiry</h2>
-      <p class="subtitle">This is the brief Claude uses to make all content decisions. Be specific about what children will study.</p>
+      <p class="subtitle">Select what children will study from the CLF curriculum. The descriptions build automatically — edit freely if needed.</p>
+
+      <div class="field">
+        <label class="field-label">CLF curriculum topics
+          <span class="hint" id="topicChipsHint"></span>
+        </label>
+        <div class="chip-actions">
+          <button class="btn-sec" type="button" onclick="setAllChips(true)">Select all</button>
+          <button class="btn-sec" type="button" onclick="setAllChips(false)">Clear all</button>
+        </div>
+        <div class="chip-grid" id="topicChips"></div>
+        <div id="noTopicsMsg" style="display:none;font-size:0.82rem;color:var(--muted)">No CLF topics found for this combination. Fill in the fields below manually.</div>
+      </div>
 
       <div class="field">
         <label class="field-label" for="f_about">What is this enquiry about?
-          <span class="hint">Describe the content, concepts and knowledge children will encounter. 2–4 paragraphs.</span>
+          <span class="hint">Auto-built from your selections above. Edit freely.</span>
         </label>
-        <textarea id="f_about" rows="8" placeholder="e.g. Children will study Earth's place in the Solar System, how planets orbit the Sun, the Moon's orbit of Earth, and the cause of day and night through Earth's rotation. They will examine how our understanding of the solar system changed over time — from Ptolemy's geocentric model through Copernicus and Galileo to modern astronomy..."></textarea>
+        <textarea id="f_about" rows="6"></textarea>
         <div class="errmsg" id="err_f_about">Please describe the enquiry.</div>
       </div>
 
       <div class="field">
         <label class="field-label" for="f_end_goal">What should children know and understand by the end?
-          <span class="hint">The big ideas and key knowledge children should take away.</span>
+          <span class="hint">Auto-built from your selections above. Edit freely.</span>
         </label>
-        <textarea id="f_end_goal" rows="5" placeholder="e.g. Children should understand that Earth orbits the Sun and the Moon orbits Earth; that day and night are caused by Earth's rotation; and that scientific models of the solar system have changed over time..."></textarea>
+        <textarea id="f_end_goal" rows="4"></textarea>
         <div class="errmsg" id="err_f_end_goal">End goal is required.</div>
       </div>
     </div>
@@ -430,6 +450,29 @@
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
 const ONEDRIVE_BASE = '/Users/innes/Library/CloudStorage/OneDrive-SharedLibraries-CabotLearningFederation/WFA Staff Shared Files - O365 Group - !2026-27/1-Planning';
+
+// ── CLF topic data ─────────────────────────────────────────────────────────
+const CLF_TOPICS = {
+  // Science — keyed by science_YEAR_CONCEPT
+  'science_Y4_Electricity': ['series circuits','components — cell, bulb, switch, buzzer','conductors and insulators','circuit diagrams'],
+  'science_Y4_Sound': ['vibrations cause sound','pitch (high and low) and volume (loud and quiet)','how sound travels through different materials','the ear drum'],
+  'science_Y4_Biology': ['vertebrates — fish, amphibians, reptiles, birds, mammals','invertebrates','classification keys','voluntary and involuntary muscles','tendons and ligaments','how muscles work in pairs','reading x-rays'],
+  'science_Y4_Chemistry': ['changing state — melting, boiling, freezing, evaporation, condensation','degrees Celsius','reversible changes'],
+  'science_Y5_Earth and Space': ['Big Bang theory and the scale of the universe','solar system — 8 planets orbiting the Sun','day and night — caused by Earth\'s rotation','seasons — caused by Earth\'s axial tilt and orbit','lunar eclipses','constellations','phases of the Moon'],
+  'science_Y5_Biology': ['life cycles of mammals, amphibians, insects, birds and plants','comparing life cycles across species','puberty and hormonal changes','growth and development'],
+  'science_Y5_Physics': ['gravity — Earth\'s gravitational pull','air resistance','water resistance','measuring force with Newton meters','levers as force multipliers','pulleys as force multipliers','gears as force multipliers'],
+  'science_Y5_Chemistry': ['elements and atoms','mass and volume','density','dissolving and solutions','separating mixtures','reversible vs irreversible changes'],
+  'science_Y6_Biology': ['classification — 5 kingdoms (animals, plants, fungi, bacteria, protists)','cells, tissues, organs and organ systems','evolution and natural selection','fossils as evidence of evolution','adaptation','Darwin and DNA','the heart, blood vessels and circulatory system','the lungs, alveoli and breathing mechanism'],
+  'science_Y6_Physics': ['the visible light spectrum','prisms and refraction','RGB — primary colours of light','how the eye works','circuit symbols','measuring current with an ammeter','resistance'],
+  // History — keyed by history_YEAR (concept is disciplinary lens, not topic)
+  'history_Y4': ['end of Roman Britain — Anglo-Saxon migration begins','Angles, Saxons, Jutes and Scots','the seven kingdoms (Heptarchy)','Viking raids and the Danelaw','Alfred the Great — resisting Vikings, promoting learning','Athelstan — first King of England','Battle of Hastings 1066','Mayan city states — Tikal, Palenque, Chichen Itza','Maya achievements — astronomy, mathematics (zero), calendar','Maya hieroglyphic writing and agriculture','Maya decline','Abbasid Caliphate and Baghdad','the House of Wisdom','Islamic advances in medicine, mathematics and astronomy'],
+  'history_Y5': ['Julius Caesar\'s reconnaissance of Britain','Claudius\' invasion of Britain AD43','Roman Britain — roads, towns (Londinium, Aquae Sulis), villas','Roman army and religion in Britain','Boudicca\'s revolt','Hadrian\'s Wall','Roman legacy — language, law and infrastructure','Hatshepsut — female pharaoh','Tutankhamun — tomb discovery and historical significance','Egyptian polytheism — Ra, Isis, Osiris, Anubis','Valley of the Kings and mummification','beliefs about the afterlife','King Djoser and the step pyramid','construction of the Great Pyramid','Rosetta Stone and deciphering hieroglyphs'],
+  'history_Y6': ['Palaeolithic — hunter-gatherers and cave paintings','Mesolithic — microliths and semi-nomadic life','Neolithic — farming revolution and Stonehenge','Bronze Age — metalworking and trade','Iron Age — hillforts and Skara Brae','Greek city states — Athens and Sparta','democracy in Athens','the Persian Wars','Alexander the Great and the spread of Greek culture','Homer, Pythagoras, Socrates and Aristotle','Greek legacy in science, philosophy, art and politics'],
+  // Geography — keyed by geography_YEAR
+  'geography_Y4': ['SE England counties (Kent, Berkshire, Surrey, Sussex, Essex, Buckinghamshire, Hampshire, Oxfordshire, Herefordshire)','biomes — desert, tundra and tropical rainforest','South American topography — coastal, highlands, rainforest','London as capital city','South American countries and capitals (Brazil, Ecuador, Chile, Bolivia, Colombia)','contrasting study — England and Peru/Brazil','natural resources — copper, silver, gold, oil, beans, maize, potatoes, quinoa','trade links between England and South America'],
+  'geography_Y5': ['major UK waterways — Avon, Grand Union Canal, Mersey, Ouse, Trent, Thames, Tyne','water cycle — evaporation, condensation, precipitation, run-off, groundwater','rivers — source, tributary, meander, estuary, delta','river processes — erosion, deposition, transportation','biomes and climate zones','renewable vs non-renewable natural resources','fossil fuels and their environmental impact','global distribution of natural resources'],
+  'geography_Y6': ['UK highland areas','tectonic plates and the theory of Pangaea','continental drift','mountains, volcanoes and earthquakes','climate change — causes','climate change — evidence and global impacts','human responses to climate change','sustainability and environmental responsibility'],
+};
 const TERM_WEEKS = { '1':7, '2':7, '3':5, '4':6, '5':5, '6':7 };
 const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri'];
 
@@ -719,6 +762,66 @@ function validate(step) {
   return ok;
 }
 
+// ── CLF topic chips ────────────────────────────────────────────────────────
+function getClfKey() {
+  const subj = pill('subject'), year = pill('year_group'), concept = fv('f_concept');
+  if (subj === 'science') return concept ? `science_${year}_${concept}` : null;
+  if (subj === 'history') return year ? `history_${year}` : null;
+  if (subj === 'geography') return year ? `geography_${year}` : null;
+  return null;
+}
+
+let lastAutoAbout = '', lastAutoEndGoal = '';
+
+function renderTopicChips() {
+  const key = getClfKey();
+  const container = document.getElementById('topicChips');
+  const hint = document.getElementById('topicChipsHint');
+  const noMsg = document.getElementById('noTopicsMsg');
+  const subj = pill('subject'), year = pill('year_group'), concept = fv('f_concept');
+  const subjLabel = subj === 'science' ? 'Science' : subj === 'geography' ? 'Geography' : 'History';
+  const conceptPart = concept ? ` · ${concept}` : '';
+  hint.textContent = year ? `${year} ${subjLabel}${conceptPart} — tick what this specific enquiry covers.` : 'Complete Step 1 first.';
+  const topics = (key && CLF_TOPICS[key]) ? CLF_TOPICS[key] : [];
+  container.innerHTML = '';
+  if (topics.length === 0) { noMsg.style.display = 'block'; return; }
+  noMsg.style.display = 'none';
+  topics.forEach(topic => {
+    const chip = document.createElement('span');
+    chip.className = 'topic-chip on';
+    chip.textContent = topic;
+    chip.dataset.topic = topic;
+    chip.addEventListener('click', () => { chip.classList.toggle('on'); rebuildAboutTexts(); });
+    container.appendChild(chip);
+  });
+  rebuildAboutTexts();
+}
+
+function setAllChips(selected) {
+  document.querySelectorAll('.topic-chip').forEach(c => selected ? c.classList.add('on') : c.classList.remove('on'));
+  rebuildAboutTexts();
+}
+
+function getSelectedTopics() {
+  return Array.from(document.querySelectorAll('.topic-chip.on')).map(c => c.dataset.topic);
+}
+
+function rebuildAboutTexts() {
+  const selected = getSelectedTopics();
+  if (selected.length === 0) return;
+  const challenge = fv('f_challenge');
+  const listed = selected.length === 1
+    ? selected[0]
+    : selected.slice(0, -1).join(', ') + ' and ' + selected[selected.length - 1];
+  const newAbout = `Children will study ${listed}.${challenge ? ' They are working towards their challenge: ' + challenge + '.' : ''}`;
+  const goalParts = selected.map((t, i) => (i === selected.length - 1 && selected.length > 1) ? 'and ' + t : t);
+  const newGoal = `By the end of this enquiry, children should understand: ${goalParts.join('; ')}.`;
+  const aboutEl = document.getElementById('f_about');
+  if (!aboutEl.value.trim() || aboutEl.value === lastAutoAbout) { aboutEl.value = newAbout; lastAutoAbout = newAbout; }
+  const goalEl = document.getElementById('f_end_goal');
+  if (!goalEl.value.trim() || goalEl.value === lastAutoEndGoal) { goalEl.value = newGoal; lastAutoEndGoal = newGoal; }
+}
+
 // ── Nav ────────────────────────────────────────────────────────────────────
 function next(from) { if (!validate(from)) return; if (from === 5) buildReview(); show(from + 1); }
 function prev(from) { show(from - 1); }
@@ -727,6 +830,7 @@ function show(n) {
   document.getElementById('s' + n).classList.add('active');
   current = n; renderBar();
   window.scrollTo({top:0,behavior:'smooth'});
+  if (n === 2) renderTopicChips();
 }
 
 // ── Review ─────────────────────────────────────────────────────────────────
