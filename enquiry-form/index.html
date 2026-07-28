@@ -263,14 +263,6 @@
       <p class="subtitle">What children will be able to do and produce by the end of the enquiry.</p>
 
       <div class="field">
-        <label class="field-label" for="f_subject_outcome">Subject outcome
-          <span class="hint">What subject knowledge and skills will children have developed?</span>
-        </label>
-        <textarea id="f_subject_outcome" rows="5" placeholder="e.g. Children will be able to describe the movement of Earth around the Sun and the Moon around Earth, explain the causes of day and night, and use correct scientific vocabulary..."></textarea>
-        <div class="errmsg" id="err_f_subject_outcome">Subject outcome is required.</div>
-      </div>
-
-      <div class="field">
         <label class="field-label" for="f_writing_outcome">Writing outcome
           <span class="hint">What will children write? What writing skills will they develop?</span>
         </label>
@@ -781,7 +773,6 @@ function collect() {
     challenge: fv('f_challenge'),
     about: fv('f_about'),
     end_goal: fv('f_end_goal'),
-    subject_outcome: fv('f_subject_outcome'),
     writing_outcome: fv('f_writing_outcome'),
     writing_audience: fv('f_writing_audience') || null,
     writing_purpose: getSelectedPurposes(),
@@ -845,7 +836,7 @@ const RULES = {
     {type:'field', id:'f_challenge'},
   ],
   2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'}],
-  3: [{type:'field',id:'f_subject_outcome'},{type:'field',id:'f_writing_outcome'}],
+  3: [{type:'field',id:'f_writing_outcome'}],
   4: [
     {type:'field', id:'f_term'},
     {type:'field', id:'f_week'},
@@ -1068,7 +1059,6 @@ function buildReview() {
     </div>
     <div class="rv-section">
       <h3>Outcomes</h3>
-      ${rvRow('Subject', d.subject_outcome)}
       ${rvRow('Writing', d.writing_outcome)}
       ${d.writing_audience ? rvRow('Audience', d.writing_audience) : ''}
       ${d.writing_purpose?.length ? rvRow('Purpose', d.writing_purpose.join(' · ')) : ''}
@@ -1147,8 +1137,6 @@ function buildPrompt(d) {
   L.push(d.end_goal);
   L.push('');
   L.push('─── OUTCOMES ───────────────────────────────────────────────');
-  L.push('Subject outcome:');
-  L.push(d.subject_outcome);
   L.push('');
   L.push('Writing outcome:');
   L.push(d.writing_outcome);
