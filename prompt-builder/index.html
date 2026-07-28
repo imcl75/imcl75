@@ -305,6 +305,13 @@
       white-space: pre-wrap; word-break: break-word;
     }
     #prompt-output.empty { color: rgba(255,255,255,0.28); font-style: italic; }
+    .excali-tip {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+    .excali-tip strong { color: rgba(255,255,255,0.85); }
     .output-actions {
       display: flex; gap: 10px; align-items: center; margin-top: 16px;
     }
@@ -734,6 +741,7 @@
       <span class="copy-confirm" id="copy-confirm">✓ Copied!</span>
       <span class="word-count" id="word-count"></span>
     </div>
+    <p class="excali-tip hidden" id="excali-tip">💡 To export: click <strong>Edit</strong> in the Excalidraw viewer → <strong>Cmd+A</strong> → <strong>Export image</strong></p>
   </div>
 
   <footer>
@@ -777,6 +785,7 @@
     document.getElementById('higgsfield-panel').classList.toggle('hidden', tool !== 'higgsfield');
     document.getElementById('excalidraw-panel').classList.toggle('hidden', tool !== 'excalidraw');
     document.getElementById('output-label').textContent = tool === 'excalidraw' ? 'Claude instruction' : 'Image prompt';
+    document.getElementById('excali-tip').classList.toggle('hidden', tool !== 'excalidraw');
     build();
   }
 
