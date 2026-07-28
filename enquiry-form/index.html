@@ -137,6 +137,9 @@
     .skill-chip:hover { border-color: #059669; background: #f0fdf4; }
     .skill-chip.on { border-color: #059669; background: #f0fdf4; color: #047857; font-weight: 600; }
     .skill-chip.nn { border-color: #b45309; background: #fffbeb; color: #92400e; font-weight: 600; cursor: default; }
+    .skill-chip.locked { cursor: default; opacity: 1; }
+    .skill-chip.locked:hover { border-color: #059669; background: #f0fdf4; }
+    .skill-chip.nn.locked:hover { border-color: #b45309; background: #fffbeb; }
     .skill-group { margin-bottom: 0.9rem; }
     .skill-group-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
   </style>
@@ -928,14 +931,15 @@ function renderWritingSkillChips() {
     group.skills.forEach(skill => {
       const chip = document.createElement('span');
       const startOn = group.nn || skill.preselect;
-      chip.className = 'skill-chip' + (group.nn ? ' nn' : '') + (startOn ? ' on' : '');
+      const locked = startOn;
+      chip.className = 'skill-chip' + (group.nn ? ' nn' : '') + (startOn ? ' on' : '') + (locked ? ' locked' : '');
       chip.dataset.skillId = skill.id;
       chip.dataset.export = skill.export;
       chip.dataset.area = group.area;
       chip.dataset.nn = group.nn ? '1' : '0';
       chip.textContent = skill.label;
       chip.title = skill.export;
-      chip.addEventListener('click', () => chip.classList.toggle('on'));
+      if (!locked) chip.addEventListener('click', () => chip.classList.toggle('on'));
       chipGrid.appendChild(chip);
     });
     groupDiv.appendChild(chipGrid);
@@ -944,9 +948,10 @@ function renderWritingSkillChips() {
 }
 
 function setAllSkillChips(selected) {
-  document.querySelectorAll('.skill-chip').forEach(c =>
-    selected ? c.classList.add('on') : c.classList.remove('on')
-  );
+  document.querySelectorAll('.skill-chip').forEach(c => {
+    if (selected) { c.classList.add('on'); }
+    else if (!c.classList.contains('locked')) { c.classList.remove('on'); }
+  });
 }
 
 function getSelectedWritingSkills() {
