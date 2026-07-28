@@ -128,6 +128,10 @@
     .chip-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
     .chip-actions { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
     .chip-actions button { font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 5px; }
+    /* Purpose chips */
+    .purpose-chip { display: inline-flex; align-items: center; padding: 0.4rem 0.85rem; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.82rem; transition: all 0.12s; user-select: none; background: white; }
+    .purpose-chip:hover { border-color: #7c3aed; background: #f5f3ff; }
+    .purpose-chip.on { border-color: #7c3aed; background: #f5f3ff; color: #6d28d9; font-weight: 600; }
     /* Writing skill chips */
     .skill-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
     .skill-chip:hover { border-color: #059669; background: #f0fdf4; }
@@ -269,8 +273,28 @@
         <label class="field-label" for="f_writing_outcome">Writing outcome
           <span class="hint">What will children write? What writing skills will they develop?</span>
         </label>
-        <textarea id="f_writing_outcome" rows="4" placeholder="e.g. Children will write an explanation text about the Solar System for a younger audience..."></textarea>
+        <textarea id="f_writing_outcome" rows="4" placeholder="e.g. Children will write an explanation text about the Solar System..."></textarea>
         <div class="errmsg" id="err_f_writing_outcome">Writing outcome is required.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_writing_audience">Audience
+          <span class="hint">Who is the writing for?</span>
+        </label>
+        <input type="text" id="f_writing_audience" placeholder="e.g. a younger audience, Year 3 children, parents, a scientist...">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Purpose
+          <span class="hint">What is the writing trying to do? Select all that apply.</span>
+        </label>
+        <div class="chip-grid" id="purposeChips">
+          <span class="purpose-chip" data-purpose="Inform">Inform</span>
+          <span class="purpose-chip" data-purpose="Explain">Explain</span>
+          <span class="purpose-chip" data-purpose="Persuade">Persuade</span>
+          <span class="purpose-chip" data-purpose="Argue">Argue</span>
+          <span class="purpose-chip" data-purpose="Instruct">Instruct</span>
+        </div>
       </div>
 
       <div class="field">
@@ -747,6 +771,8 @@ function collect() {
     end_goal: fv('f_end_goal'),
     subject_outcome: fv('f_subject_outcome'),
     writing_outcome: fv('f_writing_outcome'),
+    writing_audience: fv('f_writing_audience') || null,
+    writing_purpose: getSelectedPurposes(),
     writing_skills: getSelectedWritingSkills(),
     start_term: t ? parseInt(t) : null,
     start_week: w ? parseInt(w) : null,
@@ -860,6 +886,14 @@ function validate(step) {
 }
 
 // ── CLF topic chips ────────────────────────────────────────────────────────
+// ── Purpose chips ─────────────────────────────────────────────────────────
+document.querySelectorAll('.purpose-chip').forEach(c =>
+  c.addEventListener('click', () => c.classList.toggle('on'))
+);
+function getSelectedPurposes() {
+  return Array.from(document.querySelectorAll('.purpose-chip.on')).map(c => c.dataset.purpose);
+}
+
 // ── Writing skill chips ────────────────────────────────────────────────────
 function renderWritingSkillChips() {
   const year = pill('year_group');
@@ -1024,6 +1058,8 @@ function buildReview() {
       <h3>Outcomes</h3>
       ${rvRow('Subject', d.subject_outcome)}
       ${rvRow('Writing', d.writing_outcome)}
+      ${d.writing_audience ? rvRow('Audience', d.writing_audience) : ''}
+      ${d.writing_purpose?.length ? rvRow('Purpose', d.writing_purpose.join(' · ')) : ''}
       ${(() => {
         const ws = d.writing_skills || {};
         const areas = Object.keys(ws);
@@ -1104,6 +1140,8 @@ function buildPrompt(d) {
   L.push('');
   L.push('Writing outcome:');
   L.push(d.writing_outcome);
+  if (d.writing_audience) { L.push(`Audience: ${d.writing_audience}`); }
+  if (d.writing_purpose?.length) { L.push(`Purpose: ${d.writing_purpose.join(', ')}`); }
   L.push('');
   const ws = d.writing_skills || {};
   const wsAreas = Object.keys(ws);
