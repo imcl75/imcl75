@@ -677,7 +677,8 @@ document.querySelector('[data-g="year_group"][data-v="Y5"]').classList.add('on')
 
 // ── Schedule checkboxes ────────────────────────────────────────────────────
 document.querySelectorAll('.schedule-check').forEach(chk => {
-  chk.addEventListener('click', () => {
+  chk.addEventListener('click', (e) => {
+    e.preventDefault();
     chk.classList.toggle('on');
     updateSchedulePreview();
   });
