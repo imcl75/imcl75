@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enquiry Brief Builder — WFA</title>
+  <style>
+    :root {
+      --wfa-blue: #DEECF8;
+      --wfa-gold: #FFC000;
+      --wfa-dark: #1a3a5c;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #1e293b; min-height: 100vh; }
+
+    header { background: var(--wfa-dark); border-bottom: 4px solid var(--wfa-gold); padding: 1rem 2rem; }
+    header h1 { font-size: 1.2rem; font-weight: 700; color: white; }
+    header p { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 0.2rem; }
+
+    .container { max-width: 780px; margin: 2rem auto; padding: 0 1.25rem 4rem; }
+
+    /* Steps */
+    .steps { display: flex; align-items: center; margin-bottom: 2rem; }
+    .step-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+    .step-item.active { color: var(--accent); font-weight: 700; }
+    .step-item.done { color: var(--success); }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+    .step-item.done .step-num { background: var(--success); border-color: var(--success); color: white; }
+    .step-item.active .step-num { background: var(--accent); border-color: var(--accent); color: white; }
+    .step-conn { flex: 1; height: 2px; background: var(--border); margin: 0 0.4rem; min-width: 10px; }
+    .step-conn.done { background: var(--success); }
+
+    /* Card */
+    .card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 1.75rem; margin-bottom: 1.25rem; }
+    .card h2 { font-size: 1.1rem; font-weight: 700; color: var(--wfa-dark); margin-bottom: 0.25rem; }
+    .card .subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+    /* Fields */
+    .field { margin-bottom: 1.2rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+    .hint { display: block; font-size: 0.78rem; font-weight: 400; color: var(--muted); margin-top: 0.1rem; }
+    .optional { font-size: 0.78rem; font-weight: 400; color: var(--muted); }
+
+    input[type="text"], input[type="date"], input[type="number"], select, textarea {
+      width: 100%; padding: 0.55rem 0.75rem; border: 1.5px solid var(--border);
+      border-radius: 7px; font-size: 0.875rem; font-family: inherit; color: #1e293b;
+      background: white; transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    input.err, select.err, textarea.err { border-color: var(--danger); }
+    textarea { resize: vertical; line-height: 1.55; }
+
+    /* Pills */
+    .pill-group { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .pill { display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; border: 1.5px solid var(--border); border-radius: 7px; cursor: pointer; font-size: 0.85rem; transition: all 0.12s; user-select: none; }
+    .pill:hover { border-color: var(--accent); background: #eff6ff; }
+    .pill input { display: none; }
+    .pill.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+
+    /* Grid */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Error */
+    .errmsg { font-size: 0.78rem; color: var(--danger); margin-top: 0.3rem; display: none; }
+    .errmsg.show { display: block; }
+
+    /* Nav */
+    .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
+    button { padding: 0.6rem 1.4rem; border-radius: 7px; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-sec { background: white; color: #374151; border: 1.5px solid var(--border); }
+    .btn-sec:hover { border-color: #9ca3af; }
+    .btn-gold { background: var(--wfa-gold); color: var(--wfa-dark); }
+    .btn-gold:hover { background: #e6ac00; }
+
+    /* Lesson schedule grid */
+    .schedule-grid { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .schedule-row { display: grid; grid-template-columns: 60px 1fr 1fr; align-items: center; border-bottom: 1px solid var(--border); }
+    .schedule-row:last-child { border-bottom: none; }
+    .schedule-row.header { background: var(--wfa-blue); font-size: 0.75rem; font-weight: 700; color: var(--wfa-dark); }
+    .schedule-cell { padding: 0.55rem 0.8rem; font-size: 0.875rem; }
+    .schedule-cell.day-name { font-weight: 600; color: #374151; }
+    .schedule-check { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.55rem 0.8rem; user-select: none; }
+    .schedule-check input[type="checkbox"] { display: none; }
+    .custom-check { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.12s; background: white; }
+    .schedule-check.on .custom-check { background: var(--accent); border-color: var(--accent); }
+    .schedule-check.on .custom-check::after { content: '✓'; color: white; font-size: 0.7rem; font-weight: 700; }
+    .schedule-check .slot-label { font-size: 0.82rem; color: var(--muted); }
+    .schedule-check.on .slot-label { color: var(--accent); font-weight: 600; }
+
+    /* Concept field (dynamic) */
+    #conceptField { display: none; }
+    #conceptField.show { display: block; }
+
+    /* Info box */
+    .info-box { background: var(--wfa-blue); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.8rem 1rem; font-size: 0.82rem; line-height: 1.5; margin-bottom: 1rem; }
+    .info-box strong { display: block; margin-bottom: 0.25rem; font-size: 0.82rem; }
+
+    /* Review */
+    .rv-section { margin-bottom: 1.1rem; }
+    .rv-section h3 { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+    .rv-row { display: flex; gap: 0.75rem; margin-bottom: 0.3rem; font-size: 0.85rem; }
+    .rv-lbl { width: 150px; flex-shrink: 0; color: var(--muted); }
+    .rv-val { color: #1e293b; }
+    .rv-mono { font-family: monospace; font-size: 0.78rem; color: #374151; }
+
+    /* Output */
+    .output-box { background: #0f172a; color: #cbd5e1; border-radius: 8px; padding: 1.1rem; font-family: 'Menlo','Monaco',monospace; font-size: 0.75rem; line-height: 1.65; max-height: 320px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+
+    section { display: none; }
+    section.active { display: block; }
+
+    @media (max-width: 580px) { .g2 { grid-template-columns: 1fr; } .steps { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Enquiry Brief Builder</h1>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation</p>
+</header>
+
+<div class="container">
+  <div class="steps" id="stepBar"></div>
+
+  <!-- ── Step 1: Basics ─────────────────────────────────────────────────── -->
+  <section id="s1" class="active">
+    <div class="card">
+      <h2>Enquiry basics</h2>
+      <p class="subtitle">The core information that defines this enquiry.</p>
+
+      <div class="field">
+        <label class="field-label">State of Being</label>
+        <div class="pill-group" id="g_subject">
+          <label class="pill" data-g="subject" data-v="science"><input type="radio" name="subject" value="science">Scientist</label>
+          <label class="pill" data-g="subject" data-v="geography"><input type="radio" name="subject" value="geography">Geographer</label>
+          <label class="pill" data-g="subject" data-v="history"><input type="radio" name="subject" value="history">Historian</label>
+        </div>
+        <div class="errmsg" id="err_subject">Please select a State of Being.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Year group</label>
+        <div class="pill-group" id="g_year_group">
+          <label class="pill" data-g="year_group" data-v="Y4"><input type="radio" name="year_group" value="Y4">Y4</label>
+          <label class="pill" data-g="year_group" data-v="Y5"><input type="radio" name="year_group" value="Y5">Y5</label>
+          <label class="pill" data-g="year_group" data-v="Y6"><input type="radio" name="year_group" value="Y6">Y6</label>
+        </div>
+        <div class="errmsg" id="err_year_group">Please select a year group.</div>
+      </div>
+
+      <!-- Concept — mandatory for Science and History only -->
+      <div class="field" id="conceptField">
+        <label class="field-label" for="f_concept">Concept
+          <span class="hint" id="conceptHint"></span>
+        </label>
+        <select id="f_concept">
+          <option value="">— select —</option>
+        </select>
+        <div class="errmsg" id="err_f_concept">Please select a concept.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_topic">Topic name
+          <span class="hint">Short name used in file and folder names — e.g. "Space", "Rivers", "Romans"</span>
+        </label>
+        <input type="text" id="f_topic" placeholder="e.g. Space">
+        <div class="errmsg" id="err_f_topic">Topic name is required.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_key_question">Key question
+          <span class="hint">The enquiry question children will investigate and answer</span>
+        </label>
+        <input type="text" id="f_key_question" placeholder="e.g. How do the Moon and Earth move in space?">
+        <div class="errmsg" id="err_f_key_question">Key question is required.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_challenge">Challenge
+          <span class="hint">The final task or product at the end of the enquiry</span>
+        </label>
+        <input type="text" id="f_challenge" placeholder="e.g. Create a guide to the solar system for younger children">
+        <div class="errmsg" id="err_f_challenge">Challenge is required.</div>
+      </div>
+    </div>
+    <div class="nav"><span></span><button class="btn-primary" onclick="next(1)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 2: About ──────────────────────────────────────────────────── -->
+  <section id="s2">
+    <div class="card">
+      <h2>About this enquiry</h2>
+      <p class="subtitle">This is the brief Claude uses to make all content decisions. Be specific about what children will study.</p>
+
+      <div class="field">
+        <label class="field-label" for="f_about">What is this enquiry about?
+          <span class="hint">Describe the content, concepts and knowledge children will encounter. 2–4 paragraphs.</span>
+        </label>
+        <textarea id="f_about" rows="8" placeholder="e.g. Children will study Earth's place in the Solar System, how planets orbit the Sun, the Moon's orbit of Earth, and the cause of day and night through Earth's rotation. They will examine how our understanding of the solar system changed over time — from Ptolemy's geocentric model through Copernicus and Galileo to modern astronomy..."></textarea>
+        <div class="errmsg" id="err_f_about">Please describe the enquiry.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_end_goal">What should children know and understand by the end?
+          <span class="hint">The big ideas and key knowledge children should take away.</span>
+        </label>
+        <textarea id="f_end_goal" rows="5" placeholder="e.g. Children should understand that Earth orbits the Sun and the Moon orbits Earth; that day and night are caused by Earth's rotation; and that scientific models of the solar system have changed over time..."></textarea>
+        <div class="errmsg" id="err_f_end_goal">End goal is required.</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-sec" onclick="prev(2)">← Back</button>
+      <button class="btn-primary" onclick="next(2)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ── Step 3: Outcomes ───────────────────────────────────────────────── -->
+  <section id="s3">
+    <div class="card">
+      <h2>Enquiry outcomes</h2>
+      <p class="subtitle">What children will be able to do and produce by the end of the enquiry.</p>
+
+      <div class="field">
+        <label class="field-label" for="f_subject_outcome">Subject outcome
+          <span class="hint">What subject knowledge and skills will children have developed?</span>
+        </label>
+        <textarea id="f_subject_outcome" rows="5" placeholder="e.g. Children will be able to describe the movement of Earth around the Sun and the Moon around Earth, explain the causes of day and night, and use correct scientific vocabulary..."></textarea>
+        <div class="errmsg" id="err_f_subject_outcome">Subject outcome is required.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_writing_outcome">Writing outcome
+          <span class="hint">What will children write? What writing skills will they develop?</span>
+        </label>
+        <textarea id="f_writing_outcome" rows="5" placeholder="e.g. Children will write an explanation text about the Solar System, using technical vocabulary, fronted adverbials, and relative clauses..."></textarea>
+        <div class="errmsg" id="err_f_writing_outcome">Writing outcome is required.</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-sec" onclick="prev(3)">← Back</button>
+      <button class="btn-primary" onclick="next(3)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ── Step 4: Logistics ──────────────────────────────────────────────── -->
+  <section id="s4">
+    <div class="card">
+      <h2>Logistics</h2>
+      <p class="subtitle">When and where — drives the delivery path and file names.</p>
+
+      <div class="g2">
+        <div class="field">
+          <label class="field-label" for="f_term">Starting term</label>
+          <select id="f_term" onchange="updateWeeks()">
+            <option value="">— select —</option>
+            <option value="1">Term 1</option>
+            <option value="2">Term 2</option>
+            <option value="3">Term 3</option>
+            <option value="4">Term 4</option>
+            <option value="5">Term 5</option>
+            <option value="6">Term 6</option>
+          </select>
+          <div class="errmsg" id="err_f_term">Please select a term.</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f_week">Starting week</label>
+          <select id="f_week" onchange="updatePathPreview()">
+            <option value="">— select term first —</option>
+          </select>
+          <div class="errmsg" id="err_f_week">Please select a week.</div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="field">
+          <label class="field-label" for="f_first_date">First lesson date</label>
+          <input type="date" id="f_first_date">
+          <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f_num_lessons">Number of lessons <span class="optional">(optional)</span>
+            <span class="hint">Leave blank — Claude decides from CLF curriculum</span>
+          </label>
+          <input type="number" id="f_num_lessons" min="1" max="30" placeholder="e.g. 14">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Lesson schedule
+          <span class="hint">Tick which slots have an enquiry lesson each week. Each day can have up to two lessons.</span>
+        </label>
+        <div class="schedule-grid">
+          <div class="schedule-row header">
+            <div class="schedule-cell">Day</div>
+            <div class="schedule-cell">Lesson 1</div>
+            <div class="schedule-cell">Lesson 2</div>
+          </div>
+          <div class="schedule-row" id="row-Mon">
+            <div class="schedule-cell day-name">Mon</div>
+            <label class="schedule-check" data-day="Mon" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+            <label class="schedule-check" data-day="Mon" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+          </div>
+          <div class="schedule-row" id="row-Tue">
+            <div class="schedule-cell day-name">Tue</div>
+            <label class="schedule-check" data-day="Tue" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+            <label class="schedule-check" data-day="Tue" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+          </div>
+          <div class="schedule-row" id="row-Wed">
+            <div class="schedule-cell day-name">Wed</div>
+            <label class="schedule-check" data-day="Wed" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+            <label class="schedule-check" data-day="Wed" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+          </div>
+          <div class="schedule-row" id="row-Thu">
+            <div class="schedule-cell day-name">Thu</div>
+            <label class="schedule-check" data-day="Thu" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+            <label class="schedule-check" data-day="Thu" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+          </div>
+          <div class="schedule-row" id="row-Fri">
+            <div class="schedule-cell day-name">Fri</div>
+            <label class="schedule-check" data-day="Fri" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+            <label class="schedule-check" data-day="Fri" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+          </div>
+        </div>
+        <div class="errmsg" id="err_schedule">Please tick at least one lesson slot.</div>
+        <div id="schedulePreview" style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Handwriting join style (XCCW)</label>
+        <div class="pill-group" id="g_xccw_style">
+          <label class="pill" data-g="xccw_style" data-v="dotted"><input type="radio" name="xccw_style" value="dotted">Dotted joins</label>
+          <label class="pill" data-g="xccw_style" data-v="solid"><input type="radio" name="xccw_style" value="solid">Solid joins</label>
+        </div>
+        <div class="errmsg" id="err_xccw_style">Please select XCCW style.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Delivery path</h2>
+      <p class="subtitle">Where Claude will copy the finished files on your Mac. Auto-generated from term and week.</p>
+      <div class="info-box" id="pathPreview">
+        <strong>Delivery path</strong>Select a term and week above.
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted)">
+        <strong>Root:</strong> Knowledge Organiser PDF · Vocabulary Display PDF<br>
+        <strong>Teaching/</strong>: lesson decks · MTP documents<br>
+        <strong>LP/</strong>: learning papers<br>
+        <strong>Resources/</strong>: sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting<br>
+        <strong>Resources/Learning-Labels/</strong>: label sheets
+      </p>
+    </div>
+
+    <div class="nav">
+      <button class="btn-sec" onclick="prev(4)">← Back</button>
+      <button class="btn-primary" onclick="next(4)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ── Step 5: Notes ──────────────────────────────────────────────────── -->
+  <section id="s5">
+    <div class="card">
+      <h2>Additional notes for Claude</h2>
+      <p class="subtitle">All optional. Claude decides everything not specified here.</p>
+
+      <div class="field">
+        <label class="field-label" for="f_vocab">Vocabulary you want included <span class="optional">(optional)</span>
+          <span class="hint">One word or phrase per line. Claude adds more from the CLF curriculum.</span>
+        </label>
+        <textarea id="f_vocab" rows="4" placeholder="e.g.&#10;orbit&#10;atmosphere&#10;satellite"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_images">Images already in the repo assets folder <span class="optional">(optional)</span>
+          <span class="hint">Filenames of any images already committed under assets/{subject}/. One per line.</span>
+        </label>
+        <textarea id="f_images" rows="3" placeholder="e.g.&#10;solar_system_diagram.png"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_notes">Anything else Claude should know <span class="optional">(optional)</span></label>
+        <textarea id="f_notes" rows="4" placeholder="e.g. This enquiry follows our rainforest unit. Children already understand food chains and habitats. We visit Bristol Museum in W4 for the space exhibition — the enquiry should build up to this visit..."></textarea>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-sec" onclick="prev(5)">← Back</button>
+      <button class="btn-primary" onclick="next(5)">Review →</button>
+    </div>
+  </section>
+
+  <!-- ── Step 6: Review & Export ────────────────────────────────────────── -->
+  <section id="s6">
+    <div class="card">
+      <h2>Review</h2>
+      <p class="subtitle">Check everything looks right before exporting.</p>
+      <div id="reviewContent"></div>
+    </div>
+
+    <div class="card">
+      <h2>Export</h2>
+      <p class="subtitle">Download the JSON brief, then copy the Claude prompt and paste it into a new Cowork session.</p>
+      <div class="info-box">
+        <strong>Workflow</strong>
+        1. Copy the Claude prompt below and paste it into a new Cowork session. &nbsp;2. Claude reads the CLF curriculum, generates a human-readable MTP for your review. &nbsp;3. After you confirm, Claude generates the JSON, runs build_all.py, and copies deliverables to your OneDrive folder.
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="downloadJSON()">⬇ Download brief JSON</button>
+        <button class="btn-gold" onclick="copyPrompt()">⎘ Copy Claude prompt</button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem">Preview — Claude prompt:</p>
+      <div class="output-box" id="promptPreview"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-sec" onclick="prev(6)">← Back</button>
+      <span></span>
+    </div>
+  </section>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const ONEDRIVE_BASE = '/Users/innes/Library/CloudStorage/OneDrive-SharedLibraries-CabotLearningFederation/WFA Staff Shared Files - O365 Group - !2026-27/1-Planning';
+const TERM_WEEKS = { '1':7, '2':7, '3':5, '4':6, '5':5, '6':7 };
+const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri'];
+
+const STEPS = [
+  {n:1,lbl:'Basics'},{n:2,lbl:'About'},{n:3,lbl:'Outcomes'},
+  {n:4,lbl:'Logistics'},{n:5,lbl:'Notes'},{n:6,lbl:'Export'}
+];
+let current = 1;
+
+const SCIENCE_CONCEPTS = [
+  'Earth and Space',
+  'Forces and Motion',
+  'Life Cycles and Living Things',
+  'Chemistry: Materials and Changes',
+  'Animals Including Humans',
+  'Electricity and Light',
+  'Sound',
+  'Classification and Evolution',
+];
+
+const HISTORY_CONCEPTS = [
+  'Civilisation',
+  'Empire',
+  'Invasion and Settlement',
+  'Trade',
+  'Power',
+  'Society',
+  'Change and Continuity',
+  'Cause and Consequence',
+  'Significance',
+  'Legacy',
+  'Chronology',
+];
+
+// ── Step bar ───────────────────────────────────────────────────────────────
+function renderBar() {
+  const bar = document.getElementById('stepBar');
+  bar.innerHTML = '';
+  STEPS.forEach((s, i) => {
+    if (i > 0) {
+      const c = document.createElement('div');
+      c.className = 'step-conn' + (current > s.n ? ' done' : '');
+      bar.appendChild(c);
+    }
+    const el = document.createElement('div');
+    el.className = 'step-item ' + (current === s.n ? 'active' : current > s.n ? 'done' : '');
+    el.innerHTML = `<div class="step-num">${current > s.n ? '✓' : s.n}</div><span>${s.lbl}</span>`;
+    bar.appendChild(el);
+  });
+}
+
+// ── Concept field — dynamic based on State of Being ───────────────────────
+function updateConceptField(subject) {
+  const field = document.getElementById('conceptField');
+  const sel = document.getElementById('f_concept');
+  const hint = document.getElementById('conceptHint');
+
+  if (subject === 'science') {
+    field.classList.add('show');
+    hint.textContent = 'The science strand this enquiry sits within.';
+    sel.innerHTML = '<option value="">— select —</option>' +
+      SCIENCE_CONCEPTS.map(c => `<option value="${c}">${c}</option>`).join('');
+  } else if (subject === 'history') {
+    field.classList.add('show');
+    hint.textContent = 'The substantive historical concept this enquiry explores.';
+    sel.innerHTML = '<option value="">— select —</option>' +
+      HISTORY_CONCEPTS.map(c => `<option value="${c}">${c}</option>`).join('');
+  } else {
+    field.classList.remove('show');
+    sel.value = '';
+  }
+}
+
+// ── Pills ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    const g = p.dataset.g;
+    document.querySelectorAll(`[data-g="${g}"]`).forEach(o => o.classList.remove('on'));
+    p.classList.add('on');
+    const e = document.getElementById('err_' + g);
+    if (e) e.classList.remove('show');
+    if (g === 'subject') updateConceptField(p.dataset.v);
+  });
+});
+
+// ── Schedule checkboxes ────────────────────────────────────────────────────
+document.querySelectorAll('.schedule-check').forEach(chk => {
+  chk.addEventListener('click', () => {
+    chk.classList.toggle('on');
+    updateSchedulePreview();
+  });
+});
+
+function getSchedule() {
+  // Returns object: { Mon: [bool, bool], Tue: [bool, bool], ... }
+  const sched = {};
+  DAYS_ORDER.forEach(day => {
+    sched[day] = [false, false];
+  });
+  document.querySelectorAll('.schedule-check').forEach(chk => {
+    const day = chk.dataset.day;
+    const slot = parseInt(chk.dataset.slot);
+    if (chk.classList.contains('on')) sched[day][slot] = true;
+  });
+  return sched;
+}
+
+function scheduleToWeeklySlots() {
+  // Returns ordered list of {day, slot, position} — position is 1-based within the week
+  const sched = getSchedule();
+  const slots = [];
+  let pos = 1;
+  DAYS_ORDER.forEach(day => {
+    [0, 1].forEach(slot => {
+      if (sched[day][slot]) {
+        slots.push({ day, slot, position: pos++ });
+      }
+    });
+  });
+  return slots;
+}
+
+function updateSchedulePreview() {
+  const slots = scheduleToWeeklySlots();
+  const prev = document.getElementById('schedulePreview');
+  if (slots.length === 0) {
+    prev.textContent = '';
+    return;
+  }
+  const desc = slots.map(s => `${s.day} (pos ${s.position})`).join(', ');
+  prev.textContent = `${slots.length} lesson slot${slots.length > 1 ? 's' : ''} per week: ${desc}`;
+  document.getElementById('err_schedule').classList.remove('show');
+}
+
+// ── Week / path ────────────────────────────────────────────────────────────
+function updateWeeks() {
+  const t = document.getElementById('f_term').value;
+  const sel = document.getElementById('f_week');
+  if (!t) { sel.innerHTML = '<option value="">— select term first —</option>'; updatePathPreview(); return; }
+  const n = TERM_WEEKS[t] || 7;
+  sel.innerHTML = '<option value="">— select week —</option>';
+  for (let w = 1; w <= n; w++) sel.innerHTML += `<option value="${w}">W${w}  (T${t}W${w})</option>`;
+  updatePathPreview();
+}
+
+function updatePathPreview() {
+  const t = document.getElementById('f_term').value;
+  const w = document.getElementById('f_week').value;
+  const box = document.getElementById('pathPreview');
+  if (!t || !w) { box.innerHTML = '<strong>Delivery path</strong>Select a term and week above.'; return; }
+  const path = deliveryPath(t, w);
+  box.innerHTML = `<strong>Delivery path</strong><code style="font-size:0.75rem;word-break:break-all">${path}</code>`;
+}
+
+function deliveryPath(t, w) {
+  if (!t || !w) return null;
+  return `${ONEDRIVE_BASE}/Term ${t}/T${t}W${w}/Enquiry`;
+}
+
+// ── Data ───────────────────────────────────────────────────────────────────
+function pill(g) { const el = document.querySelector(`[data-g="${g}"].on`); return el ? el.dataset.v : ''; }
+function fv(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function lines(id) { return fv(id).split('\n').map(s => s.trim()).filter(Boolean); }
+
+function collect() {
+  const t = fv('f_term'), w = fv('f_week');
+  const subject = pill('subject');
+  const txwy = t && w ? `T${t}W${w}` : null;
+  const topic = fv('f_topic');
+  const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const slots = scheduleToWeeklySlots();
+  const sched = getSchedule();
+  const concept = (subject === 'science' || subject === 'history') ? fv('f_concept') : null;
+
+  return {
+    form_version: '1.2',
+    created: new Date().toISOString().slice(0,10),
+    subject,
+    year_group: pill('year_group'),
+    concept,
+    topic,
+    slug,
+    key_question: fv('f_key_question'),
+    challenge: fv('f_challenge'),
+    about: fv('f_about'),
+    end_goal: fv('f_end_goal'),
+    subject_outcome: fv('f_subject_outcome'),
+    writing_outcome: fv('f_writing_outcome'),
+    start_term: t ? parseInt(t) : null,
+    start_week: w ? parseInt(w) : null,
+    txwy,
+    first_lesson_date: fv('f_first_date') || null,
+    num_lessons: fv('f_num_lessons') ? parseInt(fv('f_num_lessons')) : null,
+    lesson_schedule: sched,
+    weekly_slots: slots,
+    lessons_per_week: slots.length,
+    xccw_style: pill('xccw_style') || 'dotted',
+    specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
+    existing_images: lines('f_images').length ? lines('f_images') : null,
+    other_notes: fv('f_notes') || null,
+    delivery: {
+      root: deliveryPath(t, w),
+      lp_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/LP' : null,
+      teaching_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Teaching' : null,
+      resources_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Resources' : null,
+      labels_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Resources/Learning-Labels' : null,
+    },
+    file_naming: buildNaming(slug, txwy),
+  };
+}
+
+function buildNaming(slug, txwy) {
+  const t = txwy || 'TxWy';
+  const S = slug || 'topic';
+  return {
+    // Enquiry-level — go in root
+    knowledge_organiser: `KO_${S}_${t}.pdf`,
+    vocab_display: `Vocab_${S}_${t}.pdf`,
+    // Teaching/ folder
+    mtp_readable: `MTP_${S}_${t}.md`,
+    mtp_json: `mtp_${S}_${t}.json`,
+    lesson_deck: `{pos:02d}-{Day}-L{nn:02d}-Teaching.pptx`,
+    // LP/ folder
+    learning_paper: `{pos:02d}-{Day}-L{nn:02d}-LP-{Class}.pptx`,
+    // Resources/ folder
+    sort_cards: `SortCards_${S}_${t}.pdf`,
+    word_cards: `WordCards_${S}_${t}.pdf`,
+    statement_sort: `StatementSort_${S}_${t}.pdf`,
+    timeline: `Timeline_${S}_${t}.pdf`,
+    hunt_texts: `HuntTexts_${S}_${t}.pdf`,
+    writing_toolkit: `WritingToolkit_${S}_${t}.pdf`,
+    handwriting: `Handwriting_${S}_${t}.pdf`,
+    // Resources/Learning-Labels/ folder
+    label_sheet: `{pos:02d}-{Day}-L{nn:02d}-Labels.docx`,
+  };
+}
+
+// ── Validation ─────────────────────────────────────────────────────────────
+const RULES = {
+  1: [
+    {type:'pill', g:'subject'},
+    {type:'pill', g:'year_group'},
+    {type:'concept'},
+    {type:'field', id:'f_topic'},
+    {type:'field', id:'f_key_question'},
+    {type:'field', id:'f_challenge'},
+  ],
+  2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'}],
+  3: [{type:'field',id:'f_subject_outcome'},{type:'field',id:'f_writing_outcome'}],
+  4: [
+    {type:'field', id:'f_term'},
+    {type:'field', id:'f_week'},
+    {type:'field', id:'f_first_date'},
+    {type:'schedule'},
+    {type:'pill', g:'xccw_style'},
+  ],
+  5: [],
+};
+
+function validate(step) {
+  let ok = true;
+  (RULES[step]||[]).forEach(r => {
+    if (r.type === 'pill') {
+      const v = pill(r.g);
+      const e = document.getElementById('err_' + r.g);
+      if (!v) { if(e) e.classList.add('show'); ok = false; }
+      else { if(e) e.classList.remove('show'); }
+    } else if (r.type === 'concept') {
+      const subj = pill('subject');
+      if (subj === 'science' || subj === 'history') {
+        const el = document.getElementById('f_concept');
+        const e = document.getElementById('err_f_concept');
+        if (!el.value) { el.classList.add('err'); if(e) e.classList.add('show'); ok = false; }
+        else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
+      }
+    } else if (r.type === 'schedule') {
+      if (scheduleToWeeklySlots().length === 0) {
+        document.getElementById('err_schedule').classList.add('show');
+        ok = false;
+      } else {
+        document.getElementById('err_schedule').classList.remove('show');
+      }
+    } else {
+      const el = document.getElementById(r.id);
+      if (!el) return;
+      const e = document.getElementById('err_' + r.id);
+      if (!el.value.trim()) {
+        el.classList.add('err');
+        if(e) e.classList.add('show');
+        ok = false;
+      } else {
+        el.classList.remove('err');
+        if(e) e.classList.remove('show');
+      }
+    }
+  });
+  return ok;
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────
+function next(from) { if (!validate(from)) return; if (from === 5) buildReview(); show(from + 1); }
+function prev(from) { show(from - 1); }
+function show(n) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+  current = n; renderBar();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Review ─────────────────────────────────────────────────────────────────
+function rvRow(lbl, val) {
+  if (!val && val !== 0) return '';
+  const v = String(val).length > 130 ? String(val).slice(0,130)+'…' : String(val);
+  return `<div class="rv-row"><span class="rv-lbl">${lbl}</span><span class="rv-val">${v}</span></div>`;
+}
+function rvMono(lbl, val) {
+  if (!val) return '';
+  return `<div class="rv-row"><span class="rv-lbl">${lbl}</span><span class="rv-val rv-mono">${val}</span></div>`;
+}
+
+function buildReview() {
+  const d = collect();
+  const nc = d.file_naming;
+  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
+  const slotDesc = d.weekly_slots.map(s => `${s.day} (pos ${s.position})`).join(', ');
+
+  document.getElementById('reviewContent').innerHTML = `
+    <div class="rv-section">
+      <h3>Enquiry</h3>
+      ${rvRow('State of Being', stateLabel)}
+      ${rvRow('Year group', d.year_group)}
+      ${d.concept ? rvRow('Concept', d.concept) : ''}
+      ${rvRow('Topic', d.topic)}
+      ${rvRow('Key question', d.key_question)}
+      ${rvRow('Challenge', d.challenge)}
+    </div>
+    <div class="rv-section">
+      <h3>About</h3>
+      ${rvRow('About', d.about)}
+      ${rvRow('End goal', d.end_goal)}
+    </div>
+    <div class="rv-section">
+      <h3>Outcomes</h3>
+      ${rvRow('Subject', d.subject_outcome)}
+      ${rvRow('Writing', d.writing_outcome)}
+    </div>
+    <div class="rv-section">
+      <h3>Logistics</h3>
+      ${rvRow('Slot', d.txwy)}
+      ${rvRow('First lesson', d.first_lesson_date)}
+      ${rvRow('Lessons', d.num_lessons ? String(d.num_lessons) : 'Claude to decide')}
+      ${rvRow('Weekly schedule', `${d.lessons_per_week} lesson${d.lessons_per_week !== 1 ? 's' : ''}/week — ${slotDesc}`)}
+      ${rvRow('XCCW', d.xccw_style)}
+    </div>
+    <div class="rv-section">
+      <h3>Delivery</h3>
+      ${rvRow('Root (enquiry-level)', d.delivery.root?.replace(ONEDRIVE_BASE,'…/1-Planning') || 'not set')}
+      ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
+      ${rvRow('LP/', 'Learning papers')}
+      ${rvRow('Resources/', 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
+      ${rvRow('Resources/Learning-Labels/', 'Label sheets')}
+    </div>
+    <div class="rv-section">
+      <h3>File naming</h3>
+      ${rvMono('Enquiry-level', nc.knowledge_organiser + ' · ' + nc.vocab_display)}
+      ${rvMono('Lesson Teaching', nc.lesson_deck)}
+      ${rvMono('Learning paper', nc.learning_paper)}
+      ${rvMono('Label sheet', nc.label_sheet)}
+    </div>
+    ${d.specific_vocab || d.other_notes ? `
+    <div class="rv-section">
+      <h3>Notes</h3>
+      ${d.specific_vocab ? rvRow('Specific vocab', d.specific_vocab.join(', ')) : ''}
+      ${d.other_notes ? rvRow('Other notes', d.other_notes) : ''}
+    </div>` : ''}
+  `;
+  document.getElementById('promptPreview').textContent = buildPrompt(d);
+}
+
+// ── Claude prompt ──────────────────────────────────────────────────────────
+function buildPrompt(d) {
+  const nc = d.file_naming;
+  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
+  const slotDesc = d.weekly_slots.map(s => `pos ${s.position}: ${s.day}`).join(', ');
+  const L = [];
+  L.push('NEW ENQUIRY BRIEF');
+  L.push('=================');
+  L.push('');
+  L.push('Read this brief in full. Then read the CLF curriculum reference in the project.');
+  L.push('Do NOT start generating content until you have read both.');
+  L.push('');
+  L.push('WORKFLOW — follow in order, do not skip ahead:');
+  L.push('  1. Generate a human-readable MTP document (markdown, lesson by lesson). Share it. Stop.');
+  L.push('  2. I review and give feedback. Revise until confirmed. Stop.');
+  L.push('  3. Generate the MTP JSON. Clone the enquiry-builder repo fresh.');
+  L.push('  4. Run build_all.py to produce all deliverables.');
+  L.push(`  5. Copy deliverables to the delivery path using the file naming convention below.`);
+  L.push('');
+  L.push('─── ENQUIRY ────────────────────────────────────────────────');
+  L.push(`State of Being: ${stateLabel}  (subject value: ${d.subject})`);
+  L.push(`Year group:     ${d.year_group}`);
+  if (d.concept) L.push(`Concept:        ${d.concept}`);
+  L.push(`Topic:          ${d.topic}`);
+  L.push(`Key question:   ${d.key_question}`);
+  L.push(`Challenge:      ${d.challenge}`);
+  L.push('');
+  L.push('─── ABOUT ──────────────────────────────────────────────────');
+  L.push(d.about);
+  L.push('');
+  L.push('─── END GOAL ───────────────────────────────────────────────');
+  L.push(d.end_goal);
+  L.push('');
+  L.push('─── OUTCOMES ───────────────────────────────────────────────');
+  L.push('Subject outcome:');
+  L.push(d.subject_outcome);
+  L.push('');
+  L.push('Writing outcome:');
+  L.push(d.writing_outcome);
+  L.push('');
+  L.push('─── LOGISTICS ──────────────────────────────────────────────');
+  L.push(`Slot:           ${d.txwy || 'not set'}`);
+  L.push(`First lesson:   ${d.first_lesson_date || 'not set'}`);
+  L.push(`Lessons:        ${d.num_lessons ? d.num_lessons + ' lessons' : 'Claude to decide from CLF curriculum'}`);
+  L.push(`Lessons/week:   ${d.lessons_per_week}`);
+  L.push(`Weekly slots:   ${slotDesc}`);
+  L.push(`XCCW style:     ${d.xccw_style}`);
+  L.push('');
+  L.push('Weekly schedule (used to derive file name position prefix):');
+  DAYS_ORDER.forEach(day => {
+    const s = d.lesson_schedule[day];
+    if (s[0] || s[1]) {
+      L.push(`  ${day}: ${[s[0] ? 'Lesson 1' : null, s[1] ? 'Lesson 2' : null].filter(Boolean).join(' + ')}`);
+    }
+  });
+  if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
+  if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
+  if (d.other_notes) { L.push(''); L.push('Additional notes:'); L.push(d.other_notes); }
+  L.push('');
+  L.push('─── DELIVERY PATH ──────────────────────────────────────────');
+  const root = d.delivery.root || 'NOT SET';
+  L.push(`Root (enquiry-level files): ${root}`);
+  L.push(`Teaching/:                  ${root}/Teaching`);
+  L.push(`LP/:                        ${root}/LP`);
+  L.push(`Resources/:                 ${root}/Resources`);
+  L.push(`Resources/Learning-Labels/: ${root}/Resources/Learning-Labels`);
+  L.push('');
+  L.push('─── FILE NAMING CONVENTION ─────────────────────────────────');
+  L.push('Enquiry-level (copy to root):');
+  L.push(`  ${nc.knowledge_organiser}`);
+  L.push(`  ${nc.vocab_display}`);
+  L.push('');
+  L.push('Teaching/ folder:');
+  L.push(`  ${nc.mtp_readable}`);
+  L.push(`  ${nc.mtp_json}`);
+  L.push(`  ${nc.lesson_deck}   ← {pos} = 2-digit lesson position within the week (01, 02…); {Day} = Mon/Tue/etc; {nn} = lesson number in enquiry`);
+  L.push('');
+  L.push('LP/ folder:');
+  L.push(`  ${nc.learning_paper}   ← {Class} = class key (IM, LS)`);
+  L.push('');
+  L.push('Resources/ folder:');
+  L.push(`  ${nc.sort_cards}`);
+  L.push(`  ${nc.word_cards}`);
+  L.push(`  ${nc.statement_sort}`);
+  L.push(`  ${nc.timeline}`);
+  L.push(`  ${nc.hunt_texts}`);
+  L.push(`  ${nc.writing_toolkit}`);
+  L.push(`  ${nc.handwriting}`);
+  L.push('');
+  L.push('Resources/Learning-Labels/ folder:');
+  L.push(`  ${nc.label_sheet}   ← same {pos}/{Day}/{nn} logic as Teaching files`);
+  L.push('');
+  L.push('─── END OF BRIEF ───────────────────────────────────────────');
+  return L.join('\n');
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function downloadJSON() {
+  const d = collect();
+  const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `enquiry_brief_${d.slug||'draft'}_${d.txwy||'undated'}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyPrompt() {
+  const d = collect();
+  navigator.clipboard.writeText(buildPrompt(d)).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = orig, 2500);
+  });
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderBar();
+</script>
+</body>
+</html>
