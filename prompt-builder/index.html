@@ -520,7 +520,7 @@
         <h2>People &amp; diversity</h2>
         <div class="toggle-row">
           <label class="toggle">
-            <input type="checkbox" id="d-has-people" onchange="build()">
+            <input type="checkbox" id="d-has-people" onchange="togglePeople('d')">
             <span class="slider"></span>
           </label>
           <span class="toggle-label">This image includes people</span>
@@ -650,7 +650,7 @@
         <h2>People &amp; diversity</h2>
         <div class="toggle-row">
           <label class="toggle">
-            <input type="checkbox" id="h-has-people" onchange="build()">
+            <input type="checkbox" id="h-has-people" onchange="togglePeople('h')">
             <span class="slider"></span>
           </label>
           <span class="toggle-label">This image includes people</span>
@@ -799,16 +799,38 @@
   let currentTool = 'dalle';
 
   const DISABILITY_POOL = [
+    // Limb difference
     "a child with two fingers on one hand",
-    "a child with a shorter left arm",
+    "a child with a shorter left arm, joining in naturally",
     "a child with extra fingers on one hand",
     "a child with fused fingers on one hand",
     "a child with one leg visibly shorter than the other",
     "a child with a foot that turns inward",
     "a child with one hand",
-    "a child with a shorter forearm on one side",
     "a child with a flesh-coloured prosthetic lower arm, natural and well-fitted",
-    "a child with a running blade prosthetic on one leg, wearing it naturally"
+    "a child with a running blade prosthetic on one leg, wearing it naturally as part of everyday life",
+    // Hearing
+    "a child wearing a hearing aid on one ear",
+    "a child with a cochlear implant processor visible behind one ear",
+    "a child with bilateral hearing aids, joining in naturally",
+    // Mobility
+    "a child using a manual wheelchair, joining in naturally",
+    "a child using a powered wheelchair",
+    "a child on forearm crutches",
+    "a child using a walking frame",
+    "a child with leg braces visible below their trouser leg",
+    // Skeletal
+    "a child of noticeably shorter stature due to a skeletal condition, joining in naturally",
+    // Down's syndrome
+    "a child with Down's syndrome, part of the group naturally",
+    // Cerebral palsy
+    "a child with hemiplegia, one arm resting loosely at their side",
+    "a child with cerebral palsy using a lightweight communication device",
+    // Visual
+    "a child with thick prescription glasses and a partial visual impairment",
+    "a child using a white cane",
+    // Skin
+    "a child with vitiligo visible on their face and hands, joining in naturally"
   ];
 
   const EXCALI_CONFIG = {
@@ -961,16 +983,6 @@
   }
 
   function build() {
-    // Toggle diversity panels
-    if (currentTool === 'dalle') {
-      const on = document.getElementById('d-has-people').checked;
-      document.getElementById('d-diversity').classList.toggle('hidden', !on);
-    }
-    if (currentTool === 'higgsfield') {
-      const on = document.getElementById('h-has-people').checked;
-      document.getElementById('h-diversity').classList.toggle('hidden', !on);
-    }
-
     let prompt = '';
 
     if (currentTool === 'dalle') {
@@ -1058,6 +1070,17 @@
   function randomDisability(fieldId) {
     const pick = DISABILITY_POOL[Math.floor(Math.random() * DISABILITY_POOL.length)];
     document.getElementById(fieldId).value = pick;
+    build();
+  }
+
+  function togglePeople(prefix) {
+    const on = document.getElementById(prefix + '-has-people').checked;
+    document.getElementById(prefix + '-diversity').classList.toggle('hidden', !on);
+    // Auto-pick a random disability when toggled on, if field is empty
+    if (on) {
+      const field = document.getElementById(prefix + '-disability');
+      if (!field.value.trim()) randomDisability(prefix + '-disability');
+    }
     build();
   }
 
