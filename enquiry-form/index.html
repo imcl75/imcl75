@@ -891,6 +891,28 @@ function buildPrompt(d) {
   L.push('Resources/Learning-Labels/ folder:');
   L.push(`  ${nc.label_sheet}   ← same {pos}/{Day}/{nn} logic as Teaching files`);
   L.push('');
+  L.push('─── CLF FRAMEWORK ──────────────────────────────────────────');
+  L.push('Use these lists when assigning substantive_concept and skill_focus to each lesson.');
+  L.push('');
+  L.push('SCIENCE');
+  L.push('  Concept (enquiry-level — set from brief above; drives slide colour for whole enquiry):');
+  L.push('    Biology · Chemistry · Physics · Earth and Space');
+  L.push('  Skill (lesson-level — Claude assigns; drives flask colour per lesson):');
+  L.push('    Plan and Question · Test · Observe and Measure · Record and Present · Conclude');
+  L.push('');
+  L.push('HISTORY');
+  L.push('  Concept (enquiry-level — set from brief above; drives slide colour for whole enquiry):');
+  L.push('    Civilisation · Monarchy · Empire · Invasion · Revolution');
+  L.push('  Skill (lesson-level — Claude assigns; drives brick colour per lesson):');
+  L.push('    Chronology · Using Sources · Questioning and Understanding · Interpretations');
+  L.push('');
+  L.push('GEOGRAPHY');
+  L.push('  Concept (lesson-level — Claude assigns from CLF curriculum reference; drives slide colour per lesson):');
+  L.push('    Place, Space & Scale · Physical Geography · Environmental Impact & Sustainability');
+  L.push('    Human Geography · Cultural awareness & diversity');
+  L.push('  Skill (lesson-level — Claude assigns; drives jigsaw piece colour per lesson):');
+  L.push('    Map Skill · Field work · Observing · Questioning · Concluding');
+  L.push('');
   L.push('─── END OF BRIEF ───────────────────────────────────────────');
   return L.join('\n');
 }
