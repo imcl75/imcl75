@@ -394,14 +394,6 @@
         <div id="schedulePreview" style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;"></div>
       </div>
 
-      <div class="field">
-        <label class="field-label">Handwriting join style (XCCW)</label>
-        <div class="pill-group" id="g_xccw_style">
-          <label class="pill" data-g="xccw_style" data-v="dotted"><input type="radio" name="xccw_style" value="dotted">Dotted joins</label>
-          <label class="pill" data-g="xccw_style" data-v="solid"><input type="radio" name="xccw_style" value="solid">Solid joins</label>
-        </div>
-        <div class="errmsg" id="err_xccw_style">Please select XCCW style.</div>
-      </div>
     </div>
 
     <div class="card">
@@ -789,7 +781,7 @@ function collect() {
     lesson_schedule: sched,
     weekly_slots: slots,
     lessons_per_week: slots.length,
-    xccw_style: pill('xccw_style') || 'dotted',
+    xccw_style: 'dotted',
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
@@ -846,7 +838,6 @@ const RULES = {
     {type:'field', id:'f_week'},
     {type:'field', id:'f_first_date'},
     {type:'schedule'},
-    {type:'pill', g:'xccw_style'},
   ],
   5: [],
 };
@@ -1087,7 +1078,6 @@ function buildReview() {
       ${rvRow('First lesson', d.first_lesson_date)}
       ${rvRow('Lessons', d.num_lessons ? String(d.num_lessons) : 'Claude to decide')}
       ${rvRow('Weekly schedule', `${d.lessons_per_week} lesson${d.lessons_per_week !== 1 ? 's' : ''}/week — ${slotDesc}`)}
-      ${rvRow('XCCW', d.xccw_style)}
     </div>
     <div class="rv-section">
       <h3>Delivery</h3>
@@ -1167,7 +1157,6 @@ function buildPrompt(d) {
   L.push(`Lessons:        ${d.num_lessons ? d.num_lessons + ' lessons' : 'Claude to decide from CLF curriculum'}`);
   L.push(`Lessons/week:   ${d.lessons_per_week}`);
   L.push(`Weekly slots:   ${slotDesc}`);
-  L.push(`XCCW style:     ${d.xccw_style}`);
   L.push('');
   L.push('Weekly schedule (used to derive file name position prefix):');
   DAYS_ORDER.forEach(day => {
