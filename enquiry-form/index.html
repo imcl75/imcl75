@@ -170,9 +170,9 @@
       <div class="field">
         <label class="field-label">Year group</label>
         <div class="pill-group" id="g_year_group">
-          <label class="pill" data-g="year_group" data-v="Y4"><input type="radio" name="year_group" value="Y4">Y4</label>
+          <label class="pill" data-g="year_group" data-v="Y4" style="display:none"><input type="radio" name="year_group" value="Y4">Y4</label>
           <label class="pill" data-g="year_group" data-v="Y5"><input type="radio" name="year_group" value="Y5">Y5</label>
-          <label class="pill" data-g="year_group" data-v="Y6"><input type="radio" name="year_group" value="Y6">Y6</label>
+          <label class="pill" data-g="year_group" data-v="Y6" style="display:none"><input type="radio" name="year_group" value="Y6">Y6</label>
         </div>
         <div class="errmsg" id="err_year_group">Please select a year group.</div>
       </div>
@@ -299,7 +299,7 @@
 
       <div class="field">
         <label class="field-label">Writing skills focus
-          <span class="hint" id="writingSkillsHint">Select the Y5 non-fiction writing skills this enquiry will develop. Non-negotiables are always included.</span>
+          <span class="hint" id="writingSkillsHint">Select the Y5 non-fiction writing skills this enquiry will develop.</span>
         </label>
         <div class="chip-actions">
           <button class="btn-sec" type="button" onclick="setAllSkillChips(true)">Select all</button>
@@ -563,6 +563,18 @@ const WRITING_SKILLS_NF = {
       skills: [
         { id: 'er1', label: 'Edit (grammar, punctuation, spelling)', export: 'Edit writing for Y5 grammar, punctuation and spelling' },
         { id: 'er2', label: 'Revise (composition & structure)', export: 'Revise using Y5 composition, sentence structure and cohesion skills' },
+      ]
+    },
+    {
+      area: 'Spelling',
+      skills: [
+        { id: 'sp1', label: 'Year 5 statutory spellings', export: 'Year 5/6 statutory spelling word list', preselect: true },
+      ]
+    },
+    {
+      area: 'Handwriting',
+      skills: [
+        { id: 'hw1', label: 'Consistent, joined handwriting', export: 'Write in a consistent and joined style with increased quality and speed', preselect: true },
       ]
     },
   ]
@@ -914,20 +926,21 @@ function renderWritingSkillChips() {
     groupDiv.className = 'skill-group';
     const lbl = document.createElement('span');
     lbl.className = 'skill-group-label';
-    lbl.textContent = group.nn ? '⚑ Non-Negotiable (always included)' : group.area;
+    lbl.textContent = group.nn ? '⚑ Non-Negotiable' : group.area;
     groupDiv.appendChild(lbl);
     const chipGrid = document.createElement('div');
     chipGrid.className = 'chip-grid';
     group.skills.forEach(skill => {
       const chip = document.createElement('span');
-      chip.className = 'skill-chip' + (group.nn ? ' nn on' : '');
+      const startOn = group.nn || skill.preselect;
+      chip.className = 'skill-chip' + (group.nn ? ' nn' : '') + (startOn ? ' on' : '');
       chip.dataset.skillId = skill.id;
       chip.dataset.export = skill.export;
       chip.dataset.area = group.area;
       chip.dataset.nn = group.nn ? '1' : '0';
       chip.textContent = skill.label;
       chip.title = skill.export;
-      if (!group.nn) chip.addEventListener('click', () => chip.classList.toggle('on'));
+      chip.addEventListener('click', () => chip.classList.toggle('on'));
       chipGrid.appendChild(chip);
     });
     groupDiv.appendChild(chipGrid);
@@ -936,7 +949,7 @@ function renderWritingSkillChips() {
 }
 
 function setAllSkillChips(selected) {
-  document.querySelectorAll('.skill-chip:not(.nn)').forEach(c =>
+  document.querySelectorAll('.skill-chip').forEach(c =>
     selected ? c.classList.add('on') : c.classList.remove('on')
   );
 }
