@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Prompt Builder — IM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:        #F4F5F7;
+      --surface:   #FFFFFF;
+      --border:    #DDE1EB;
+      --text:      #1A2030;
+      --muted:     #7A8499;
+      --accent:    #2E5F8A;
+      --accent-lo: #EBF1F8;
+      --chip-bg:   #ECEEF3;
+      --chip-txt:  #5C6880;
+      --shadow:    rgba(26, 32, 48, 0.07);
+      --amber:     #D09800;
+      --amber-lo:  #FFF8E6;
+      --excali:    #6965db;
+      --excali-lo: #EEEEFF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:        #0F1520;
+        --surface:   #192030;
+        --border:    #242E42;
+        --text:      #DEE5F2;
+        --muted:     #7A8AA8;
+        --accent:    #5090C0;
+        --accent-lo: #152030;
+        --chip-bg:   #1D2840;
+        --chip-txt:  #8099BF;
+        --shadow:    rgba(0,0,0,0.25);
+        --amber:     #E8B000;
+        --amber-lo:  #2A2000;
+        --excali:    #9490f0;
+        --excali-lo: #1a1a40;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:        #0F1520; --surface:   #192030; --border:    #242E42;
+      --text:      #DEE5F2; --muted:     #7A8AA8; --accent:    #5090C0;
+      --accent-lo: #152030; --chip-bg:   #1D2840; --chip-txt:  #8099BF;
+      --shadow:    rgba(0,0,0,0.25); --amber: #E8B000; --amber-lo: #2A2000;
+      --excali: #9490f0; --excali-lo: #1a1a40;
+    }
+    :root[data-theme="light"] {
+      --bg:        #F4F5F7; --surface:   #FFFFFF; --border:    #DDE1EB;
+      --text:      #1A2030; --muted:     #7A8499; --accent:    #2E5F8A;
+      --accent-lo: #EBF1F8; --chip-bg:   #ECEEF3; --chip-txt:  #5C6880;
+      --shadow:    rgba(26,32,48,0.07); --amber: #D09800; --amber-lo: #FFF8E6;
+      --excali: #6965db; --excali-lo: #EEEEFF;
+    }
+
+    /* ── Reset ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Figtree', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ── Wrapper ─────────────────────────────────────────── */
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 22px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      padding: 40px 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-left { display: flex; flex-direction: column; gap: 4px; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; letter-spacing: 0.04em;
+      color: var(--muted);
+      transition: color 0.15s;
+      margin-bottom: 4px;
+    }
+    .back-link:hover { color: var(--accent); }
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.6rem;
+      line-height: 1.15; color: var(--text);
+    }
+    .page-sub { font-size: 0.875rem; color: var(--muted); }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+    .theme-btn {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 6px 11px;
+      font-size: 1rem; color: var(--muted); line-height: 1;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    hr.rule { border: none; border-top: 1.5px solid var(--border); margin-bottom: 28px; }
+
+    /* ── Tool Switcher ───────────────────────────────────── */
+    .tool-switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .tool-btn {
+      padding: 14px 18px;
+      border: none; background: var(--surface);
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.95rem;
+      transition: background 0.15s, color 0.15s;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    }
+    .tool-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
+    .tool-sub {
+      font-family: 'Figtree', sans-serif;
+      font-weight: 400; font-size: 0.74rem;
+      opacity: 0.75; line-height: 1.3;
+    }
+    .tool-btn.active-dalle { background: var(--accent); color: #fff; }
+    .tool-btn.active-higgsfield { background: var(--amber); color: #2a1a00; }
+    .tool-btn.active-excalidraw { background: var(--excali); color: #fff; }
+    .tool-btn:not([class*="active"]):hover { background: var(--accent-lo); color: var(--accent); }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .full { grid-column: 1 / -1; }
+
+    /* ── Panel ──────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .panel h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 16px;
+    }
+
+    /* ── Form elements ───────────────────────────────────── */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-family: 'Figtree', sans-serif;
+      font-weight: 600; font-size: 0.83rem;
+      color: var(--text); margin-bottom: 5px;
+    }
+    .field label .hint {
+      font-weight: 400; color: var(--muted); font-size: 0.78rem;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: var(--text);
+      background: var(--bg);
+      font-family: 'Figtree', sans-serif;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-lo);
+    }
+    textarea { resize: vertical; min-height: 64px; }
+
+    /* ── Pills ───────────────────────────────────────────── */
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+    .pill {
+      padding: 5px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.79rem;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--muted);
+      transition: all 0.12s;
+      user-select: none;
+      font-family: 'Figtree', sans-serif;
+      font-weight: 500;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lo); }
+    .pill.sel-dalle { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .pill.sel-higgsfield { background: var(--amber); border-color: var(--amber); color: #2a1a00; font-weight: 600; }
+    .pill.sel-excalidraw { background: var(--excali); border-color: var(--excali); color: #fff; font-weight: 600; }
+
+    /* ── Toggle ─────────────────────────────────────────── */
+    .toggle-row { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 22px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .slider::before {
+      content: ""; position: absolute;
+      width: 16px; height: 16px;
+      border-radius: 50%; background: #fff;
+      top: 3px; left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .slider { background: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+    .toggle-label { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Sub-panel ───────────────────────────────────────── */
+    .sub-panel {
+      background: var(--accent-lo);
+      border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 16px; margin-top: 14px;
+    }
+    .sub-panel h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+    }
+
+    /* ── Excalidraw diagram type icons ───────────────────── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 5px;
+    }
+    .type-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 10px;
+      cursor: pointer;
+      background: var(--bg);
+      text-align: center;
+      transition: all 0.12s;
+    }
+    .type-card:hover { border-color: var(--excali); background: var(--excali-lo); }
+    .type-card.sel-excalidraw {
+      border-color: var(--excali);
+      background: var(--excali-lo);
+      box-shadow: 0 0 0 2px var(--excali);
+    }
+    .type-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+    .type-name {
+      font-family: 'Figtree', sans-serif;
+      font-weight: 600; font-size: 0.77rem;
+      color: var(--text);
+    }
+    .type-card.sel-excalidraw .type-name { color: var(--excali); }
+
+    /* ── Output ─────────────────────────────────────────── */
+    .output-panel {
+      background: var(--text);
+      border-radius: 12px; padding: 20px;
+      margin-bottom: 16px;
+    }
+    .output-panel h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--bg); opacity: 0.5;
+      margin-bottom: 12px;
+    }
+    #prompt-output {
+      font-family: 'Figtree', sans-serif;
+      font-size: 0.88rem; line-height: 1.65;
+      color: var(--surface);
+      min-height: 80px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    #prompt-output.empty { color: rgba(255,255,255,0.28); font-style: italic; }
+    .output-actions {
+      display: flex; gap: 10px; align-items: center; margin-top: 16px;
+    }
+    .btn-copy {
+      background: var(--amber); color: #1a1000;
+      border: none; padding: 9px 20px;
+      border-radius: 8px; font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-copy:hover { opacity: 0.88; }
+    .btn-clear {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.65);
+      padding: 9px 16px; border-radius: 8px;
+      font-size: 0.83rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-clear:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
+    .word-count {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: rgba(255,255,255,0.4);
+    }
+    .word-count.warn { color: var(--amber); }
+    .copy-confirm {
+      font-size: 0.8rem; color: var(--amber);
+      font-weight: 700; opacity: 0; transition: opacity 0.2s;
+    }
+
+    /* ── Random btn ─────────────────────────────────────── */
+    .btn-random {
+      background: none; border: 1.5px solid var(--border);
+      color: var(--muted); padding: 3px 9px;
+      border-radius: 6px; font-size: 0.72rem;
+      cursor: pointer; font-family: 'Figtree', sans-serif;
+      font-weight: 600; vertical-align: middle; margin-left: 6px;
+      transition: all 0.12s;
+    }
+    .btn-random:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      border-top: 1.5px solid var(--border);
+      padding: 16px 0 28px;
+      display: flex; justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      .layout { grid-template-columns: 1fr; }
+      .type-grid { grid-template-columns: repeat(2, 1fr); }
+      .tool-btn .tool-sub { display: none; }
+      header { flex-direction: column; align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-left">
+      <a class="back-link" href="../">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1L3 6l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        imcl75.github.io
+      </a>
+      <h1 class="page-title">Image Prompt Builder</h1>
+      <p class="page-sub">Assemble prompts for DALL-E, Higgsfield and Excalidraw — copy straight into Claude</p>
+    </div>
+    <div class="header-right">
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle colour scheme">◐</button>
+    </div>
+  </header>
+
+  <hr class="rule">
+
+  <!-- Tool switcher -->
+  <div class="tool-switcher">
+    <button class="tool-btn active-dalle" onclick="setTool('dalle')">
+      DALL-E
+      <span class="tool-sub">Labelled diagrams · Science · Geography</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('higgsfield')">
+      Higgsfield
+      <span class="tool-sub">Scenes · Illustrations · Characters</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('excalidraw')">
+      Excalidraw
+      <span class="tool-sub">Flowcharts · Mind maps · Timelines</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ DALL-E PANEL -->
+  <div id="dalle-panel">
+    <div class="layout">
+      <div class="panel">
+        <h2>Content</h2>
+        <div class="field">
+          <label>Subject <span class="hint">— what to show</span></label>
+          <input type="text" id="d-subject" placeholder="e.g. the water cycle, a plant cell, the Roman army" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Label style</label>
+          <div class="pills" id="d-labels">
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-labels','dalle')">Bold clear labels</span>
+            <span class="pill" onclick="pickPill(this,'d-labels','dalle')">Minimal annotations</span>
+            <span class="pill" onclick="pickPill(this,'d-labels','dalle')">No labels — visual only</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Colour scheme</label>
+          <div class="pills" id="d-colour">
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-colour','dalle')">Full colour</span>
+            <span class="pill" onclick="pickPill(this,'d-colour','dalle')">Two-colour</span>
+            <span class="pill" onclick="pickPill(this,'d-colour','dalle')">Black and white</span>
+            <span class="pill" onclick="pickPill(this,'d-colour','dalle')">School-friendly primaries</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Anything extra</label>
+          <input type="text" id="d-extra" placeholder="e.g. show arrows indicating direction of movement" oninput="build()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Options</h2>
+        <div class="field">
+          <label>Quality</label>
+          <div class="pills" id="d-quality">
+            <span class="pill" onclick="pickPill(this,'d-quality','dalle')">Draft (fast)</span>
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-quality','dalle')">Standard (balanced)</span>
+            <span class="pill" onclick="pickPill(this,'d-quality','dalle')">Final (quality)</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Background</label>
+          <div class="pills" id="d-bg">
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-bg','dalle')">White / clean</span>
+            <span class="pill" onclick="pickPill(this,'d-bg','dalle')">Light grey</span>
+            <span class="pill" onclick="pickPill(this,'d-bg','dalle')">Contextual</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Complexity</label>
+          <div class="pills" id="d-complexity">
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-complexity','dalle')">Simple / clean</span>
+            <span class="pill" onclick="pickPill(this,'d-complexity','dalle')">Detailed — multiple components</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Aspect ratio</label>
+          <div class="pills" id="d-aspect">
+            <span class="pill" onclick="pickPill(this,'d-aspect','dalle')">16:9</span>
+            <span class="pill sel-dalle" onclick="pickPill(this,'d-aspect','dalle')">4:3</span>
+            <span class="pill" onclick="pickPill(this,'d-aspect','dalle')">1:1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diversity (dalle) -->
+      <div class="panel full">
+        <h2>People &amp; diversity</h2>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="d-has-people" onchange="build()">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">This image includes people</span>
+        </div>
+        <div id="d-diversity" class="sub-panel hidden">
+          <h3>Diversity clause</h3>
+          <div class="field">
+            <label>Disability <button class="btn-random" onclick="randomDisability('d-disability')">🎲 Random</button></label>
+            <input type="text" id="d-disability" placeholder="e.g. a child with two fingers on one hand" oninput="build()">
+          </div>
+          <div class="field">
+            <label>Faith marker <span class="hint">optional — pick any</span></label>
+            <div class="pills" id="d-faith">
+              <span class="pill" onclick="toggleFaith(this)">Hijab</span>
+              <span class="pill" onclick="toggleFaith(this)">Turban</span>
+              <span class="pill" onclick="toggleFaith(this)">Kippah</span>
+              <span class="pill" onclick="toggleFaith(this)">Cross</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Gender balance</label>
+            <div class="pills" id="d-gender">
+              <span class="pill sel-dalle" onclick="pickPill(this,'d-gender','dalle')">Mixed</span>
+              <span class="pill" onclick="pickPill(this,'d-gender','dalle')">Predominantly female</span>
+              <span class="pill" onclick="pickPill(this,'d-gender','dalle')">Predominantly male</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Age range</label>
+            <div class="pills" id="d-age">
+              <span class="pill sel-dalle" onclick="pickPill(this,'d-age','dalle')">Children (9–10)</span>
+              <span class="pill" onclick="pickPill(this,'d-age','dalle')">Mixed ages</span>
+              <span class="pill" onclick="pickPill(this,'d-age','dalle')">Adults</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ HIGGSFIELD PANEL -->
+  <div id="higgsfield-panel" class="hidden">
+    <div class="layout">
+      <div class="panel">
+        <h2>Content</h2>
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" id="h-subject" placeholder="e.g. a Roman centurion on a battlefield" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Setting / context</label>
+          <input type="text" id="h-context" placeholder="e.g. ancient Rome at dawn, open countryside" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Shot type</label>
+          <div class="pills" id="h-shot">
+            <span class="pill" onclick="pickPill(this,'h-shot','higgsfield')">Extreme close-up</span>
+            <span class="pill" onclick="pickPill(this,'h-shot','higgsfield')">Close-up</span>
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-shot','higgsfield')">Medium shot</span>
+            <span class="pill" onclick="pickPill(this,'h-shot','higgsfield')">Wide shot</span>
+            <span class="pill" onclick="pickPill(this,'h-shot','higgsfield')">Bird's eye view</span>
+            <span class="pill" onclick="pickPill(this,'h-shot','higgsfield')">Low angle</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Anything extra</label>
+          <input type="text" id="h-extra" placeholder="e.g. include soldiers in the background" oninput="build()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Style</h2>
+        <div class="field">
+          <label>Visual style</label>
+          <div class="pills" id="h-style">
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-style','higgsfield')">Photorealistic</span>
+            <span class="pill" onclick="pickPill(this,'h-style','higgsfield')">Cinematic</span>
+            <span class="pill" onclick="pickPill(this,'h-style','higgsfield')">Children's illustration</span>
+            <span class="pill" onclick="pickPill(this,'h-style','higgsfield')">Oil painting</span>
+            <span class="pill" onclick="pickPill(this,'h-style','higgsfield')">Watercolour</span>
+            <span class="pill" onclick="pickPill(this,'h-style','higgsfield')">Flat vector cartoon</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Lighting</label>
+          <div class="pills" id="h-lighting">
+            <span class="pill" onclick="pickPill(this,'h-lighting','higgsfield')">Golden hour</span>
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-lighting','higgsfield')">Overcast</span>
+            <span class="pill" onclick="pickPill(this,'h-lighting','higgsfield')">Dramatic side lighting</span>
+            <span class="pill" onclick="pickPill(this,'h-lighting','higgsfield')">Studio clean</span>
+            <span class="pill" onclick="pickPill(this,'h-lighting','higgsfield')">Candlelight</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Mood</label>
+          <div class="pills" id="h-mood">
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-mood','higgsfield')">Calm</span>
+            <span class="pill" onclick="pickPill(this,'h-mood','higgsfield')">Dramatic</span>
+            <span class="pill" onclick="pickPill(this,'h-mood','higgsfield')">Joyful</span>
+            <span class="pill" onclick="pickPill(this,'h-mood','higgsfield')">Epic</span>
+            <span class="pill" onclick="pickPill(this,'h-mood','higgsfield')">Eerie</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Colour palette</label>
+          <div class="pills" id="h-palette">
+            <span class="pill" onclick="pickPill(this,'h-palette','higgsfield')">Warm earthy</span>
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-palette','higgsfield')">Cool blues and greys</span>
+            <span class="pill" onclick="pickPill(this,'h-palette','higgsfield')">Vivid</span>
+            <span class="pill" onclick="pickPill(this,'h-palette','higgsfield')">Muted</span>
+            <span class="pill" onclick="pickPill(this,'h-palette','higgsfield')">Black and white</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diversity (higgsfield) -->
+      <div class="panel full">
+        <h2>People &amp; diversity</h2>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="h-has-people" onchange="build()">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">This image includes people</span>
+        </div>
+        <div id="h-diversity" class="sub-panel hidden">
+          <h3>Diversity clause</h3>
+          <div class="field">
+            <label>Disability <button class="btn-random" onclick="randomDisability('h-disability')">🎲 Random</button></label>
+            <input type="text" id="h-disability" placeholder="e.g. a child with two fingers on one hand" oninput="build()">
+          </div>
+          <div class="field">
+            <label>Faith marker <span class="hint">optional — pick any</span></label>
+            <div class="pills" id="h-faith">
+              <span class="pill" onclick="toggleFaith(this)">Hijab</span>
+              <span class="pill" onclick="toggleFaith(this)">Turban</span>
+              <span class="pill" onclick="toggleFaith(this)">Kippah</span>
+              <span class="pill" onclick="toggleFaith(this)">Cross</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Gender balance</label>
+            <div class="pills" id="h-gender">
+              <span class="pill sel-higgsfield" onclick="pickPill(this,'h-gender','higgsfield')">Mixed</span>
+              <span class="pill" onclick="pickPill(this,'h-gender','higgsfield')">Predominantly female</span>
+              <span class="pill" onclick="pickPill(this,'h-gender','higgsfield')">Predominantly male</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Age range</label>
+            <div class="pills" id="h-age">
+              <span class="pill sel-higgsfield" onclick="pickPill(this,'h-age','higgsfield')">Children (9–10)</span>
+              <span class="pill" onclick="pickPill(this,'h-age','higgsfield')">Mixed ages</span>
+              <span class="pill" onclick="pickPill(this,'h-age','higgsfield')">Adults</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ EXCALIDRAW PANEL -->
+  <div id="excalidraw-panel" class="hidden">
+    <div class="layout">
+      <div class="panel full">
+        <h2>Diagram type</h2>
+        <div class="type-grid" id="e-type">
+          <div class="type-card" onclick="pickType(this)" data-type="flowchart">
+            <span class="type-icon">🔀</span>
+            <span class="type-name">Flowchart</span>
+          </div>
+          <div class="type-card sel-excalidraw" onclick="pickType(this)" data-type="timeline">
+            <span class="type-icon">📅</span>
+            <span class="type-name">Timeline</span>
+          </div>
+          <div class="type-card" onclick="pickType(this)" data-type="mindmap">
+            <span class="type-icon">🧠</span>
+            <span class="type-name">Mind map</span>
+          </div>
+          <div class="type-card" onclick="pickType(this)" data-type="decision">
+            <span class="type-icon">🔷</span>
+            <span class="type-name">Decision tree</span>
+          </div>
+          <div class="type-card" onclick="pickType(this)" data-type="concept">
+            <span class="type-icon">🔗</span>
+            <span class="type-name">Concept map</span>
+          </div>
+          <div class="type-card" onclick="pickType(this)" data-type="orgchart">
+            <span class="type-icon">🏛</span>
+            <span class="type-name">Hierarchy / org chart</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Content</h2>
+        <div class="field">
+          <label id="e-subject-label">Topic / subject</label>
+          <input type="text" id="e-subject" placeholder="e.g. the Roman invasion of Britain" oninput="build()">
+        </div>
+        <div class="field" id="e-items-field">
+          <label id="e-items-label">Key events / branches <span class="hint">comma-separated</span></label>
+          <textarea id="e-items" placeholder="e.g. 55 BC — Caesar's first landing, 54 BC — second invasion…" oninput="build()"></textarea>
+        </div>
+        <div class="field">
+          <label>Extra notes</label>
+          <input type="text" id="e-extra" placeholder="e.g. use colour to group by theme" oninput="build()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Layout</h2>
+        <div class="field">
+          <label>Canvas size</label>
+          <div class="pills" id="e-canvas">
+            <span class="pill sel-excalidraw" onclick="pickPill(this,'e-canvas','excalidraw')">XL — 1200×900</span>
+            <span class="pill" onclick="pickPill(this,'e-canvas','excalidraw')">XXL — 1600×1200</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Export target</label>
+          <div class="pills" id="e-export">
+            <span class="pill" onclick="pickPill(this,'e-export','excalidraw')">Screen / no constraint</span>
+            <span class="pill sel-excalidraw" onclick="pickPill(this,'e-export','excalidraw')">A4 landscape</span>
+            <span class="pill" onclick="pickPill(this,'e-export','excalidraw')">A3 landscape</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Scale</label>
+          <div class="pills" id="e-scale">
+            <span class="pill sel-excalidraw" onclick="pickPill(this,'e-scale','excalidraw')">Small (5–8 nodes)</span>
+            <span class="pill" onclick="pickPill(this,'e-scale','excalidraw')">Medium (9–15)</span>
+            <span class="pill" onclick="pickPill(this,'e-scale','excalidraw')">Large (16+)</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Animation / panning</label>
+          <div class="pills" id="e-anim">
+            <span class="pill" onclick="pickPill(this,'e-anim','excalidraw')">None</span>
+            <span class="pill sel-excalidraw" onclick="pickPill(this,'e-anim','excalidraw')">Pan across on load</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ OUTPUT -->
+  <div class="output-panel">
+    <h2 id="output-label">Image prompt</h2>
+    <div id="prompt-output" class="empty">Fill in the options above…</div>
+    <div class="output-actions">
+      <button class="btn-copy" onclick="copyPrompt()">Copy</button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+      <span class="copy-confirm" id="copy-confirm">✓ Copied!</span>
+      <span class="word-count" id="word-count"></span>
+    </div>
+  </div>
+
+  <footer>
+    <span>imcl75.github.io</span>
+    <span>personal use only</span>
+  </footer>
+
+</div>
+<script>
+  let currentTool = 'dalle';
+
+  const DISABILITY_POOL = [
+    "a child with two fingers on one hand",
+    "a child with a shorter left arm",
+    "a child with extra fingers on one hand",
+    "a child with fused fingers on one hand",
+    "a child with one leg visibly shorter than the other",
+    "a child with a foot that turns inward",
+    "a child with one hand",
+    "a child with a shorter forearm on one side",
+    "a child with a flesh-coloured prosthetic lower arm, natural and well-fitted",
+    "a child with a running blade prosthetic on one leg, wearing it naturally"
+  ];
+
+  const EXCALI_CONFIG = {
+    flowchart:  { subject: 'Process to show', subjectP: 'e.g. how a bill becomes law, the digestive system', itemsLabel: 'Steps / decision points', itemsP: 'e.g. Food enters mouth, Stomach churns food, Nutrients absorbed…', outputVerb: 'a flowchart' },
+    timeline:   { subject: 'Topic / period', subjectP: 'e.g. the Roman invasion of Britain', itemsLabel: 'Key events (comma-separated)', itemsP: 'e.g. 55 BC — first landing, 43 AD — Claudius invasion…', outputVerb: 'a horizontal timeline' },
+    mindmap:    { subject: 'Central topic', subjectP: 'e.g. The Romans, The Water Cycle, World War Two', itemsLabel: 'Main branches (comma-separated)', itemsP: 'e.g. Army, Roads, Buildings, Food, Religion', outputVerb: 'a mind map' },
+    decision:   { subject: 'Decision or problem', subjectP: 'e.g. Is this plant a monocot or dicot?', itemsLabel: 'Decision points / outcomes', itemsP: 'e.g. Has parallel veins? → Yes (monocot) / No → Has net veins?', outputVerb: 'a decision tree' },
+    concept:    { subject: 'Topic / subject', subjectP: 'e.g. forces and motion, the water cycle', itemsLabel: 'Key concepts (comma-separated)', itemsP: 'e.g. Gravity, Friction, Mass, Acceleration', outputVerb: 'a concept map' },
+    orgchart:   { subject: 'Organisation or hierarchy to show', subjectP: 'e.g. Roman army structure, school leadership', itemsLabel: 'Levels / roles (top to bottom)', itemsP: 'e.g. General, Legate, Tribune, Centurion, Soldier', outputVerb: 'a hierarchy diagram' }
+  };
+
+  function setTool(tool) {
+    currentTool = tool;
+    const btns = document.querySelectorAll('.tool-btn');
+    btns.forEach(b => { b.className = 'tool-btn'; });
+    const idx = ['dalle','higgsfield','excalidraw'].indexOf(tool);
+    btns[idx].classList.add('active-' + tool);
+    document.getElementById('dalle-panel').classList.toggle('hidden', tool !== 'dalle');
+    document.getElementById('higgsfield-panel').classList.toggle('hidden', tool !== 'higgsfield');
+    document.getElementById('excalidraw-panel').classList.toggle('hidden', tool !== 'excalidraw');
+    document.getElementById('output-label').textContent = tool === 'excalidraw' ? 'Claude instruction' : 'Image prompt';
+    build();
+  }
+
+  function pickPill(el, groupId, tool) {
+    document.getElementById(groupId).querySelectorAll('.pill').forEach(p => {
+      p.className = 'pill';
+    });
+    el.classList.add('sel-' + tool);
+    // Update Excalidraw items field label
+    if (tool === 'excalidraw') updateExcaliFields();
+    build();
+  }
+
+  function pickType(el) {
+    document.querySelectorAll('#e-type .type-card').forEach(c => c.classList.remove('sel-excalidraw'));
+    el.classList.add('sel-excalidraw');
+    updateExcaliFields();
+    build();
+  }
+
+  function getType() {
+    const sel = document.querySelector('#e-type .type-card.sel-excalidraw');
+    return sel ? sel.dataset.type : 'timeline';
+  }
+
+  function updateExcaliFields() {
+    const type = getType();
+    const cfg = EXCALI_CONFIG[type];
+    document.getElementById('e-subject-label').textContent = cfg.subject;
+    document.getElementById('e-subject').placeholder = cfg.subjectP;
+    document.getElementById('e-items-label').innerHTML = cfg.itemsLabel + ' <span class="hint">comma-separated</span>';
+    document.getElementById('e-items').placeholder = cfg.itemsP;
+  }
+
+  function toggleFaith(el) {
+    if (el.classList.contains('sel-higgsfield') || el.classList.contains('sel-dalle')) {
+      el.className = 'pill';
+    } else {
+      const tool = currentTool === 'dalle' ? 'dalle' : 'higgsfield';
+      el.classList.add('sel-' + tool);
+    }
+    build();
+  }
+
+  function getFaithForGroup(prefix) {
+    return [...document.querySelectorAll(`#${prefix}-faith .pill`)]
+      .filter(p => p.classList.contains('sel-dalle') || p.classList.contains('sel-higgsfield'))
+      .map(p => p.textContent.trim());
+  }
+
+  function getPill(groupId) {
+    const sel = document.querySelector(`#${groupId} .pill[class*="sel-"]`);
+    return sel ? sel.textContent.trim() : '';
+  }
+
+  function buildDiversityClause(prefix) {
+    const hasPeople = document.getElementById(prefix + '-has-people').checked;
+    if (!hasPeople) return '';
+    const tool = prefix === 'd' ? 'dalle' : 'higgsfield';
+    document.getElementById(prefix + '-diversity').classList.remove('hidden');
+    const ageRange = getPill(prefix + '-age');
+    const gender = getPill(prefix + '-gender');
+    const disability = document.getElementById(prefix + '-disability').value.trim();
+    const faith = getFaithForGroup(prefix);
+    const faithMap = { Hijab: 'wearing a hijab', Turban: 'wearing a turban', Kippah: 'wearing a kippah', Cross: 'wearing a visible cross' };
+    const parts = [];
+    if (ageRange === 'Children (9–10)') parts.push('diverse group of children of different ethnicities and skin tones');
+    else if (ageRange === 'Adults') parts.push('people of varied ethnicities, skin tones and ages');
+    else parts.push('people of varied ages, ethnicities and skin tones');
+    if (disability) parts.push(disability + ' included naturally');
+    faith.forEach(f => { if (faithMap[f]) parts.push('one person ' + faithMap[f]); });
+    if (gender === 'Predominantly female') parts.push('predominantly female');
+    else if (gender === 'Predominantly male') parts.push('predominantly male');
+    else parts.push('mixed gender presentations');
+    return parts.join(', ') + ', all part of the scene naturally';
+  }
+
+  function buildExcalidrawInstruction() {
+    const type = getType();
+    const cfg = EXCALI_CONFIG[type];
+    const subject = document.getElementById('e-subject').value.trim();
+    const items = document.getElementById('e-items').value.trim();
+    const extra = document.getElementById('e-extra').value.trim();
+    const canvas = getPill('e-canvas').includes('XXL') ? 'XXL canvas (1600×1200)' : 'XL canvas (1200×900)';
+    const exportTarget = getPill('e-export');
+    const anim = getPill('e-anim');
+
+    if (!subject) return '';
+
+    let instruction = `Use Excalidraw to create ${cfg.outputVerb} on an ${canvas}.`;
+
+    if (type === 'mindmap') {
+      instruction += ` Central topic: "${subject}".`;
+      if (items) instruction += ` Main branches: ${items}. Add two or three sub-topics for each branch.`;
+    } else if (type === 'timeline') {
+      instruction += ` Topic: ${subject}.`;
+      if (items) instruction += ` Events: ${items}.`;
+    } else if (type === 'flowchart') {
+      instruction += ` Process: ${subject}.`;
+      if (items) instruction += ` Steps/decisions: ${items}.`;
+      instruction += ` Use rectangles for process steps and diamonds for decision points.`;
+    } else if (type === 'decision') {
+      instruction += ` Decision/problem: ${subject}.`;
+      if (items) instruction += ` Decision points: ${items}.`;
+      instruction += ` Use diamond shapes at each decision node with clear yes/no branches.`;
+    } else if (type === 'concept') {
+      instruction += ` Subject: ${subject}.`;
+      if (items) instruction += ` Key concepts: ${items}.`;
+      instruction += ` Use labelled arrows to show relationships between concepts.`;
+    } else if (type === 'orgchart') {
+      instruction += ` Hierarchy: ${subject}.`;
+      if (items) instruction += ` Levels (top to bottom): ${items}.`;
+    }
+
+    if (exportTarget.includes('A4')) {
+      instruction += ` Lay out content to fill roughly 1.4:1 width-to-height ratio for A4 landscape export.`;
+    } else if (exportTarget.includes('A3')) {
+      instruction += ` Lay out content to fill roughly 1.41:1 width-to-height ratio for A3 landscape export.`;
+    }
+
+    if (anim.includes('Pan')) {
+      instruction += ` Include a cameraUpdate pan across the diagram on load.`;
+    }
+
+    if (extra) instruction += ` ${extra}.`;
+
+    return instruction;
+  }
+
+  function build() {
+    // Toggle diversity panels
+    if (currentTool === 'dalle') {
+      const on = document.getElementById('d-has-people').checked;
+      document.getElementById('d-diversity').classList.toggle('hidden', !on);
+    }
+    if (currentTool === 'higgsfield') {
+      const on = document.getElementById('h-has-people').checked;
+      document.getElementById('h-diversity').classList.toggle('hidden', !on);
+    }
+
+    let prompt = '';
+
+    if (currentTool === 'dalle') {
+      const subject = document.getElementById('d-subject').value.trim();
+      if (!subject) { setOutput('', true); return; }
+      const labels = getPill('d-labels');
+      const colour = getPill('d-colour');
+      const bg = getPill('d-bg');
+      const complexity = getPill('d-complexity');
+      const extra = document.getElementById('d-extra').value.trim();
+      const diversity = buildDiversityClause('d');
+      const parts = [subject, 'educational diagram for primary school children aged 9–10'];
+      parts.push(labels === 'No labels — visual only' ? 'no labels' : labels === 'Minimal annotations' ? 'minimal annotations' : 'bold clear labels');
+      parts.push(colour.toLowerCase());
+      parts.push(bg.toLowerCase() + ' background');
+      parts.push(complexity.includes('Detailed') ? 'detailed with multiple components' : 'simple clean composition');
+      parts.push('clear and accurate, suitable for classroom display');
+      parts.push('no watermarks, no borders, no decorative frames');
+      if (extra) parts.push(extra);
+      if (diversity) parts.push(diversity);
+      prompt = parts.join(', ');
+
+    } else if (currentTool === 'higgsfield') {
+      const subject = document.getElementById('h-subject').value.trim();
+      if (!subject) { setOutput('', true); return; }
+      const context = document.getElementById('h-context').value.trim();
+      const shot = getPill('h-shot');
+      const style = getPill('h-style');
+      const lighting = getPill('h-lighting');
+      const mood = getPill('h-mood');
+      const palette = getPill('h-palette');
+      const extra = document.getElementById('h-extra').value.trim();
+      const diversity = buildDiversityClause('h');
+      const parts = [subject];
+      if (context) parts.push(context);
+      if (shot) parts.push(shot.toLowerCase() + ' shot');
+      if (lighting) parts.push(lighting.toLowerCase() + ' lighting');
+      if (style) parts.push(style.toLowerCase());
+      if (mood) parts.push(mood.toLowerCase() + ' mood');
+      if (palette) parts.push(palette.toLowerCase() + ' colour palette');
+      if (extra) parts.push(extra);
+      if (diversity) parts.push(diversity);
+      prompt = parts.join(', ');
+
+    } else {
+      prompt = buildExcalidrawInstruction();
+      if (!prompt) { setOutput('', true); return; }
+    }
+
+    setOutput(prompt, false);
+  }
+
+  function setOutput(text, empty) {
+    const el = document.getElementById('prompt-output');
+    const wc = document.getElementById('word-count');
+    if (empty || !text) {
+      el.textContent = 'Fill in the options above…';
+      el.classList.add('empty');
+      wc.textContent = ''; wc.classList.remove('warn');
+    } else {
+      el.textContent = text;
+      el.classList.remove('empty');
+      const words = text.trim().split(/\s+/).length;
+      wc.textContent = words + ' words';
+      wc.classList.toggle('warn', words > 180);
+    }
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('prompt-output').textContent;
+    if (!text || text.includes('Fill in')) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const el = document.getElementById('copy-confirm');
+      el.style.opacity = '1';
+      setTimeout(() => el.style.opacity = '0', 1800);
+    });
+  }
+
+  function randomDisability(fieldId) {
+    const pick = DISABILITY_POOL[Math.floor(Math.random() * DISABILITY_POOL.length)];
+    document.getElementById(fieldId).value = pick;
+    build();
+  }
+
+  function clearAll() {
+    ['d-subject','d-extra','h-subject','h-context','h-extra','e-subject','e-items','e-extra',
+     'd-disability','h-disability'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    // Reset pills to defaults
+    const defaults = {
+      'd-labels':0, 'd-colour':0, 'd-quality':1, 'd-bg':0, 'd-complexity':0, 'd-aspect':1,
+      'h-shot':2, 'h-style':0, 'h-lighting':1, 'h-mood':0, 'h-palette':1,
+      'd-gender':0, 'd-age':0, 'h-gender':0, 'h-age':0,
+      'e-canvas':0, 'e-export':1, 'e-scale':0, 'e-anim':1
+    };
+    for (const [groupId, defIdx] of Object.entries(defaults)) {
+      const pills = document.querySelectorAll(`#${groupId} .pill`);
+      const tool = groupId.startsWith('d') ? 'dalle' : groupId.startsWith('h') ? 'higgsfield' : 'excalidraw';
+      pills.forEach((p, i) => {
+        p.className = 'pill';
+        if (i === defIdx) p.classList.add('sel-' + tool);
+      });
+    }
+    document.querySelectorAll('#d-faith .pill, #h-faith .pill').forEach(p => p.className = 'pill');
+    document.getElementById('d-has-people').checked = false;
+    document.getElementById('h-has-people').checked = false;
+    document.getElementById('d-diversity').classList.add('hidden');
+    document.getElementById('h-diversity').classList.add('hidden');
+    // Reset excalidraw type
+    document.querySelectorAll('#e-type .type-card').forEach((c, i) => {
+      c.classList.toggle('sel-excalidraw', i === 1);
+    });
+    updateExcaliFields();
+    build();
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme');
+    const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.setAttribute('data-theme', current ? (current === 'dark' ? 'light' : 'dark') : (sys === 'dark' ? 'light' : 'dark'));
+  }
+
+  // Init
+  updateExcaliFields();
+</script>
+</body>
+</html>
