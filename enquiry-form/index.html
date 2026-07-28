@@ -279,7 +279,7 @@
 
       <div class="field">
         <label class="field-label">Purpose
-          <span class="hint">What is the writing trying to do? Select all that apply.</span>
+          <span class="hint">What is the writing trying to do?</span>
         </label>
         <div class="chip-grid" id="purposeChips">
           <span class="purpose-chip" data-purpose="Inform">Inform</span>
@@ -890,10 +890,15 @@ function validate(step) {
 // ── CLF topic chips ────────────────────────────────────────────────────────
 // ── Purpose chips ─────────────────────────────────────────────────────────
 document.querySelectorAll('.purpose-chip').forEach(c =>
-  c.addEventListener('click', () => c.classList.toggle('on'))
+  c.addEventListener('click', () => {
+    const already = c.classList.contains('on');
+    document.querySelectorAll('.purpose-chip').forEach(o => o.classList.remove('on'));
+    if (!already) c.classList.add('on');
+  })
 );
 function getSelectedPurposes() {
-  return Array.from(document.querySelectorAll('.purpose-chip.on')).map(c => c.dataset.purpose);
+  const el = document.querySelector('.purpose-chip.on');
+  return el ? el.dataset.purpose : '';
 }
 
 // ── Writing skill chips ────────────────────────────────────────────────────
@@ -1061,7 +1066,7 @@ function buildReview() {
       <h3>Outcomes</h3>
       ${rvRow('Writing', d.writing_outcome)}
       ${d.writing_audience ? rvRow('Audience', d.writing_audience) : ''}
-      ${d.writing_purpose?.length ? rvRow('Purpose', d.writing_purpose.join(' · ')) : ''}
+      ${d.writing_purpose ? rvRow('Purpose', d.writing_purpose) : ''}
       ${(() => {
         const ws = d.writing_skills || {};
         const areas = Object.keys(ws);
@@ -1141,7 +1146,7 @@ function buildPrompt(d) {
   L.push('Writing outcome:');
   L.push(d.writing_outcome);
   if (d.writing_audience) { L.push(`Audience: ${d.writing_audience}`); }
-  if (d.writing_purpose?.length) { L.push(`Purpose: ${d.writing_purpose.join(', ')}`); }
+  if (d.writing_purpose) { L.push(`Purpose: ${d.writing_purpose}`); }
   L.push('');
   const ws = d.writing_skills || {};
   const wsAreas = Object.keys(ws);
