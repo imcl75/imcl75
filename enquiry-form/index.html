@@ -128,6 +128,13 @@
     .chip-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
     .chip-actions { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
     .chip-actions button { font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 5px; }
+    /* Writing skill chips */
+    .skill-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
+    .skill-chip:hover { border-color: #059669; background: #f0fdf4; }
+    .skill-chip.on { border-color: #059669; background: #f0fdf4; color: #047857; font-weight: 600; }
+    .skill-chip.nn { border-color: #b45309; background: #fffbeb; color: #92400e; font-weight: 600; cursor: default; }
+    .skill-group { margin-bottom: 0.9rem; }
+    .skill-group-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
   </style>
 </head>
 <body>
@@ -262,8 +269,20 @@
         <label class="field-label" for="f_writing_outcome">Writing outcome
           <span class="hint">What will children write? What writing skills will they develop?</span>
         </label>
-        <textarea id="f_writing_outcome" rows="5" placeholder="e.g. Children will write an explanation text about the Solar System, using technical vocabulary, fronted adverbials, and relative clauses..."></textarea>
+        <textarea id="f_writing_outcome" rows="4" placeholder="e.g. Children will write an explanation text about the Solar System for a younger audience..."></textarea>
         <div class="errmsg" id="err_f_writing_outcome">Writing outcome is required.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Writing skills focus
+          <span class="hint" id="writingSkillsHint">Select the Y5 non-fiction writing skills this enquiry will develop. Non-negotiables are always included.</span>
+        </label>
+        <div class="chip-actions">
+          <button class="btn-sec" type="button" onclick="setAllSkillChips(true)">Select all</button>
+          <button class="btn-sec" type="button" onclick="setAllSkillChips(false)">Clear all</button>
+        </div>
+        <div id="writingSkillsArea"></div>
+        <div id="noWritingSkillsMsg" style="display:none;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;"></div>
       </div>
     </div>
     <div class="nav">
@@ -450,6 +469,80 @@
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
 const ONEDRIVE_BASE = '/Users/innes/Library/CloudStorage/OneDrive-SharedLibraries-CabotLearningFederation/WFA Staff Shared Files - O365 Group - !2026-27/1-Planning';
+
+// ── Writing skills framework (non-fiction) ─────────────────────────────────
+// Y5 only for now. Each skill: { id, label (chip text), export (export text) }
+const WRITING_SKILLS_NF = {
+  'Y5': [
+    {
+      area: 'Non-Negotiable',
+      nn: true,
+      skills: [
+        { id: 'nn1', label: 'Co- & subordinating conjunctions', export: 'Co-ordinating and subordinating conjunctions' },
+        { id: 'nn2', label: 'Commas in lists', export: 'Commas in lists' },
+        { id: 'nn3', label: 'Simple paragraphs', export: 'Simple paragraphs' },
+      ]
+    },
+    {
+      area: 'Composition',
+      skills: [
+        { id: 'comp1', label: 'Range of purposes & audiences', export: 'Write for a range of purposes and audiences' },
+      ]
+    },
+    {
+      area: 'Sentence Structure',
+      skills: [
+        { id: 'ss1', label: 'Simple sentences', export: 'Simple sentences' },
+        { id: 'ss2', label: 'Compound sentences', export: 'Compound sentences' },
+        { id: 'ss3', label: 'Subordination — beginning', export: 'Subordination at the start of a sentence' },
+        { id: 'ss4', label: 'Subordination — middle', export: 'Subordination in the middle of a sentence' },
+        { id: 'ss5', label: 'Subordination — end', export: 'Subordination at the end of a sentence' },
+        { id: 'ss6', label: 'Relative clauses', export: 'Relative clauses' },
+        { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
+        { id: 'ss8', label: 'Adverbs of possibility', export: 'Adverbs of possibility' },
+      ]
+    },
+    {
+      area: 'Tense & Verb Form',
+      skills: [
+        { id: 'tvf1', label: 'Simple tense', export: 'Simple tense (past, present, future)' },
+        { id: 'tvf2', label: 'Progressive tense', export: 'Progressive tense (ongoing actions)' },
+        { id: 'tvf3', label: 'Perfect tense', export: 'Perfect tense (completed actions)' },
+      ]
+    },
+    {
+      area: 'Cohesion',
+      skills: [
+        { id: 'coh1', label: 'Presentational devices', export: 'Organisational and presentational devices (bullet points, diagrams, font)' },
+        { id: 'coh2', label: 'Conjunctions', export: 'Conjunctions for cohesion' },
+        { id: 'coh3', label: 'Adverbials (time & place)', export: 'Adverbials of time and place' },
+        { id: 'coh4', label: 'Synonyms', export: 'Synonyms for cohesion' },
+        { id: 'coh5', label: 'Relative pronouns', export: 'Relative pronouns (who, which, where, when, that, whose)' },
+      ]
+    },
+    {
+      area: 'Punctuation',
+      skills: [
+        { id: 'punc1', label: 'Capital letters', export: 'Capital letters' },
+        { id: 'punc2', label: 'Full stops', export: 'Full stops' },
+        { id: 'punc3', label: 'Question marks', export: 'Question marks' },
+        { id: 'punc4', label: 'Brackets', export: 'Brackets' },
+        { id: 'punc5', label: 'Hyphens', export: 'Hyphens' },
+        { id: 'punc6', label: 'Dashes', export: 'Dashes' },
+        { id: 'punc7', label: 'Commas (clauses)', export: 'Commas to mark subordinate and relative clauses' },
+        { id: 'punc8', label: 'Apostrophes (contraction)', export: "Apostrophes for contraction" },
+        { id: 'punc9', label: 'Apostrophes (possession)', export: "Apostrophes for possession" },
+      ]
+    },
+    {
+      area: 'Editing & Revising',
+      skills: [
+        { id: 'er1', label: 'Edit (grammar, punctuation, spelling)', export: 'Edit writing for Y5 grammar, punctuation and spelling' },
+        { id: 'er2', label: 'Revise (composition & structure)', export: 'Revise using Y5 composition, sentence structure and cohesion skills' },
+      ]
+    },
+  ]
+};
 
 // ── CLF topic data ─────────────────────────────────────────────────────────
 const CLF_TOPICS = {
@@ -654,6 +747,7 @@ function collect() {
     end_goal: fv('f_end_goal'),
     subject_outcome: fv('f_subject_outcome'),
     writing_outcome: fv('f_writing_outcome'),
+    writing_skills: getSelectedWritingSkills(),
     start_term: t ? parseInt(t) : null,
     start_week: w ? parseInt(w) : null,
     txwy,
@@ -766,6 +860,63 @@ function validate(step) {
 }
 
 // ── CLF topic chips ────────────────────────────────────────────────────────
+// ── Writing skill chips ────────────────────────────────────────────────────
+function renderWritingSkillChips() {
+  const year = pill('year_group');
+  const container = document.getElementById('writingSkillsArea');
+  const noMsg = document.getElementById('noWritingSkillsMsg');
+  container.innerHTML = '';
+  const data = WRITING_SKILLS_NF[year] || null;
+  if (!data) {
+    noMsg.style.display = 'block';
+    noMsg.textContent = year
+      ? `Writing skills framework for ${year} coming soon. Note the skills focus manually in the text above.`
+      : 'Select a year group in Step 1 to see the writing skills framework.';
+    return;
+  }
+  noMsg.style.display = 'none';
+  data.forEach(group => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'skill-group';
+    const lbl = document.createElement('span');
+    lbl.className = 'skill-group-label';
+    lbl.textContent = group.nn ? '⚑ Non-Negotiable (always included)' : group.area;
+    groupDiv.appendChild(lbl);
+    const chipGrid = document.createElement('div');
+    chipGrid.className = 'chip-grid';
+    group.skills.forEach(skill => {
+      const chip = document.createElement('span');
+      chip.className = 'skill-chip' + (group.nn ? ' nn on' : '');
+      chip.dataset.skillId = skill.id;
+      chip.dataset.export = skill.export;
+      chip.dataset.area = group.area;
+      chip.dataset.nn = group.nn ? '1' : '0';
+      chip.textContent = skill.label;
+      chip.title = skill.export;
+      if (!group.nn) chip.addEventListener('click', () => chip.classList.toggle('on'));
+      chipGrid.appendChild(chip);
+    });
+    groupDiv.appendChild(chipGrid);
+    container.appendChild(groupDiv);
+  });
+}
+
+function setAllSkillChips(selected) {
+  document.querySelectorAll('.skill-chip:not(.nn)').forEach(c =>
+    selected ? c.classList.add('on') : c.classList.remove('on')
+  );
+}
+
+function getSelectedWritingSkills() {
+  const byArea = {};
+  document.querySelectorAll('.skill-chip.on').forEach(c => {
+    const area = c.dataset.area;
+    if (!byArea[area]) byArea[area] = [];
+    byArea[area].push(c.dataset.export);
+  });
+  return byArea;
+}
+
 function getClfKey() {
   const subj = pill('subject'), year = pill('year_group'), concept = fv('f_concept');
   if (subj === 'science') return concept ? `science_${year}_${concept}` : null;
@@ -834,6 +985,7 @@ function show(n) {
   current = n; renderBar();
   window.scrollTo({top:0,behavior:'smooth'});
   if (n === 2) renderTopicChips();
+  if (n === 3) renderWritingSkillChips();
 }
 
 // ── Review ─────────────────────────────────────────────────────────────────
@@ -872,6 +1024,13 @@ function buildReview() {
       <h3>Outcomes</h3>
       ${rvRow('Subject', d.subject_outcome)}
       ${rvRow('Writing', d.writing_outcome)}
+      ${(() => {
+        const ws = d.writing_skills || {};
+        const areas = Object.keys(ws);
+        if (!areas.length) return '';
+        const summary = areas.map(a => `${a}: ${ws[a].join(' · ')}`).join(' | ');
+        return rvRow('Writing skills', summary);
+      })()}
     </div>
     <div class="rv-section">
       <h3>Logistics</h3>
@@ -946,6 +1105,13 @@ function buildPrompt(d) {
   L.push('Writing outcome:');
   L.push(d.writing_outcome);
   L.push('');
+  const ws = d.writing_skills || {};
+  const wsAreas = Object.keys(ws);
+  if (wsAreas.length) {
+    L.push('Writing skills focus (non-fiction, Y5):');
+    wsAreas.forEach(area => L.push(`  ${area}: ${ws[area].join(' · ')}`));
+    L.push('');
+  }
   L.push('─── LOGISTICS ──────────────────────────────────────────────');
   L.push(`Slot:           ${d.txwy || 'not set'}`);
   L.push(`First lesson:   ${d.first_lesson_date || 'not set'}`);
