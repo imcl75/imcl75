@@ -167,12 +167,13 @@
         <div class="errmsg" id="err_subject">Please select a State of Being.</div>
       </div>
 
-      <div class="field">
+      <!-- Year group: always Y5 — pills hidden, Y5 auto-selected in JS -->
+      <div class="field" style="display:none">
         <label class="field-label">Year group</label>
         <div class="pill-group" id="g_year_group">
-          <label class="pill" data-g="year_group" data-v="Y4" style="display:none"><input type="radio" name="year_group" value="Y4">Y4</label>
+          <label class="pill" data-g="year_group" data-v="Y4"><input type="radio" name="year_group" value="Y4">Y4</label>
           <label class="pill" data-g="year_group" data-v="Y5"><input type="radio" name="year_group" value="Y5">Y5</label>
-          <label class="pill" data-g="year_group" data-v="Y6" style="display:none"><input type="radio" name="year_group" value="Y6">Y6</label>
+          <label class="pill" data-g="year_group" data-v="Y6"><input type="radio" name="year_group" value="Y6">Y6</label>
         </div>
         <div class="errmsg" id="err_year_group">Please select a year group.</div>
       </div>
@@ -510,7 +511,7 @@ const WRITING_SKILLS_NF = {
     {
       area: 'Composition',
       skills: [
-        { id: 'comp1', label: 'Range of purposes & audiences', export: 'Write for a range of purposes and audiences' },
+        { id: 'comp1', label: 'Range of purposes & audiences', export: 'Write for a range of purposes and audiences', preselect: true },
       ]
     },
     {
@@ -547,8 +548,8 @@ const WRITING_SKILLS_NF = {
     {
       area: 'Punctuation',
       skills: [
-        { id: 'punc1', label: 'Capital letters', export: 'Capital letters' },
-        { id: 'punc2', label: 'Full stops', export: 'Full stops' },
+        { id: 'punc1', label: 'Capital letters', export: 'Capital letters', preselect: true },
+        { id: 'punc2', label: 'Full stops', export: 'Full stops', preselect: true },
         { id: 'punc3', label: 'Question marks', export: 'Question marks' },
         { id: 'punc4', label: 'Brackets', export: 'Brackets' },
         { id: 'punc5', label: 'Hyphens', export: 'Hyphens' },
@@ -561,8 +562,8 @@ const WRITING_SKILLS_NF = {
     {
       area: 'Editing & Revising',
       skills: [
-        { id: 'er1', label: 'Edit (grammar, punctuation, spelling)', export: 'Edit writing for Y5 grammar, punctuation and spelling' },
-        { id: 'er2', label: 'Revise (composition & structure)', export: 'Revise using Y5 composition, sentence structure and cohesion skills' },
+        { id: 'er1', label: 'Edit (grammar, punctuation, spelling)', export: 'Edit writing for Y5 grammar, punctuation and spelling', preselect: true },
+        { id: 'er2', label: 'Revise (composition & structure)', export: 'Revise using Y5 composition, sentence structure and cohesion skills', preselect: true },
       ]
     },
     {
@@ -675,6 +676,9 @@ document.querySelectorAll('.pill').forEach(p => {
     if (g === 'subject') updateConceptField(p.dataset.v);
   });
 });
+
+// Auto-select Y5 (always — year selector is hidden)
+document.querySelector('[data-g="year_group"][data-v="Y5"]').classList.add('on');
 
 // ── Schedule checkboxes ────────────────────────────────────────────────────
 document.querySelectorAll('.schedule-check').forEach(chk => {
@@ -835,7 +839,6 @@ function buildNaming(slug, txwy) {
 const RULES = {
   1: [
     {type:'pill', g:'subject'},
-    {type:'pill', g:'year_group'},
     {type:'concept'},
     {type:'field', id:'f_topic'},
     {type:'field', id:'f_key_question'},
