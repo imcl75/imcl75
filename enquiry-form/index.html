@@ -140,6 +140,13 @@
     .skill-chip.locked { cursor: default; opacity: 1; }
     .skill-chip.locked:hover { border-color: #059669; background: #f0fdf4; }
     .skill-chip.nn.locked:hover { border-color: #b45309; background: #fffbeb; }
+    .focus-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
+    .focus-chip:hover { border-color: #d97706; background: #fffbeb; }
+    .focus-chip.on { border-color: #d97706; background: #fffbeb; color: #92400e; font-weight: 600; }
+    .teaching-focus-section { margin-top: 1.2rem; padding: 1rem; background: #fefce8; border: 1.5px solid #fde68a; border-radius: 8px; }
+    .teaching-focus-section h4 { font-size: 0.85rem; font-weight: 700; color: #78350f; margin-bottom: 0.25rem; }
+    .teaching-focus-section .hint { display: block; font-size: 0.78rem; color: #92400e; margin-bottom: 0.75rem; }
+    #teachingFocusEmpty { font-size: 0.78rem; color: #92400e; display: none; }
     .skill-group { margin-bottom: 0.9rem; }
     .skill-group-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
   </style>
@@ -303,6 +310,13 @@
         </div>
         <div id="writingSkillsArea"></div>
         <div id="noWritingSkillsMsg" style="display:none;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;"></div>
+
+        <div class="teaching-focus-section" id="teachingFocusSection" style="display:none;">
+          <h4>Teaching focus</h4>
+          <span class="hint">Which of these will you explicitly teach in the lesson sequence? These get embedded in lesson slides and LP questions. Locked or baseline skills are not listed — they are expected and modelled, not the teaching focus.</span>
+          <div id="teachingFocusArea"></div>
+          <div id="teachingFocusEmpty">Select skills above to see them here.</div>
+        </div>
       </div>
     </div>
     <div class="nav">
@@ -758,7 +772,7 @@ function collect() {
   const concept = (subject === 'science' || subject === 'history') ? fv('f_concept') : null;
 
   return {
-    form_version: '1.2',
+    form_version: '1.3',
     created: new Date().toISOString().slice(0,10),
     subject,
     year_group: pill('year_group'),
@@ -773,6 +787,7 @@ function collect() {
     writing_audience: fv('f_writing_audience') || null,
     writing_purpose: getSelectedPurposes(),
     writing_skills: getSelectedWritingSkills(),
+    writing_skills_teaching_focus: getWritingSkillsTeachingFocus(),
     start_term: t ? parseInt(t) : null,
     start_week: w ? parseInt(w) : null,
     txwy,
@@ -931,12 +946,49 @@ function renderWritingSkillChips() {
       chip.dataset.nn = group.nn ? '1' : '0';
       chip.textContent = skill.label;
       chip.title = skill.export;
-      if (!locked) chip.addEventListener('click', () => chip.classList.toggle('on'));
+      if (!locked) chip.addEventListener('click', () => { chip.classList.toggle('on'); renderTeachingFocusChips(); });
       chipGrid.appendChild(chip);
     });
     groupDiv.appendChild(chipGrid);
     container.appendChild(groupDiv);
   });
+  renderTeachingFocusChips();
+}
+
+function renderTeachingFocusChips() {
+  const area = document.getElementById('teachingFocusArea');
+  const section = document.getElementById('teachingFocusSection');
+  const empty = document.getElementById('teachingFocusEmpty');
+  if (!area) return;
+
+  // Collect currently selected, non-locked, non-NN skills
+  const eligibleChips = Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)'));
+  const eligibleExports = eligibleChips.map(c => c.dataset.export);
+
+  section.style.display = eligibleExports.length ? 'block' : 'none';
+  if (!eligibleExports.length) { area.innerHTML = ''; return; }
+
+  // Remember which were already selected as teaching focus
+  const currentlyFocused = new Set(
+    Array.from(area.querySelectorAll('.focus-chip.on')).map(c => c.dataset.export)
+  );
+
+  area.innerHTML = '';
+  empty.style.display = eligibleExports.length ? 'none' : 'block';
+
+  eligibleExports.forEach(exp => {
+    const chip = document.createElement('span');
+    chip.className = 'focus-chip' + (currentlyFocused.has(exp) ? ' on' : '');
+    chip.dataset.export = exp;
+    chip.textContent = eligibleChips.find(c => c.dataset.export === exp)?.textContent || exp;
+    chip.title = exp;
+    chip.addEventListener('click', () => chip.classList.toggle('on'));
+    area.appendChild(chip);
+  });
+}
+
+function getWritingSkillsTeachingFocus() {
+  return Array.from(document.querySelectorAll('.focus-chip.on')).map(c => c.dataset.export);
 }
 
 function setAllSkillChips(selected) {
