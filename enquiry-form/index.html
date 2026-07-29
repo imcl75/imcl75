@@ -154,8 +154,8 @@
 <body>
 
 <header>
-  <h1>Enquiry Briefing Tool</h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation</p>
+  <h1>Enquiry Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation &nbsp;·&nbsp; <a href="#" onclick="clearSavedState();return false;" style="color:rgba(255,255,255,0.5);font-size:0.78rem;">Clear saved data</a></p>
 </header>
 
 <div class="container">
@@ -946,12 +946,13 @@ function renderWritingSkillChips() {
       chip.dataset.nn = group.nn ? '1' : '0';
       chip.textContent = skill.label;
       chip.title = skill.export;
-      if (!locked) chip.addEventListener('click', () => { chip.classList.toggle('on'); renderTeachingFocusChips(); });
+      if (!locked) chip.addEventListener('click', () => { chip.classList.toggle('on'); renderTeachingFocusChips(); saveState(); });
       chipGrid.appendChild(chip);
     });
     groupDiv.appendChild(chipGrid);
     container.appendChild(groupDiv);
   });
+  applySkillChipState();
   renderTeachingFocusChips();
 }
 
@@ -982,9 +983,10 @@ function renderTeachingFocusChips() {
     chip.dataset.export = exp;
     chip.textContent = eligibleChips.find(c => c.dataset.export === exp)?.textContent || exp;
     chip.title = exp;
-    chip.addEventListener('click', () => chip.classList.toggle('on'));
+    chip.addEventListener('click', () => { chip.classList.toggle('on'); saveState(); });
     area.appendChild(chip);
   });
+  applyTeachingFocusChipState();
 }
 
 function getWritingSkillsTeachingFocus() {
@@ -1036,9 +1038,10 @@ function renderTopicChips() {
     chip.className = 'topic-chip on';
     chip.textContent = topic;
     chip.dataset.topic = topic;
-    chip.addEventListener('click', () => { chip.classList.toggle('on'); rebuildAboutTexts(); });
+    chip.addEventListener('click', () => { chip.classList.toggle('on'); rebuildAboutTexts(); saveState(); });
     container.appendChild(chip);
   });
+  applyTopicChipState();
   rebuildAboutTexts();
 }
 
@@ -1301,6 +1304,156 @@ function copyPrompt() {
     setTimeout(() => btn.textContent = orig, 2500);
   });
 }
+
+// ── Persistence ────────────────────────────────────────────────────────────
+
+const LS_KEY = 'wfa_enquiry_form_v1';
+let _savedState = null;
+let _saveTimer = null;
+let _topicStateApplied = false;
+let _skillStateApplied = false;
+let _focusStateApplied = false;
+
+function saveState() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    const state = {
+      subject: pill('subject'),
+      concept: fv('f_concept'),
+      topic: fv('f_topic'),
+      key_question: fv('f_key_question'),
+      challenge: fv('f_challenge'),
+      about: fv('f_about'),
+      end_goal: fv('f_end_goal'),
+      writing_outcome: fv('f_writing_outcome'),
+      writing_audience: fv('f_writing_audience'),
+      writing_purpose: getSelectedPurposes(),
+      term: fv('f_term'),
+      week: fv('f_week'),
+      first_date: fv('f_first_date'),
+      num_lessons: fv('f_num_lessons'),
+      vocab: fv('f_vocab'),
+      images: fv('f_images'),
+      notes: fv('f_notes'),
+      topicChipsOff: Array.from(document.querySelectorAll('.topic-chip:not(.on)')).map(c => c.dataset.topic),
+      skillChipsOn: Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)')).map(c => c.dataset.export),
+      teachingFocusOn: getWritingSkillsTeachingFocus(),
+      schedule: (() => {
+        const s = {};
+        document.querySelectorAll('.schedule-check').forEach(c => {
+          s[c.dataset.day + '_' + c.dataset.slot] = c.classList.contains('on');
+        });
+        return s;
+      })(),
+    };
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    const ind = document.getElementById('save-indicator');
+    if (ind) { ind.style.opacity = '1'; clearTimeout(ind._t); ind._t = setTimeout(() => { ind.style.opacity = '0'; }, 1800); }
+  }, 600);
+}
+
+function applyTopicChipState() {
+  if (_topicStateApplied || !_savedState || !_savedState.topicChipsOff) return;
+  _topicStateApplied = true;
+  document.querySelectorAll('.topic-chip').forEach(c => {
+    if (_savedState.topicChipsOff.includes(c.dataset.topic)) c.classList.remove('on');
+  });
+}
+
+function applySkillChipState() {
+  if (_skillStateApplied || !_savedState || !_savedState.skillChipsOn) return;
+  _skillStateApplied = true;
+  document.querySelectorAll('.skill-chip:not(.locked)').forEach(c => c.classList.remove('on'));
+  _savedState.skillChipsOn.forEach(exp => {
+    const c = document.querySelector('.skill-chip:not(.locked)[data-export="' + exp + '"]');
+    if (c) c.classList.add('on');
+  });
+}
+
+function applyTeachingFocusChipState() {
+  if (_focusStateApplied || !_savedState || !_savedState.teachingFocusOn || !_savedState.teachingFocusOn.length) return;
+  _focusStateApplied = true;
+  _savedState.teachingFocusOn.forEach(exp => {
+    const c = document.querySelector('.focus-chip[data-export="' + exp + '"]');
+    if (c) c.classList.add('on');
+  });
+}
+
+function restoreState() {
+  try { _savedState = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return; }
+  if (!_savedState) return;
+
+  // Subject pill
+  if (_savedState.subject) {
+    document.querySelectorAll('[data-g="subject"]').forEach(p => p.classList.remove('on'));
+    const sp = document.querySelector('[data-g="subject"][data-v="' + _savedState.subject + '"]');
+    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); }
+  }
+
+  // Concept
+  if (_savedState.concept) {
+    const sel = document.getElementById('f_concept');
+    if (sel) sel.value = _savedState.concept;
+  }
+
+  // Text / select fields
+  const restore = {
+    f_topic: _savedState.topic, f_key_question: _savedState.key_question,
+    f_challenge: _savedState.challenge, f_about: _savedState.about,
+    f_end_goal: _savedState.end_goal, f_writing_outcome: _savedState.writing_outcome,
+    f_writing_audience: _savedState.writing_audience,
+    f_first_date: _savedState.first_date, f_num_lessons: _savedState.num_lessons,
+    f_vocab: _savedState.vocab, f_images: _savedState.images, f_notes: _savedState.notes,
+  };
+  Object.entries(restore).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  });
+
+  // Term / week (select fields need special handling)
+  if (_savedState.term) {
+    const termSel = document.getElementById('f_term');
+    if (termSel) { termSel.value = _savedState.term; updateWeeks(); }
+  }
+  if (_savedState.week) {
+    const weekSel = document.getElementById('f_week');
+    if (weekSel) weekSel.value = _savedState.week;
+  }
+  updatePathPreview();
+
+  // Keep auto-rebuild from overwriting the restored text
+  lastAutoAbout = _savedState.about || '';
+  lastAutoEndGoal = _savedState.end_goal || '';
+
+  // Purpose chip
+  if (_savedState.writing_purpose) {
+    document.querySelectorAll('.purpose-chip').forEach(c => {
+      c.classList.toggle('on', c.dataset.purpose === _savedState.writing_purpose);
+    });
+  }
+
+  // Schedule checkboxes
+  if (_savedState.schedule) {
+    document.querySelectorAll('.schedule-check').forEach(chk => {
+      const key = chk.dataset.day + '_' + chk.dataset.slot;
+      if (_savedState.schedule[key]) chk.classList.add('on'); else chk.classList.remove('on');
+    });
+    updateSchedulePreview();
+  }
+}
+
+function clearSavedState() {
+  if (!confirm('Clear all saved form data and start fresh?')) return;
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+  location.reload();
+}
+
+// Auto-save on any input change
+document.addEventListener('input', saveState);
+document.addEventListener('change', saveState);
+
+// Restore on load
+restoreState();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderBar();
