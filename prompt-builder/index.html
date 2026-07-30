@@ -687,6 +687,15 @@
             <span class="pill" onclick="pickPill(this,'h-palette','higgsfield')">Black and white</span>
           </div>
         </div>
+        <div class="field">
+          <label>Aspect ratio</label>
+          <div class="pills" id="h-aspect">
+            <span class="pill" onclick="pickPill(this,'h-aspect','higgsfield')">9:16</span>
+            <span class="pill sel-higgsfield" onclick="pickPill(this,'h-aspect','higgsfield')">16:9</span>
+            <span class="pill" onclick="pickPill(this,'h-aspect','higgsfield')">4:3</span>
+            <span class="pill" onclick="pickPill(this,'h-aspect','higgsfield')">1:1</span>
+          </div>
+        </div>
       </div>
 
       <!-- Diversity (higgsfield) -->
@@ -1194,6 +1203,7 @@
       const colour = getPill('d-colour');
       const bg = getPill('d-bg');
       const complexity = getPill('d-complexity');
+      const aspect = getPill('d-aspect');
       const extra = document.getElementById('d-extra').value.trim();
       const diversity = buildDiversityClause('d');
       const parts = [subject, 'educational diagram for primary school children aged 9–10'];
@@ -1206,6 +1216,7 @@
       if (extra) parts.push(extra);
       if (diversity) parts.push(diversity);
       prompt = parts.join(', ');
+      if (aspect) prompt += ` [aspect ratio: ${aspect}]`;
       if (document.getElementById('d-ref-img').checked) {
         prompt += ' [REF-IMG: a reference image will be attached — use it to guide style, composition or content]';
       }
@@ -1219,6 +1230,7 @@
       const lighting = getPill('h-lighting');
       const mood = getPill('h-mood');
       const palette = getPill('h-palette');
+      const hAspect = getPill('h-aspect');
       const extra = document.getElementById('h-extra').value.trim();
       const diversity = buildDiversityClause('h');
       const parts = [subject];
@@ -1231,6 +1243,7 @@
       if (extra) parts.push(extra);
       if (diversity) parts.push(diversity);
       prompt = parts.join(', ');
+      if (hAspect) prompt += ` [aspect ratio: ${hAspect}]`;
       if (document.getElementById('h-ref-img').checked) {
         prompt += ' [REF-IMG: a reference image will be attached — use it to guide style, composition or content]';
       }
@@ -1297,7 +1310,7 @@
     });
     const defaults = {
       'd-labels':0, 'd-colour':0, 'd-quality':1, 'd-bg':0, 'd-complexity':0, 'd-aspect':1,
-      'h-shot':2, 'h-style':0, 'h-lighting':1, 'h-mood':0, 'h-palette':1,
+      'h-shot':2, 'h-style':0, 'h-lighting':1, 'h-mood':0, 'h-palette':1, 'h-aspect':1,
       'd-gender':0, 'd-age':0, 'h-gender':0, 'h-age':0,
       'e-canvas':0, 'e-export':1, 'e-scale':0, 'e-anim':1,
       'c-colour':1, 'c-tone':0, 'c-density':1
