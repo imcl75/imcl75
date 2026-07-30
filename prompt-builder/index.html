@@ -24,6 +24,8 @@
       --amber-lo:  #FFF8E6;
       --excali:    #6965db;
       --excali-lo: #EEEEFF;
+      --canva:     #0891B2;
+      --canva-lo:  #ECFEFF;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -41,6 +43,8 @@
         --amber-lo:  #2A2000;
         --excali:    #9490f0;
         --excali-lo: #1a1a40;
+        --canva:     #22D3EE;
+        --canva-lo:  #082030;
       }
     }
     :root[data-theme="dark"] {
@@ -49,6 +53,7 @@
       --accent-lo: #152030; --chip-bg:   #1D2840; --chip-txt:  #8099BF;
       --shadow:    rgba(0,0,0,0.25); --amber: #E8B000; --amber-lo: #2A2000;
       --excali: #9490f0; --excali-lo: #1a1a40;
+      --canva: #22D3EE; --canva-lo: #082030;
     }
     :root[data-theme="light"] {
       --bg:        #F4F5F7; --surface:   #FFFFFF; --border:    #DDE1EB;
@@ -56,6 +61,7 @@
       --accent-lo: #EBF1F8; --chip-bg:   #ECEEF3; --chip-txt:  #5C6880;
       --shadow:    rgba(26,32,48,0.07); --amber: #D09800; --amber-lo: #FFF8E6;
       --excali: #6965db; --excali-lo: #EEEEFF;
+      --canva: #0891B2; --canva-lo: #ECFEFF;
     }
 
     /* ── Reset ──────────────────────────────────────────── */
@@ -123,7 +129,7 @@
     /* ── Tool Switcher ───────────────────────────────────── */
     .tool-switcher {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 0;
       border: 1.5px solid var(--border);
       border-radius: 12px;
@@ -147,9 +153,10 @@
       font-weight: 400; font-size: 0.74rem;
       opacity: 0.75; line-height: 1.3;
     }
-    .tool-btn.active-dalle { background: var(--accent); color: #fff; }
-    .tool-btn.active-higgsfield { background: var(--amber); color: #2a1a00; }
+    .tool-btn.active-dalle      { background: var(--accent); color: #fff; }
+    .tool-btn.active-higgsfield { background: var(--amber);  color: #2a1a00; }
     .tool-btn.active-excalidraw { background: var(--excali); color: #fff; }
+    .tool-btn.active-canva      { background: var(--canva);  color: #fff; }
     .tool-btn:not([class*="active"]):hover { background: var(--accent-lo); color: var(--accent); }
 
     /* ── Layout ─────────────────────────────────────────── */
@@ -217,9 +224,10 @@
       font-weight: 500;
     }
     .pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lo); }
-    .pill.sel-dalle { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-    .pill.sel-higgsfield { background: var(--amber); border-color: var(--amber); color: #2a1a00; font-weight: 600; }
+    .pill.sel-dalle      { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .pill.sel-higgsfield { background: var(--amber);  border-color: var(--amber);  color: #2a1a00; font-weight: 600; }
     .pill.sel-excalidraw { background: var(--excali); border-color: var(--excali); color: #fff; font-weight: 600; }
+    .pill.sel-canva      { background: var(--canva);  border-color: var(--canva);  color: #fff; font-weight: 600; }
 
     /* ── Toggle ─────────────────────────────────────────── */
     .toggle-row { display: flex; align-items: center; gap: 10px; }
@@ -284,6 +292,30 @@
     }
     .type-card.sel-excalidraw .type-name { color: var(--excali); }
 
+    /* ── Canva design type cards ─────────────────────────── */
+    .canva-type-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 5px;
+    }
+    .canva-type-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 10px;
+      cursor: pointer;
+      background: var(--bg);
+      text-align: center;
+      transition: all 0.12s;
+    }
+    .canva-type-card:hover { border-color: var(--canva); background: var(--canva-lo); }
+    .canva-type-card.sel-canva {
+      border-color: var(--canva);
+      background: var(--canva-lo);
+      box-shadow: 0 0 0 2px var(--canva);
+    }
+    .canva-type-card.sel-canva .type-name { color: var(--canva); }
+
     /* ── Output ─────────────────────────────────────────── */
     .output-panel {
       background: var(--text);
@@ -312,6 +344,13 @@
       line-height: 1.5;
     }
     .excali-tip strong { color: rgba(255,255,255,0.85); }
+    .canva-tip {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+    .canva-tip strong { color: rgba(255,255,255,0.85); }
     .output-actions {
       display: flex; gap: 10px; align-items: center; margin-top: 16px;
     }
@@ -396,6 +435,7 @@
     @media (max-width: 600px) {
       .layout { grid-template-columns: 1fr; }
       .type-grid { grid-template-columns: repeat(2, 1fr); }
+      .canva-type-grid { grid-template-columns: repeat(2, 1fr); }
       .tool-btn .tool-sub { display: none; }
       header { flex-direction: column; align-items: flex-start; }
     }
@@ -414,7 +454,7 @@
         imcl75.github.io
       </a>
       <h1 class="page-title">Image Prompt Builder</h1>
-      <p class="page-sub">Assemble prompts for DALL-E, Higgsfield and Excalidraw — copy straight into Claude</p>
+      <p class="page-sub">Assemble prompts for DALL-E, Higgsfield, Excalidraw and Canva — copy straight into Claude</p>
     </div>
     <div class="header-right">
       <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle colour scheme">◐</button>
@@ -436,6 +476,10 @@
     <button class="tool-btn" onclick="setTool('excalidraw')">
       Excalidraw
       <span class="tool-sub">Flowcharts · Mind maps · Timelines</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('canva')">
+      Canva
+      <span class="tool-sub">Logos · Posters · Displays · Flyers</span>
     </button>
   </div>
 
@@ -776,6 +820,99 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════ CANVA PANEL -->
+  <div id="canva-panel" class="hidden">
+    <div class="layout">
+
+      <div class="panel full">
+        <h2>Design type</h2>
+        <div class="canva-type-grid" id="c-type">
+          <div class="canva-type-card sel-canva" onclick="pickCanvaType(this)" data-type="logo">
+            <span class="type-icon">🔷</span>
+            <span class="type-name">Logo</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="poster">
+            <span class="type-icon">🗒️</span>
+            <span class="type-name">Poster</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="flyer">
+            <span class="type-icon">📄</span>
+            <span class="type-name">Flyer</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="certificate">
+            <span class="type-icon">🏆</span>
+            <span class="type-name">Certificate</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="display">
+            <span class="type-icon">🖼️</span>
+            <span class="type-name">Classroom display</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="social">
+            <span class="type-icon">📸</span>
+            <span class="type-name">Social graphic</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="invitation">
+            <span class="type-icon">💌</span>
+            <span class="type-name">Invitation</span>
+          </div>
+          <div class="canva-type-card" onclick="pickCanvaType(this)" data-type="banner">
+            <span class="type-icon">🎌</span>
+            <span class="type-name">Banner</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Content</h2>
+        <div class="field">
+          <label>What it's for <span class="hint">— subject or purpose</span></label>
+          <input type="text" id="c-subject" placeholder="e.g. Wallscourt Farm Academy, a primary school in Bristol" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Text to include <span class="hint">— wording that must appear</span></label>
+          <textarea id="c-text" placeholder="e.g. Wallscourt Farm Academy&#10;WFA&#10;Together we grow" oninput="build()"></textarea>
+        </div>
+        <div class="field">
+          <label>Anything extra <span class="hint">— imagery, symbols, layout ideas</span></label>
+          <input type="text" id="c-extra" placeholder="e.g. incorporate wheat or farm imagery, circular layout" oninput="build()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Style</h2>
+        <div class="field">
+          <label>Colour scheme</label>
+          <div class="pills" id="c-colour">
+            <span class="pill" onclick="pickPill(this,'c-colour','canva')">School (gold &amp; blue)</span>
+            <span class="pill sel-canva" onclick="pickPill(this,'c-colour','canva')">Nature (greens &amp; earth)</span>
+            <span class="pill" onclick="pickPill(this,'c-colour','canva')">Vibrant</span>
+            <span class="pill" onclick="pickPill(this,'c-colour','canva')">Muted &amp; professional</span>
+            <span class="pill" onclick="pickPill(this,'c-colour','canva')">Monochrome</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Tone</label>
+          <div class="pills" id="c-tone">
+            <span class="pill sel-canva" onclick="pickPill(this,'c-tone','canva')">Modern &amp; clean</span>
+            <span class="pill" onclick="pickPill(this,'c-tone','canva')">Traditional</span>
+            <span class="pill" onclick="pickPill(this,'c-tone','canva')">Playful &amp; fun</span>
+            <span class="pill" onclick="pickPill(this,'c-tone','canva')">Bold</span>
+            <span class="pill" onclick="pickPill(this,'c-tone','canva')">Minimal</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Complexity</label>
+          <div class="pills" id="c-density">
+            <span class="pill" onclick="pickPill(this,'c-density','canva')">Simple / minimal</span>
+            <span class="pill sel-canva" onclick="pickPill(this,'c-density','canva')">Balanced</span>
+            <span class="pill" onclick="pickPill(this,'c-density','canva')">Rich &amp; detailed</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════════════════ OUTPUT -->
   <div class="output-panel">
     <h2 id="output-label">Image prompt</h2>
@@ -787,6 +924,7 @@
       <span class="word-count" id="word-count"></span>
     </div>
     <p class="excali-tip hidden" id="excali-tip">💡 To export: click <strong>Edit</strong> in the Excalidraw viewer → <strong>Cmd+A</strong> → <strong>Export image</strong></p>
+    <p class="canva-tip hidden" id="canva-tip">💡 Claude will generate <strong>4 design candidates</strong> in Canva. Tell it which one to save and export — it will deliver the file directly to you.</p>
   </div>
 
   <footer>
@@ -799,7 +937,6 @@
   let currentTool = 'dalle';
 
   const DISABILITY_POOL = [
-    // Limb difference
     "a child with two fingers on one hand",
     "a child with a shorter left arm, joining in naturally",
     "a child with extra fingers on one hand",
@@ -809,27 +946,20 @@
     "a child with one hand",
     "a child with a flesh-coloured prosthetic lower arm, natural and well-fitted",
     "a child with a running blade prosthetic on one leg, wearing it naturally as part of everyday life",
-    // Hearing
     "a child wearing a hearing aid on one ear",
     "a child with a cochlear implant processor visible behind one ear",
     "a child with bilateral hearing aids, joining in naturally",
-    // Mobility
     "a child using a manual wheelchair, joining in naturally",
     "a child using a powered wheelchair",
     "a child on forearm crutches",
     "a child using a walking frame",
     "a child with leg braces visible below their trouser leg",
-    // Skeletal
     "a child of noticeably shorter stature due to a skeletal condition, joining in naturally",
-    // Down's syndrome
     "a child with Down's syndrome, part of the group naturally",
-    // Cerebral palsy
     "a child with hemiplegia, one arm resting loosely at their side",
     "a child with cerebral palsy using a lightweight communication device",
-    // Visual
     "a child with thick prescription glasses and a partial visual impairment",
     "a child using a white cane",
-    // Skin
     "a child with vitiligo visible on their face and hands, joining in naturally"
   ];
 
@@ -842,17 +972,48 @@
     orgchart:   { subject: 'Organisation or hierarchy to show', subjectP: 'e.g. Roman army structure, school leadership', itemsLabel: 'Levels / roles (top to bottom)', itemsP: 'e.g. General, Legate, Tribune, Centurion, Soldier', outputVerb: 'a hierarchy diagram' }
   };
 
+  const CANVA_TYPE_LABELS = {
+    logo: 'a logo', poster: 'a poster', flyer: 'a flyer',
+    certificate: 'a certificate', display: 'a classroom display',
+    social: 'a social media graphic', invitation: 'an invitation', banner: 'a banner'
+  };
+
+  const CANVA_COLOUR_MAP = {
+    'School (gold & blue)': 'gold and blue school',
+    'Nature (greens & earth)': 'natural greens and earth tone',
+    'Vibrant': 'vibrant, high-contrast',
+    'Muted & professional': 'muted, professional',
+    'Monochrome': 'monochrome'
+  };
+
+  const CANVA_TONE_MAP = {
+    'Modern & clean': 'modern and clean',
+    'Traditional': 'traditional',
+    'Playful & fun': 'playful and fun',
+    'Bold': 'bold and impactful',
+    'Minimal': 'minimal'
+  };
+
+  const CANVA_DENSITY_MAP = {
+    'Simple / minimal': 'Keep the composition simple and uncluttered.',
+    'Balanced': 'Balance imagery and text evenly.',
+    'Rich & detailed': 'Use a rich, detailed composition with multiple design elements.'
+  };
+
   function setTool(tool) {
     currentTool = tool;
     const btns = document.querySelectorAll('.tool-btn');
     btns.forEach(b => { b.className = 'tool-btn'; });
-    const idx = ['dalle','higgsfield','excalidraw'].indexOf(tool);
+    const idx = ['dalle','higgsfield','excalidraw','canva'].indexOf(tool);
     btns[idx].classList.add('active-' + tool);
     document.getElementById('dalle-panel').classList.toggle('hidden', tool !== 'dalle');
     document.getElementById('higgsfield-panel').classList.toggle('hidden', tool !== 'higgsfield');
     document.getElementById('excalidraw-panel').classList.toggle('hidden', tool !== 'excalidraw');
-    document.getElementById('output-label').textContent = tool === 'excalidraw' ? 'Claude instruction' : 'Image prompt';
+    document.getElementById('canva-panel').classList.toggle('hidden', tool !== 'canva');
+    document.getElementById('output-label').textContent =
+      (tool === 'excalidraw' || tool === 'canva') ? 'Claude instruction' : 'Image prompt';
     document.getElementById('excali-tip').classList.toggle('hidden', tool !== 'excalidraw');
+    document.getElementById('canva-tip').classList.toggle('hidden', tool !== 'canva');
     build();
   }
 
@@ -861,7 +1022,6 @@
       p.className = 'pill';
     });
     el.classList.add('sel-' + tool);
-    // Update Excalidraw items field label
     if (tool === 'excalidraw') updateExcaliFields();
     build();
   }
@@ -873,9 +1033,20 @@
     build();
   }
 
+  function pickCanvaType(el) {
+    document.querySelectorAll('#c-type .canva-type-card').forEach(c => c.classList.remove('sel-canva'));
+    el.classList.add('sel-canva');
+    build();
+  }
+
   function getType() {
     const sel = document.querySelector('#e-type .type-card.sel-excalidraw');
     return sel ? sel.dataset.type : 'timeline';
+  }
+
+  function getCanvaType() {
+    const sel = document.querySelector('#c-type .canva-type-card.sel-canva');
+    return sel ? sel.dataset.type : 'logo';
   }
 
   function updateExcaliFields() {
@@ -911,7 +1082,6 @@
   function buildDiversityClause(prefix) {
     const hasPeople = document.getElementById(prefix + '-has-people').checked;
     if (!hasPeople) return '';
-    const tool = prefix === 'd' ? 'dalle' : 'higgsfield';
     document.getElementById(prefix + '-diversity').classList.remove('hidden');
     const ageRange = getPill(prefix + '-age');
     const gender = getPill(prefix + '-gender');
@@ -982,6 +1152,38 @@
     return instruction;
   }
 
+  function buildCanvaInstruction() {
+    const subject = document.getElementById('c-subject').value.trim();
+    if (!subject) return '';
+
+    const type = getCanvaType();
+    const rawText = document.getElementById('c-text').value.trim();
+    const colour = getPill('c-colour');
+    const tone = getPill('c-tone');
+    const density = getPill('c-density');
+    const extra = document.getElementById('c-extra').value.trim();
+
+    let instruction = `Use Canva to create ${CANVA_TYPE_LABELS[type] || 'a design'} for ${subject}.`;
+
+    if (rawText) {
+      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+      instruction += ` Include the text: "${lines.join(' / ')}".`;
+    }
+
+    const colourPhrase = CANVA_COLOUR_MAP[colour];
+    if (colourPhrase) instruction += ` Use ${colourPhrase} colours.`;
+
+    const tonePhrase = CANVA_TONE_MAP[tone];
+    if (tonePhrase) instruction += ` Style: ${tonePhrase}.`;
+
+    const densityPhrase = CANVA_DENSITY_MAP[density];
+    if (densityPhrase) instruction += ` ${densityPhrase}`;
+
+    if (extra) instruction += ` ${extra}.`;
+
+    return instruction;
+  }
+
   function build() {
     let prompt = '';
 
@@ -1033,8 +1235,12 @@
         prompt += ' [REF-IMG: a reference image will be attached — use it to guide style, composition or content]';
       }
 
-    } else {
+    } else if (currentTool === 'excalidraw') {
       prompt = buildExcalidrawInstruction();
+      if (!prompt) { setOutput('', true); return; }
+
+    } else if (currentTool === 'canva') {
+      prompt = buildCanvaInstruction();
       if (!prompt) { setOutput('', true); return; }
     }
 
@@ -1076,7 +1282,6 @@
   function togglePeople(prefix) {
     const on = document.getElementById(prefix + '-has-people').checked;
     document.getElementById(prefix + '-diversity').classList.toggle('hidden', !on);
-    // Auto-pick a random disability when toggled on, if field is empty
     if (on) {
       const field = document.getElementById(prefix + '-disability');
       if (!field.value.trim()) randomDisability(prefix + '-disability');
@@ -1086,20 +1291,23 @@
 
   function clearAll() {
     ['d-subject','d-extra','h-subject','h-context','h-extra','e-subject','e-items','e-extra',
-     'd-disability','h-disability'].forEach(id => {
+     'd-disability','h-disability','c-subject','c-text','c-extra'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    // Reset pills to defaults
     const defaults = {
       'd-labels':0, 'd-colour':0, 'd-quality':1, 'd-bg':0, 'd-complexity':0, 'd-aspect':1,
       'h-shot':2, 'h-style':0, 'h-lighting':1, 'h-mood':0, 'h-palette':1,
       'd-gender':0, 'd-age':0, 'h-gender':0, 'h-age':0,
-      'e-canvas':0, 'e-export':1, 'e-scale':0, 'e-anim':1
+      'e-canvas':0, 'e-export':1, 'e-scale':0, 'e-anim':1,
+      'c-colour':1, 'c-tone':0, 'c-density':1
     };
     for (const [groupId, defIdx] of Object.entries(defaults)) {
       const pills = document.querySelectorAll(`#${groupId} .pill`);
-      const tool = groupId.startsWith('d') ? 'dalle' : groupId.startsWith('h') ? 'higgsfield' : 'excalidraw';
+      const tool = groupId.startsWith('d') ? 'dalle'
+                 : groupId.startsWith('h') ? 'higgsfield'
+                 : groupId.startsWith('e') ? 'excalidraw'
+                 : 'canva';
       pills.forEach((p, i) => {
         p.className = 'pill';
         if (i === defIdx) p.classList.add('sel-' + tool);
@@ -1112,9 +1320,11 @@
     document.getElementById('h-ref-img').checked = false;
     document.getElementById('d-diversity').classList.add('hidden');
     document.getElementById('h-diversity').classList.add('hidden');
-    // Reset excalidraw type
     document.querySelectorAll('#e-type .type-card').forEach((c, i) => {
       c.classList.toggle('sel-excalidraw', i === 1);
+    });
+    document.querySelectorAll('#c-type .canva-type-card').forEach((c, i) => {
+      c.classList.toggle('sel-canva', i === 0);
     });
     updateExcaliFields();
     build();
