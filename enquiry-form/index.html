@@ -452,6 +452,14 @@
       </div>
 
       <div class="field">
+        <label class="field-label">Include a timeline resource? <span class="hint">A visual timeline of the enquiry period (events, people, dates etc.).</span></label>
+        <div class="pill-group">
+          <label class="pill on" data-g="timeline" data-v="yes">Yes</label>
+          <label class="pill" data-g="timeline" data-v="no">No</label>
+        </div>
+      </div>
+
+      <div class="field">
         <label class="field-label" for="f_notes">Anything else Claude should know <span class="optional">(optional)</span></label>
         <textarea id="f_notes" rows="4" placeholder="e.g. This enquiry follows our rainforest unit. Children already understand food chains and habitats. We visit Bristol Museum in W4 for the space exhibition — the enquiry should build up to this visit..."></textarea>
       </div>
@@ -797,6 +805,7 @@ function collect() {
     weekly_slots: slots,
     lessons_per_week: slots.length,
     xccw_style: 'dotted',
+    include_timeline: pill('timeline') !== 'no',
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
@@ -822,6 +831,7 @@ function buildNaming(slug, txwy) {
     mtp_readable: `MTP_${S}_${t}.md`,
     mtp_json: `mtp_${S}_${t}.json`,
     lesson_deck: `{pos:02d}-{Day}-L{nn:02d}-Teaching.pptx`,
+    teaching_pattern: `{pos:02d}-{Day}-L{nn:02d}-Teaching.pptx`,
     // LP/ folder
     learning_paper: `{pos:02d}-{Day}-L{nn:02d}-LP-{Class}.pptx`,
     // Resources/ folder
@@ -1206,11 +1216,34 @@ function buildPrompt(d) {
     wsAreas.forEach(area => L.push(`  ${area}: ${ws[area].join(' · ')}`));
     L.push('');
   }
+  const wtf = d.writing_skills_teaching_focus || [];
+  if (wtf.length) {
+    L.push('Writing skills TEACHING focus (skills to teach and practise through the lesson sequence):');
+    wtf.forEach(s => L.push(`  ${s}`));
+    L.push('');
+    L.push('WRITING INTEGRATION RULES — follow these when authoring the MTP:');
+    L.push('  · L1–4: content-heavy. Writing integration minimal or none.');
+    L.push('  · L5 onwards: progressively increase writing skill integration. Each teaching-focus');
+    L.push('    skill must appear in at least one lesson\'s I Do (modelled examples using subject');
+    L.push('    content), one We Do (shared/guided practice) and one You Do Independent (children');
+    L.push('    apply both the subject knowledge and the writing skill together).');
+    L.push('  · Last 4 lessons: writing-only focus — Plan · Write · Write · Edit & Revise.');
+    L.push('    Same TL Seq slide structure; content is writing-focused (recaps subject knowledge');
+    L.push('    but primary goal is writing the outcome, not learning new subject content).');
+    L.push('  · Decide which lesson teaches which writing skill. Record this in');
+    L.push('    lesson.writing_skill_focus (optional string) in the MTP JSON — this is your');
+    L.push('    decision; it is not specified by Innes. Show it clearly in the readable MTP.');
+    L.push('  · Sentences children write during integrated lessons should feed into the final');
+    L.push('    writing outcome so the planning lesson can reuse/adapt them.');
+    L.push('');
+  }
   L.push('─── LOGISTICS ──────────────────────────────────────────────');
   L.push(`Slot:           ${d.txwy || 'not set'}`);
   L.push(`First lesson:   ${d.first_lesson_date || 'not set'}`);
   L.push(`Lessons:        ${d.num_lessons ? d.num_lessons + ' lessons' : 'Claude to decide from CLF curriculum'}`);
   L.push(`Lessons/week:   ${d.lessons_per_week}`);
+  const numWeeks = (d.num_lessons && d.lessons_per_week) ? Math.ceil(d.num_lessons / d.lessons_per_week) : null;
+  L.push(`Num weeks:      ${numWeeks ? numWeeks + ' (lessons ÷ lessons/week, rounded up — may change due to school events or bank holidays)' : 'not calculated — num_lessons not set'}`);
   L.push(`Weekly slots:   ${slotDesc}`);
   L.push('');
   L.push('Weekly schedule (used to derive file name position prefix):');
@@ -1220,6 +1253,7 @@ function buildPrompt(d) {
       L.push(`  ${day}: ${[s[0] ? 'Lesson 1' : null, s[1] ? 'Lesson 2' : null].filter(Boolean).join(' + ')}`);
     }
   });
+  L.push(`Timeline:       ${d.include_timeline ? 'Yes — include a timeline resource in Resources/' : 'No — omit timeline resource'}`);
   if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
   if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
   if (d.other_notes) { L.push(''); L.push('Additional notes:'); L.push(d.other_notes); }
@@ -1335,6 +1369,7 @@ function saveState() {
       vocab: fv('f_vocab'),
       images: fv('f_images'),
       notes: fv('f_notes'),
+      timeline: pill('timeline'),
       topicChipsOff: Array.from(document.querySelectorAll('.topic-chip:not(.on)')).map(c => c.dataset.topic),
       skillChipsOn: Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)')).map(c => c.dataset.export),
       teachingFocusOn: getWritingSkillsTeachingFocus(),
@@ -1429,6 +1464,13 @@ function restoreState() {
   if (_savedState.writing_purpose) {
     document.querySelectorAll('.purpose-chip').forEach(c => {
       c.classList.toggle('on', c.dataset.purpose === _savedState.writing_purpose);
+    });
+  }
+
+  // Timeline pill
+  if (_savedState.timeline) {
+    document.querySelectorAll('[data-g="timeline"]').forEach(p => {
+      p.classList.toggle('on', p.dataset.v === _savedState.timeline);
     });
   }
 
