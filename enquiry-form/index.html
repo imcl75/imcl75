@@ -801,6 +801,36 @@ function deliveryPath(t, w) {
   return `${ONEDRIVE_BASE}/Term ${t}/T${t}W${w}/Enquiry`;
 }
 
+function nextWeek(t, w) {
+  // Advance by one week; roll over at week 6 (6-week terms)
+  const wNum = parseInt(w);
+  const tNum = parseInt(t);
+  if (wNum < 6) return { t: tNum, w: wNum + 1 };
+  return { t: tNum + 1, w: 1 };
+}
+
+function buildDelivery(t, w, numLessons, lessonsPerWeek) {
+  if (!t || !w) return null;
+  const n = numLessons ? parseInt(numLessons) : 0;
+  const lpw = lessonsPerWeek && lessonsPerWeek > 0 ? lessonsPerWeek : 1;
+  const numWeeks = n > 0 ? Math.ceil(n / lpw) : 1;
+  const result = {};
+  let cur = { t: parseInt(t), w: parseInt(w) };
+  for (let i = 0; i < numWeeks; i++) {
+    const key = `T${cur.t}W${cur.w}`;
+    const base = deliveryPath(cur.t, cur.w);
+    result[key] = {
+      root: base,
+      lp_folder: base + '/LP',
+      teaching_folder: base + '/Teaching',
+      resources_folder: base + '/Resources',
+      labels_folder: base + '/Resources/Learning-Labels',
+    };
+    cur = nextWeek(cur.t, cur.w);
+  }
+  return result;
+}
+
 // ── Data ───────────────────────────────────────────────────────────────────
 function pill(g) { const el = document.querySelector(`[data-g="${g}"].on`); return el ? el.dataset.v : ''; }
 function fv(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -850,13 +880,7 @@ function collect() {
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
-    delivery: {
-      root: deliveryPath(t, w),
-      lp_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/LP' : null,
-      teaching_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Teaching' : null,
-      resources_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Resources' : null,
-      labels_folder: deliveryPath(t, w) ? deliveryPath(t,w)+'/Resources/Learning-Labels' : null,
-    },
+    delivery: buildDelivery(t, w, fv('f_num_lessons'), slots.length),
     file_naming: buildNaming(slug, txwy),
   };
 }
@@ -871,10 +895,10 @@ function buildNaming(slug, txwy) {
     // Teaching/ folder
     mtp_readable: `MTP_${S}_${t}.md`,
     mtp_json: `mtp_${S}_${t}.json`,
-    lesson_deck: `{pos:02d}-{Day}-L{nn:02d}-Teaching.pptx`,
-    teaching_pattern: `{pos:02d}-{Day}-L{nn:02d}-Teaching.pptx`,
+    lesson_deck: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Teaching.pptx`,
+    teaching_pattern: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Teaching.pptx`,
     // LP/ folder
-    learning_paper: `{pos:02d}-{Day}-L{nn:02d}-LP-{Class}.pptx`,
+    learning_paper: `{txwy}-{pos:02d}-{Day}-{nn:02d}-LP-{Class}.pptx`,
     // Resources/ folder
     sort_cards: `SortCards_${S}_${t}.pdf`,
     word_cards: `WordCards_${S}_${t}.pdf`,
@@ -884,7 +908,7 @@ function buildNaming(slug, txwy) {
     writing_toolkit: `WritingToolkit_${S}_${t}.pdf`,
     handwriting: `Handwriting_${S}_${t}.pdf`,
     // Resources/Learning-Labels/ folder
-    label_sheet: `{pos:02d}-{Day}-L{nn:02d}-Labels.docx`,
+    label_sheet: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Labels.docx`,
   };
 }
 
