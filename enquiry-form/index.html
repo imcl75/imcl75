@@ -164,6 +164,8 @@
     .para-block .field:last-child { margin-bottom: 0; }
     #modelSubjectField { display: none; }
     #modelSubjectField.show { display: block; }
+    #timelineNotesField { display: none; }
+    #timelineNotesField.show { display: block; }
   </style>
 </head>
 <body>
@@ -485,9 +487,13 @@
       <div class="field">
         <label class="field-label">Include a timeline resource? <span class="hint">A visual timeline of the enquiry period (events, people, dates etc.).</span></label>
         <div class="pill-group">
-          <label class="pill on" data-g="timeline" data-v="yes">Yes</label>
-          <label class="pill" data-g="timeline" data-v="no">No</label>
+          <label class="pill on" data-g="timeline" data-v="yes" onclick="checkTimeline()">Yes</label>
+          <label class="pill" data-g="timeline" data-v="no" onclick="checkTimeline()">No</label>
         </div>
+      </div>
+      <div class="field" id="timelineNotesField">
+        <label class="field-label" for="f_timeline_notes">What should the timeline cover? <span class="optional">(optional)</span></label>
+        <textarea id="f_timeline_notes" rows="2" placeholder="e.g. Key events in the history of space exploration, from 1957 to present"></textarea>
       </div>
 
       <div class="field">
@@ -840,6 +846,7 @@ function collect() {
     lessons_per_week: slots.length,
     xccw_style: 'dotted',
     include_timeline: pill('timeline') !== 'no',
+    timeline_notes: fv('f_timeline_notes') || null,
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
@@ -1169,6 +1176,16 @@ function checkModelSubject() {
   if (anyChildChosen) field.classList.add('show'); else field.classList.remove('show');
 }
 
+function applyTimelineVisibility() {
+  const yes = document.querySelector('[data-g="timeline"][data-v="yes"]').classList.contains('on');
+  const field = document.getElementById('timelineNotesField');
+  if (yes) field.classList.add('show'); else field.classList.remove('show');
+}
+function checkTimeline() {
+  // Called when a timeline pill is clicked — evaluate after the pill-group click handler runs
+  setTimeout(applyTimelineVisibility, 0);
+}
+
 function getParagraphData() {
   const blocks = document.querySelectorAll('#paraBlocks .para-block');
   return Array.from(blocks).map(function(block) {
@@ -1365,7 +1382,7 @@ function buildPrompt(d) {
       L.push(`  ${day}: ${[s[0] ? 'Lesson 1' : null, s[1] ? 'Lesson 2' : null].filter(Boolean).join(' + ')}`);
     }
   });
-  L.push(`Timeline:       ${d.include_timeline ? 'Yes — include a timeline resource in Resources/' : 'No — omit timeline resource'}`);
+  L.push(`Timeline:       ${d.include_timeline ? 'Yes — include a timeline resource in Resources/' : 'No — omit timeline resource'}${d.timeline_notes ? ' (' + d.timeline_notes + ')' : ''}`);
   if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
   if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
   if (d.other_notes) { L.push(''); L.push('Additional notes:'); L.push(d.other_notes); }
@@ -1485,6 +1502,7 @@ function saveState() {
       images: fv('f_images'),
       notes: fv('f_notes'),
       timeline: pill('timeline'),
+      timeline_notes: fv('f_timeline_notes'),
       topicChipsOff: Array.from(document.querySelectorAll('.topic-chip:not(.on)')).map(c => c.dataset.topic),
       skillChipsOn: Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)')).map(c => c.dataset.export),
       teachingFocusOn: getWritingSkillsTeachingFocus(),
@@ -1592,11 +1610,15 @@ function restoreState() {
     });
   }
 
-  // Timeline pill
+  // Timeline pill + notes
   if (_savedState.timeline) {
     document.querySelectorAll('[data-g="timeline"]').forEach(p => {
       p.classList.toggle('on', p.dataset.v === _savedState.timeline);
     });
+  }
+  if (_savedState.timeline_notes !== undefined) {
+    const tn = document.getElementById('f_timeline_notes');
+    if (tn) tn.value = _savedState.timeline_notes;
   }
 
   // Schedule checkboxes
@@ -1621,6 +1643,7 @@ document.addEventListener('change', saveState);
 
 // Restore on load
 restoreState();
+applyTimelineVisibility();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderBar();
