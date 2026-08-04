@@ -296,30 +296,6 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="f_writing_text_type">Text type
-          <span class="hint">e.g. Information text, Explanation text, Persuasive text</span>
-        </label>
-        <input type="text" id="f_writing_text_type" placeholder="e.g. Information text">
-        <div class="errmsg" id="err_f_writing_text_type">Text type is required.</div>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="f_writing_num_paragraphs">Number of paragraphs
-          <span class="hint">Enter a number — paragraph blocks will appear below.</span>
-        </label>
-        <input type="number" id="f_writing_num_paragraphs" min="1" max="12" placeholder="e.g. 4" oninput="renderParagraphBlocks(this.value)">
-        <div class="errmsg" id="err_f_writing_num_paragraphs">Number of paragraphs is required.</div>
-        <div class="para-blocks" id="paraBlocks"></div>
-      </div>
-
-      <div class="field" id="modelSubjectField">
-        <label class="field-label" for="f_writing_model_subject">Teacher's model subject
-          <span class="hint">What does the teacher write about in child-chosen paragraphs? e.g. Saturn</span>
-        </label>
-        <input type="text" id="f_writing_model_subject" placeholder="e.g. Saturn">
-      </div>
-
-      <div class="field">
         <label class="field-label" for="f_writing_audience">Audience
           <span class="hint">Who is the writing for?</span>
         </label>
@@ -337,6 +313,22 @@
           <span class="purpose-chip" data-purpose="Argue">Argue</span>
           <span class="purpose-chip" data-purpose="Instruct">Instruct</span>
         </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_writing_num_paragraphs">Number of paragraphs
+          <span class="hint">Enter a number — paragraph blocks will appear below.</span>
+        </label>
+        <input type="number" id="f_writing_num_paragraphs" min="1" max="12" placeholder="e.g. 4" oninput="renderParagraphBlocks(this.value)">
+        <div class="errmsg" id="err_f_writing_num_paragraphs">Number of paragraphs is required.</div>
+        <div class="para-blocks" id="paraBlocks"></div>
+      </div>
+
+      <div class="field" id="modelSubjectField">
+        <label class="field-label" for="f_writing_model_subject">Teacher's model subject
+          <span class="hint">What does the teacher write about in child-chosen paragraphs? e.g. Saturn</span>
+        </label>
+        <input type="text" id="f_writing_model_subject" placeholder="e.g. Saturn">
       </div>
 
       <div class="field">
@@ -831,7 +823,6 @@ function collect() {
     about: fv('f_about'),
     end_goal: fv('f_end_goal'),
     writing_outcome: fv('f_writing_outcome'),
-    writing_text_type: fv('f_writing_text_type') || null,
     writing_num_paragraphs: fv('f_writing_num_paragraphs') ? parseInt(fv('f_writing_num_paragraphs')) : null,
     writing_paragraphs: getParagraphData().length ? getParagraphData() : null,
     writing_model_subject: fv('f_writing_model_subject') || null,
@@ -902,7 +893,6 @@ const RULES = {
   2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'}],
   3: [
     {type:'field',id:'f_writing_outcome'},
-    {type:'field',id:'f_writing_text_type'},
     {type:'field',id:'f_writing_num_paragraphs'},
   ],
   4: [
@@ -1237,7 +1227,6 @@ function buildReview() {
     <div class="rv-section">
       <h3>Outcomes</h3>
       ${rvRow('Writing', d.writing_outcome)}
-      ${d.writing_text_type ? rvRow('Text type', d.writing_text_type) : ''}
       ${d.writing_paragraphs && d.writing_paragraphs.length ? rvRow('Paragraphs', d.writing_paragraphs.map((p,i) => `${i+1}. ${p.title || '(untitled)'}${p.child_chosen ? ' [child-chosen]' : ''}`).join(' · ')) : ''}
       ${d.writing_model_subject ? rvRow('Model subject', d.writing_model_subject) : ''}
       ${d.writing_audience ? rvRow('Audience', d.writing_audience) : ''}
@@ -1319,7 +1308,6 @@ function buildPrompt(d) {
   L.push('');
   L.push('Writing outcome:');
   L.push(d.writing_outcome);
-  if (d.writing_text_type) { L.push(`Text type: ${d.writing_text_type}`); }
   if (d.writing_paragraphs && d.writing_paragraphs.length) {
     L.push(`Number of paragraphs: ${d.writing_paragraphs.length}`);
     L.push('Paragraph structure:');
@@ -1484,7 +1472,6 @@ function saveState() {
       about: fv('f_about'),
       end_goal: fv('f_end_goal'),
       writing_outcome: fv('f_writing_outcome'),
-      writing_text_type: fv('f_writing_text_type'),
       writing_num_paragraphs: fv('f_writing_num_paragraphs'),
       writing_paragraphs: getParagraphData(),
       writing_model_subject: fv('f_writing_model_subject'),
@@ -1564,7 +1551,6 @@ function restoreState() {
     f_topic: _savedState.topic, f_key_question: _savedState.key_question,
     f_challenge: _savedState.challenge, f_about: _savedState.about,
     f_end_goal: _savedState.end_goal, f_writing_outcome: _savedState.writing_outcome,
-    f_writing_text_type: _savedState.writing_text_type,
     f_writing_model_subject: _savedState.writing_model_subject,
     f_writing_audience: _savedState.writing_audience,
     f_first_date: _savedState.first_date, f_num_lessons: _savedState.num_lessons,
