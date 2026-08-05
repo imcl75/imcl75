@@ -81,6 +81,13 @@
     .btn-gold { background: var(--wfa-gold); color: var(--wfa-dark); }
     .btn-gold:hover { background: #e6ac00; }
 
+    /* Draft-restore banner */
+    #draftBanner { display: none; background: #fff7e6; border: 1.5px solid var(--wfa-gold); border-radius: 8px; padding: 0.9rem 1.1rem; margin: 0 0 1.25rem; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    #draftBanner.show { display: flex; }
+    #draftBanner p { margin: 0; font-size: 0.85rem; color: #374151; }
+    #draftBanner strong { color: var(--wfa-dark); }
+    #draftBanner .btn-row { margin: 0; }
+
     /* Lesson schedule grid */
     .schedule-grid { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
     .schedule-row { display: grid; grid-template-columns: 60px 1fr 1fr; align-items: center; border-bottom: 1px solid var(--border); }
@@ -172,10 +179,17 @@
 
 <header>
   <h1>Enquiry Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation &nbsp;·&nbsp; <a href="#" onclick="clearSavedState();return false;" style="color:rgba(255,255,255,0.5);font-size:0.78rem;">Clear saved data</a></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation</p>
 </header>
 
 <div class="container">
+  <div id="draftBanner">
+    <p>You have a saved draft: <strong id="draftBannerLabel"></strong>. Resume it, or start this enquiry fresh?</p>
+    <div class="btn-row">
+      <button class="btn-sec" type="button" onclick="discardDraft()">Start fresh</button>
+      <button class="btn-primary" type="button" onclick="resumeDraft()">Resume draft</button>
+    </div>
+  </div>
   <div class="steps" id="stepBar"></div>
 
   <!-- ── Step 1: Basics ─────────────────────────────────────────────────── -->
@@ -1571,8 +1585,7 @@ function applyTeachingFocusChipState() {
   });
 }
 
-function restoreState() {
-  try { _savedState = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return; }
+function applyRestoredState() {
   if (!_savedState) return;
 
   // Subject pill
@@ -1655,18 +1668,39 @@ function restoreState() {
   }
 }
 
-function clearSavedState() {
-  if (!confirm('Clear all saved form data and start fresh?')) return;
+function checkForSavedDraft() {
+  // Never apply a saved draft to the form silently. A previous enquiry's
+  // values (e.g. a leftover writing_model_subject) must never carry into a
+  // new one without the person filling this in explicitly choosing to
+  // resume — that's exactly how stale data has leaked into a brief before.
+  try { _savedState = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { _savedState = null; }
+  if (!_savedState) return;
+  const topic = _savedState.topic || '(untitled)';
+  const subject = _savedState.subject ? ' — ' + _savedState.subject : '';
+  document.getElementById('draftBannerLabel').textContent = topic + subject;
+  document.getElementById('draftBanner').classList.add('show');
+}
+
+function resumeDraft() {
+  document.getElementById('draftBanner').classList.remove('show');
+  applyRestoredState();
+  applyTimelineVisibility();
+  updateSchedulePreview();
+}
+
+function discardDraft() {
   try { localStorage.removeItem(LS_KEY); } catch(e) {}
-  location.reload();
+  _savedState = null;
+  document.getElementById('draftBanner').classList.remove('show');
 }
 
 // Auto-save on any input change
 document.addEventListener('input', saveState);
 document.addEventListener('change', saveState);
 
-// Restore on load
-restoreState();
+// Check for a saved draft on load — do NOT apply it until the person
+// filling this in explicitly chooses to (see checkForSavedDraft).
+checkForSavedDraft();
 applyTimelineVisibility();
 
 // ── Init ───────────────────────────────────────────────────────────────────
