@@ -26,8 +26,8 @@
       --excali-lo: #EEEEFF;
       --canva:     #0891B2;
       --canva-lo:  #ECFEFF;
-      --map:       #2C7A4B;
-      --map-lo:    #E6F4EE;
+      --replicate:    #16A34A;
+      --replicate-lo: #F0FDF4;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -47,8 +47,8 @@
         --excali-lo: #1a1a40;
         --canva:     #22D3EE;
         --canva-lo:  #082030;
-        --map:       #4CAF7D;
-        --map-lo:    #0D2018;
+        --replicate:    #4ADE80;
+        --replicate-lo: #052E16;
       }
     }
     :root[data-theme="dark"] {
@@ -58,7 +58,7 @@
       --shadow:    rgba(0,0,0,0.25); --amber: #E8B000; --amber-lo: #2A2000;
       --excali: #9490f0; --excali-lo: #1a1a40;
       --canva: #22D3EE; --canva-lo: #082030;
-      --map: #4CAF7D; --map-lo: #0D2018;
+      --replicate: #4ADE80; --replicate-lo: #052E16;
     }
     :root[data-theme="light"] {
       --bg:        #F4F5F7; --surface:   #FFFFFF; --border:    #DDE1EB;
@@ -67,7 +67,7 @@
       --shadow:    rgba(26,32,48,0.07); --amber: #D09800; --amber-lo: #FFF8E6;
       --excali: #6965db; --excali-lo: #EEEEFF;
       --canva: #0891B2; --canva-lo: #ECFEFF;
-      --map: #2C7A4B; --map-lo: #E6F4EE;
+      --replicate: #16A34A; --replicate-lo: #F0FDF4;
     }
 
     /* ── Reset ──────────────────────────────────────────── */
@@ -159,11 +159,11 @@
       font-weight: 400; font-size: 0.74rem;
       opacity: 0.75; line-height: 1.3;
     }
-    .tool-btn.active-dalle      { background: var(--accent); color: #fff; }
-    .tool-btn.active-higgsfield { background: var(--amber);  color: #2a1a00; }
-    .tool-btn.active-excalidraw { background: var(--excali); color: #fff; }
-    .tool-btn.active-canva      { background: var(--canva);  color: #fff; }
-    .tool-btn.active-map        { background: var(--map);    color: #fff; }
+    .tool-btn.active-dalle      { background: var(--accent);     color: #fff; }
+    .tool-btn.active-higgsfield { background: var(--amber);      color: #2a1a00; }
+    .tool-btn.active-replicate  { background: var(--replicate);  color: #fff; }
+    .tool-btn.active-excalidraw { background: var(--excali);     color: #fff; }
+    .tool-btn.active-canva      { background: var(--canva);      color: #fff; }
     .tool-btn:not([class*="active"]):hover { background: var(--accent-lo); color: var(--accent); }
 
     /* ── Layout ─────────────────────────────────────────── */
@@ -231,11 +231,11 @@
       font-weight: 500;
     }
     .pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lo); }
-    .pill.sel-dalle      { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-    .pill.sel-higgsfield { background: var(--amber);  border-color: var(--amber);  color: #2a1a00; font-weight: 600; }
-    .pill.sel-excalidraw { background: var(--excali); border-color: var(--excali); color: #fff; font-weight: 600; }
-    .pill.sel-canva      { background: var(--canva);  border-color: var(--canva);  color: #fff; font-weight: 600; }
-    .pill.sel-map        { background: var(--map);    border-color: var(--map);    color: #fff; font-weight: 600; }
+    .pill.sel-dalle      { background: var(--accent);     border-color: var(--accent);     color: #fff; font-weight: 600; }
+    .pill.sel-higgsfield { background: var(--amber);      border-color: var(--amber);      color: #2a1a00; font-weight: 600; }
+    .pill.sel-replicate  { background: var(--replicate);  border-color: var(--replicate);  color: #fff; font-weight: 600; }
+    .pill.sel-excalidraw { background: var(--excali);     border-color: var(--excali);     color: #fff; font-weight: 600; }
+    .pill.sel-canva      { background: var(--canva);      border-color: var(--canva);      color: #fff; font-weight: 600; }
 
     /* ── Toggle ─────────────────────────────────────────── */
     .toggle-row { display: flex; align-items: center; gap: 10px; }
@@ -440,13 +440,16 @@
     .toggle-wrap input:checked + .toggle-track { background: var(--accent); }
     .toggle-wrap input:checked + .toggle-track::after { transform: translateX(18px); }
 
-    @media (max-width: 700px) {
+    @media (max-width: 640px) {
       .layout { grid-template-columns: 1fr; }
       .type-grid { grid-template-columns: repeat(2, 1fr); }
       .canva-type-grid { grid-template-columns: repeat(2, 1fr); }
-      .tool-switcher { grid-template-columns: 1fr 1fr; }
       .tool-btn .tool-sub { display: none; }
       header { flex-direction: column; align-items: flex-start; }
+      .tool-switcher { grid-template-columns: 1fr 1fr 1fr; }
+      .tool-switcher .tool-btn:nth-child(4),
+      .tool-switcher .tool-btn:nth-child(5) { border-top: 1.5px solid var(--border); }
+      .tool-switcher .tool-btn:nth-child(3) { border-right: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; }
@@ -463,7 +466,7 @@
         imcl75.github.io
       </a>
       <h1 class="page-title">Image Prompt Builder</h1>
-      <p class="page-sub">Assemble prompts for DALL-E, Higgsfield, Excalidraw, Canva and geography maps — copy straight into Claude</p>
+      <p class="page-sub">Assemble prompts for DALL-E, Higgsfield, Replicate, Excalidraw and Canva — copy straight into Claude</p>
     </div>
     <div class="header-right">
       <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle colour scheme">◐</button>
@@ -482,6 +485,10 @@
       Higgsfield
       <span class="tool-sub">Scenes · Illustrations · Characters</span>
     </button>
+    <button class="tool-btn" onclick="setTool('replicate')">
+      Replicate
+      <span class="tool-sub">Scenes · Illustrations · ~£0.002</span>
+    </button>
     <button class="tool-btn" onclick="setTool('excalidraw')">
       Excalidraw
       <span class="tool-sub">Flowcharts · Mind maps · Timelines</span>
@@ -489,10 +496,6 @@
     <button class="tool-btn" onclick="setTool('canva')">
       Canva
       <span class="tool-sub">Logos · Posters · Displays · Flyers</span>
-    </button>
-    <button class="tool-btn" onclick="setTool('map')">
-      Map
-      <span class="tool-sub">Geography · Locations · Routes</span>
     </button>
   </div>
 
@@ -758,6 +761,142 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════ REPLICATE PANEL -->
+  <div id="replicate-panel" class="hidden">
+    <div class="layout">
+      <div class="panel">
+        <h2>Content</h2>
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" id="r-subject" placeholder="e.g. a Viking longship at sea" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Setting / context</label>
+          <input type="text" id="r-context" placeholder="e.g. stormy North Sea, grey skies, crashing waves" oninput="build()">
+        </div>
+        <div class="field">
+          <label>Shot type</label>
+          <div class="pills" id="r-shot">
+            <span class="pill" onclick="pickPill(this,'r-shot','replicate')">Extreme close-up</span>
+            <span class="pill" onclick="pickPill(this,'r-shot','replicate')">Close-up</span>
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-shot','replicate')">Medium shot</span>
+            <span class="pill" onclick="pickPill(this,'r-shot','replicate')">Wide shot</span>
+            <span class="pill" onclick="pickPill(this,'r-shot','replicate')">Bird's eye view</span>
+            <span class="pill" onclick="pickPill(this,'r-shot','replicate')">Low angle</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Anything extra</label>
+          <input type="text" id="r-extra" placeholder="e.g. warriors visible on deck, dragon prow" oninput="build()">
+        </div>
+        <div class="field">
+          <label class="toggle-label">
+            <span>I'll attach a reference image</span>
+            <span class="toggle-wrap">
+              <input type="checkbox" id="r-ref-img" onchange="build()">
+              <span class="toggle-track"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Style</h2>
+        <div class="field">
+          <label>Model <span class="hint">— speed vs quality</span></label>
+          <div class="pills" id="r-model">
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-model','replicate')">Flux Schnell (~£0.002, fast)</span>
+            <span class="pill" onclick="pickPill(this,'r-model','replicate')">Flux Dev (~£0.02, better quality)</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Visual style</label>
+          <div class="pills" id="r-style">
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-style','replicate')">Photorealistic</span>
+            <span class="pill" onclick="pickPill(this,'r-style','replicate')">Cinematic</span>
+            <span class="pill" onclick="pickPill(this,'r-style','replicate')">Children's illustration</span>
+            <span class="pill" onclick="pickPill(this,'r-style','replicate')">Oil painting</span>
+            <span class="pill" onclick="pickPill(this,'r-style','replicate')">Watercolour</span>
+            <span class="pill" onclick="pickPill(this,'r-style','replicate')">Flat vector cartoon</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Lighting</label>
+          <div class="pills" id="r-lighting">
+            <span class="pill" onclick="pickPill(this,'r-lighting','replicate')">Golden hour</span>
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-lighting','replicate')">Overcast</span>
+            <span class="pill" onclick="pickPill(this,'r-lighting','replicate')">Dramatic side lighting</span>
+            <span class="pill" onclick="pickPill(this,'r-lighting','replicate')">Studio clean</span>
+            <span class="pill" onclick="pickPill(this,'r-lighting','replicate')">Candlelight</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Mood</label>
+          <div class="pills" id="r-mood">
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-mood','replicate')">Calm</span>
+            <span class="pill" onclick="pickPill(this,'r-mood','replicate')">Dramatic</span>
+            <span class="pill" onclick="pickPill(this,'r-mood','replicate')">Joyful</span>
+            <span class="pill" onclick="pickPill(this,'r-mood','replicate')">Epic</span>
+            <span class="pill" onclick="pickPill(this,'r-mood','replicate')">Eerie</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Aspect ratio</label>
+          <div class="pills" id="r-aspect">
+            <span class="pill" onclick="pickPill(this,'r-aspect','replicate')">9:16</span>
+            <span class="pill sel-replicate" onclick="pickPill(this,'r-aspect','replicate')">16:9</span>
+            <span class="pill" onclick="pickPill(this,'r-aspect','replicate')">4:3</span>
+            <span class="pill" onclick="pickPill(this,'r-aspect','replicate')">1:1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diversity (replicate) -->
+      <div class="panel full">
+        <h2>People &amp; diversity</h2>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="r-has-people" onchange="togglePeople('r')">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">This image includes people</span>
+        </div>
+        <div id="r-diversity" class="sub-panel hidden">
+          <h3>Diversity clause</h3>
+          <div class="field">
+            <label>Disability <button class="btn-random" onclick="randomDisability('r-disability')">🎲 Random</button></label>
+            <input type="text" id="r-disability" placeholder="e.g. a child with two fingers on one hand" oninput="build()">
+          </div>
+          <div class="field">
+            <label>Faith marker <span class="hint">optional — pick any</span></label>
+            <div class="pills" id="r-faith">
+              <span class="pill" onclick="toggleFaith(this)">Hijab</span>
+              <span class="pill" onclick="toggleFaith(this)">Turban</span>
+              <span class="pill" onclick="toggleFaith(this)">Kippah</span>
+              <span class="pill" onclick="toggleFaith(this)">Cross</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Gender balance</label>
+            <div class="pills" id="r-gender">
+              <span class="pill sel-replicate" onclick="pickPill(this,'r-gender','replicate')">Mixed</span>
+              <span class="pill" onclick="pickPill(this,'r-gender','replicate')">Predominantly female</span>
+              <span class="pill" onclick="pickPill(this,'r-gender','replicate')">Predominantly male</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Age range</label>
+            <div class="pills" id="r-age">
+              <span class="pill sel-replicate" onclick="pickPill(this,'r-age','replicate')">Children (9–10)</span>
+              <span class="pill" onclick="pickPill(this,'r-age','replicate')">Mixed ages</span>
+              <span class="pill" onclick="pickPill(this,'r-age','replicate')">Adults</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════════════════ EXCALIDRAW PANEL -->
   <div id="excalidraw-panel" class="hidden">
     <div class="layout">
@@ -936,71 +1075,6 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════ MAP PANEL -->
-  <div id="map-panel" class="hidden">
-    <div class="layout">
-      <div class="panel">
-        <h2>Location</h2>
-        <div class="field">
-          <label>Centre / area <span class="hint">— what to show</span></label>
-          <input type="text" id="m-location" placeholder="e.g. Europe, Bristol UK, the Amazon basin, Ancient Rome" oninput="build()">
-        </div>
-        <div class="field">
-          <label>Zoom level</label>
-          <div class="pills" id="m-zoom">
-            <span class="pill" onclick="pickPill(this,'m-zoom','map')">World</span>
-            <span class="pill sel-map" onclick="pickPill(this,'m-zoom','map')">Continent</span>
-            <span class="pill" onclick="pickPill(this,'m-zoom','map')">Country</span>
-            <span class="pill" onclick="pickPill(this,'m-zoom','map')">Region</span>
-            <span class="pill" onclick="pickPill(this,'m-zoom','map')">City</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Markers <span class="hint">optional — comma-separated places to pin</span></label>
-          <input type="text" id="m-markers" placeholder="e.g. London, Paris, Berlin, Rome" oninput="build()">
-        </div>
-        <div class="field">
-          <label>Route / line <span class="hint">optional</span></label>
-          <input type="text" id="m-route" placeholder="e.g. the Silk Road from Rome to Chang'an" oninput="build()">
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Style</h2>
-        <div class="field">
-          <label>Tile style</label>
-          <div class="pills" id="m-tiles">
-            <span class="pill sel-map" onclick="pickPill(this,'m-tiles','map')">Standard</span>
-            <span class="pill" onclick="pickPill(this,'m-tiles','map')">Terrain</span>
-            <span class="pill" onclick="pickPill(this,'m-tiles','map')">Cycling / outdoor</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Map size</label>
-          <div class="pills" id="m-size">
-            <span class="pill sel-map" onclick="pickPill(this,'m-size','map')">Standard (1200×900)</span>
-            <span class="pill" onclick="pickPill(this,'m-size','map')">Wide (1600×900)</span>
-            <span class="pill" onclick="pickPill(this,'m-size','map')">Square (900×900)</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Marker colour</label>
-          <div class="pills" id="m-colour">
-            <span class="pill sel-map" onclick="pickPill(this,'m-colour','map')">Red</span>
-            <span class="pill" onclick="pickPill(this,'m-colour','map')">Blue</span>
-            <span class="pill" onclick="pickPill(this,'m-colour','map')">Gold</span>
-            <span class="pill" onclick="pickPill(this,'m-colour','map')">Green</span>
-            <span class="pill" onclick="pickPill(this,'m-colour','map')">Black</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Anything extra</label>
-          <input type="text" id="m-extra" placeholder="e.g. label country borders, add a north arrow, show rivers" oninput="build()">
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ══════════════════════════════════════════════════════ OUTPUT -->
   <div class="output-panel">
     <h2 id="output-label">Image prompt</h2>
@@ -1013,7 +1087,6 @@
     </div>
     <p class="excali-tip hidden" id="excali-tip">💡 To export: click <strong>Edit</strong> in the Excalidraw viewer → <strong>Cmd+A</strong> → <strong>Export image</strong></p>
     <p class="canva-tip hidden" id="canva-tip">💡 Claude will generate <strong>4 design candidates</strong> in Canva. Tell it which one to save and export — it will deliver the file directly to you.</p>
-    <p class="canva-tip hidden" id="map-tip">💡 Claude generates the map as a <strong>PNG image</strong> using OpenStreetMap tiles — no API key needed. Saved to <strong>claude-images/Geographer/</strong> on your Mac.</p>
   </div>
 
   <footer>
@@ -1093,18 +1166,17 @@
     currentTool = tool;
     const btns = document.querySelectorAll('.tool-btn');
     btns.forEach(b => { b.className = 'tool-btn'; });
-    const idx = ['dalle','higgsfield','excalidraw','canva','map'].indexOf(tool);
+    const idx = ['dalle','higgsfield','replicate','excalidraw','canva'].indexOf(tool);
     btns[idx].classList.add('active-' + tool);
     document.getElementById('dalle-panel').classList.toggle('hidden', tool !== 'dalle');
     document.getElementById('higgsfield-panel').classList.toggle('hidden', tool !== 'higgsfield');
+    document.getElementById('replicate-panel').classList.toggle('hidden', tool !== 'replicate');
     document.getElementById('excalidraw-panel').classList.toggle('hidden', tool !== 'excalidraw');
     document.getElementById('canva-panel').classList.toggle('hidden', tool !== 'canva');
-    document.getElementById('map-panel').classList.toggle('hidden', tool !== 'map');
     document.getElementById('output-label').textContent =
-      (tool === 'excalidraw' || tool === 'canva' || tool === 'map') ? 'Claude instruction' : 'Image prompt';
+      (tool === 'excalidraw' || tool === 'canva') ? 'Claude instruction' : 'Image prompt';
     document.getElementById('excali-tip').classList.toggle('hidden', tool !== 'excalidraw');
     document.getElementById('canva-tip').classList.toggle('hidden', tool !== 'canva');
-    document.getElementById('map-tip').classList.toggle('hidden', tool !== 'map');
     build();
   }
 
@@ -1150,18 +1222,18 @@
   }
 
   function toggleFaith(el) {
-    if (el.classList.contains('sel-higgsfield') || el.classList.contains('sel-dalle')) {
+    const activeCls = 'sel-' + (currentTool === 'dalle' ? 'dalle' : currentTool === 'replicate' ? 'replicate' : 'higgsfield');
+    if (el.classList.contains(activeCls)) {
       el.className = 'pill';
     } else {
-      const tool = currentTool === 'dalle' ? 'dalle' : 'higgsfield';
-      el.classList.add('sel-' + tool);
+      el.className = 'pill ' + activeCls;
     }
     build();
   }
 
   function getFaithForGroup(prefix) {
     return [...document.querySelectorAll(`#${prefix}-faith .pill`)]
-      .filter(p => p.classList.contains('sel-dalle') || p.classList.contains('sel-higgsfield'))
+      .filter(p => p.classList.contains('sel-dalle') || p.classList.contains('sel-higgsfield') || p.classList.contains('sel-replicate'))
       .map(p => p.textContent.trim());
   }
 
@@ -1275,58 +1347,6 @@
     return instruction;
   }
 
-  function buildMapInstruction() {
-    const location = document.getElementById('m-location').value.trim();
-    if (!location) return '';
-
-    const zoom = getPill('m-zoom');
-    const markers = document.getElementById('m-markers').value.trim();
-    const route = document.getElementById('m-route').value.trim();
-    const tiles = getPill('m-tiles');
-    const size = getPill('m-size');
-    const colour = getPill('m-colour');
-    const extra = document.getElementById('m-extra').value.trim();
-
-    const zoomMap = {
-      'World': 'world level (zoom 2)',
-      'Continent': 'continent level (zoom 4)',
-      'Country': 'country level (zoom 6)',
-      'Region': 'regional level (zoom 9)',
-      'City': 'city level (zoom 12)'
-    };
-    const tileMap = {
-      'Standard': 'standard OpenStreetMap',
-      'Terrain': 'terrain (OpenTopoMap)',
-      'Cycling / outdoor': 'cycling (CyclOSM)'
-    };
-    const sizeMap = {
-      'Standard (1200×900)': '1200×900',
-      'Wide (1600×900)': '1600×900',
-      'Square (900×900)': '900×900'
-    };
-    const colourMap = {
-      'Red': '#CC0000', 'Blue': '#0055CC', 'Gold': '#CC9900',
-      'Green': '#228833', 'Black': '#222222'
-    };
-
-    let instruction = `Generate a geography map using py-staticmaps centred on ${location}, at ${zoomMap[zoom] || zoom}.`;
-    instruction += ` Map size: ${sizeMap[size] || '1200×900'} pixels.`;
-    instruction += ` Use ${tileMap[tiles] || 'standard OpenStreetMap'} tiles.`;
-
-    if (markers) {
-      const hex = colourMap[colour] || '#CC0000';
-      instruction += ` Add labelled markers (colour ${hex}) for: ${markers}.`;
-    }
-    if (route) {
-      instruction += ` Draw a line showing: ${route}.`;
-    }
-    if (extra) {
-      instruction += ` ${extra}.`;
-    }
-    instruction += ` Save as PNG and deliver with SendUserFile.`;
-    return instruction;
-  }
-
   function build() {
     let prompt = '';
 
@@ -1382,15 +1402,40 @@
         prompt += ' [REF-IMG: a reference image will be attached — use it to guide style, composition or content]';
       }
 
+    } else if (currentTool === 'replicate') {
+      const subject = document.getElementById('r-subject').value.trim();
+      if (!subject) { setOutput('', true); return; }
+      const context = document.getElementById('r-context').value.trim();
+      const shot = getPill('r-shot');
+      const model = getPill('r-model');
+      const style = getPill('r-style');
+      const lighting = getPill('r-lighting');
+      const mood = getPill('r-mood');
+      const rAspect = getPill('r-aspect');
+      const extra = document.getElementById('r-extra').value.trim();
+      const diversity = buildDiversityClause('r');
+      const parts = [subject];
+      if (context) parts.push(context);
+      if (shot) parts.push(shot.toLowerCase() + ' shot');
+      if (lighting) parts.push(lighting.toLowerCase() + ' lighting');
+      if (style) parts.push(style.toLowerCase());
+      if (mood) parts.push(mood.toLowerCase() + ' mood');
+      if (extra) parts.push(extra);
+      if (diversity) parts.push(diversity);
+      prompt = parts.join(', ');
+      if (rAspect) prompt += ` [aspect ratio: ${rAspect}]`;
+      const modelName = model.includes('Dev') ? 'Flux Dev' : 'Flux Schnell';
+      prompt += ` [model: ${modelName}]`;
+      if (document.getElementById('r-ref-img').checked) {
+        prompt += ' [REF-IMG: a reference image will be attached — use it to guide style, composition or content]';
+      }
+
     } else if (currentTool === 'excalidraw') {
       prompt = buildExcalidrawInstruction();
       if (!prompt) { setOutput('', true); return; }
 
     } else if (currentTool === 'canva') {
       prompt = buildCanvaInstruction();
-      if (!prompt) { setOutput('', true); return; }
-    } else if (currentTool === 'map') {
-      prompt = buildMapInstruction();
       if (!prompt) { setOutput('', true); return; }
     }
 
@@ -1440,39 +1485,43 @@
   }
 
   function clearAll() {
-    ['d-subject','d-extra','h-subject','h-context','h-extra','e-subject','e-items','e-extra',
-     'd-disability','h-disability','c-subject','c-text','c-extra',
-     'm-location','m-markers','m-route','m-extra'].forEach(id => {
+    ['d-subject','d-extra','h-subject','h-context','h-extra',
+     'r-subject','r-context','r-extra',
+     'e-subject','e-items','e-extra',
+     'd-disability','h-disability','r-disability','c-subject','c-text','c-extra'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     const defaults = {
       'd-labels':0, 'd-colour':0, 'd-quality':1, 'd-bg':0, 'd-complexity':0, 'd-aspect':1,
       'h-shot':2, 'h-style':0, 'h-lighting':1, 'h-mood':0, 'h-palette':1, 'h-aspect':1,
-      'd-gender':0, 'd-age':0, 'h-gender':0, 'h-age':0,
+      'r-shot':2, 'r-model':0, 'r-style':0, 'r-lighting':1, 'r-mood':0, 'r-aspect':1,
+      'd-gender':0, 'd-age':0, 'h-gender':0, 'h-age':0, 'r-gender':0, 'r-age':0,
       'e-canvas':0, 'e-export':1, 'e-scale':0, 'e-anim':1,
-      'c-colour':1, 'c-tone':0, 'c-density':1,
-      'm-zoom':1, 'm-tiles':0, 'm-size':0, 'm-colour':0
+      'c-colour':1, 'c-tone':0, 'c-density':1
     };
     for (const [groupId, defIdx] of Object.entries(defaults)) {
       const pills = document.querySelectorAll(`#${groupId} .pill`);
       const tool = groupId.startsWith('d') ? 'dalle'
                  : groupId.startsWith('h') ? 'higgsfield'
+                 : groupId.startsWith('r') ? 'replicate'
                  : groupId.startsWith('e') ? 'excalidraw'
-                 : groupId.startsWith('m') ? 'map'
                  : 'canva';
       pills.forEach((p, i) => {
         p.className = 'pill';
         if (i === defIdx) p.classList.add('sel-' + tool);
       });
     }
-    document.querySelectorAll('#d-faith .pill, #h-faith .pill').forEach(p => p.className = 'pill');
+    document.querySelectorAll('#d-faith .pill, #h-faith .pill, #r-faith .pill').forEach(p => p.className = 'pill');
     document.getElementById('d-has-people').checked = false;
     document.getElementById('h-has-people').checked = false;
+    document.getElementById('r-has-people').checked = false;
     document.getElementById('d-ref-img').checked = false;
     document.getElementById('h-ref-img').checked = false;
+    document.getElementById('r-ref-img').checked = false;
     document.getElementById('d-diversity').classList.add('hidden');
     document.getElementById('h-diversity').classList.add('hidden');
+    document.getElementById('r-diversity').classList.add('hidden');
     document.querySelectorAll('#e-type .type-card').forEach((c, i) => {
       c.classList.toggle('sel-excalidraw', i === 1);
     });
