@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Tiler — Print Larger on A3</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1e293b;
+      color: #fff;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+    header p  { font-size: 0.85rem; opacity: 0.55; }
+
+    .wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Drop zone ─────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 14px;
+      background: #fff;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 1.5rem;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .drop-zone .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .drop-zone .primary { font-weight: 600; color: #1e293b; margin-bottom: 0.25rem; }
+    .drop-zone .secondary { font-size: 0.8rem; color: #94a3b8; }
+    #fileInput { display: none; }
+
+    /* ── Cards ──────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 1.1rem;
+    }
+
+    /* ── Preview ─────────────────────────────────── */
+    .preview-row {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    #previewCanvas {
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+      max-height: 260px;
+      width: auto;
+    }
+    .info-table { flex: 1; font-size: 0.85rem; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { color: #94a3b8; }
+    .info-row .val { font-weight: 600; }
+
+    /* ── Options grid ─────────────────────────────── */
+    .opts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem 2rem;
+    }
+    @media (max-width: 560px) { .opts-grid { grid-template-columns: 1fr; } }
+
+    .opt-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    /* tile picker */
+    .tile-picker { display: flex; gap: 0.75rem; }
+    .tile-btn {
+      flex: 1;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      cursor: pointer;
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .tile-btn:hover { border-color: #93c5fd; background: #eff6ff; }
+    .tile-btn.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .tile-icon {
+      display: inline-grid;
+      gap: 2px;
+      margin-bottom: 0.4rem;
+    }
+    .tile-icon .c {
+      background: #3b82f6;
+      border-radius: 2px;
+    }
+    .tile-btn.active .tile-icon .c { background: #1d4ed8; }
+    .tile-btn span { font-size: 0.78rem; font-weight: 600; display: block; }
+    .tile-btn small { font-size: 0.7rem; color: #94a3b8; display: block; margin-top: 0.2rem; }
+
+    /* sliders */
+    .slider-row { display: flex; align-items: center; gap: 0.75rem; }
+    input[type="range"] {
+      flex: 1;
+      accent-color: #3b82f6;
+      cursor: pointer;
+    }
+    .slider-badge {
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
+      min-width: 54px;
+      text-align: center;
+    }
+    .slider-hints {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #cbd5e1;
+      margin-top: 0.3rem;
+    }
+
+    /* checkboxes */
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: #475569;
+      margin-bottom: 0.45rem;
+      cursor: pointer;
+    }
+    .check-row input { accent-color: #3b82f6; width: 15px; height: 15px; cursor: pointer; }
+
+    /* info pill */
+    .info-pill {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem;
+      color: #15803d;
+      margin-top: 1.1rem;
+      line-height: 1.5;
+    }
+
+    /* generate */
+    .gen-btn {
+      width: 100%;
+      padding: 1rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: -0.01em;
+    }
+    .gen-btn:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
+    .gen-btn:active:not(:disabled) { transform: translateY(0); }
+    .gen-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+    .progress-wrap { margin-bottom: 1rem; }
+    .prog-bar {
+      background: #e2e8f0;
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .prog-fill {
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .prog-text { font-size: 0.8rem; color: #64748b; text-align: center; }
+
+    .hidden { display: none !important; }
+
+    /* assembly diagram (shown inside info pill) */
+    .asm-diagram {
+      display: inline-grid;
+      gap: 3px;
+      vertical-align: middle;
+      margin: 0 4px;
+    }
+    .asm-cell {
+      width: 18px;
+      height: 24px;
+      background: #dcfce7;
+      border: 1.5px solid #16a34a;
+      border-radius: 2px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>PDF Tiler</h1>
+  <p>Tile an A4 PDF across A3 sheets to print it larger</p>
+</header>
+
+<div class="wrap">
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">📄</div>
+    <p class="primary">Drop a PDF here, or click to browse</p>
+    <p class="secondary">First page will be tiled · A4 portrait or landscape · any PDF</p>
+    <input type="file" id="fileInput" accept=".pdf">
+  </div>
+
+  <!-- Preview -->
+  <div class="card hidden" id="previewCard">
+    <p class="card-title">Source page</p>
+    <div class="preview-row">
+      <canvas id="previewCanvas"></canvas>
+      <div class="info-table" id="infoTable"></div>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="card hidden" id="optsCard">
+    <p class="card-title">Options</p>
+    <div class="opts-grid">
+
+      <!-- Tile count -->
+      <div>
+        <span class="opt-label">Number of A3 sheets</span>
+        <div class="tile-picker">
+          <button class="tile-btn" data-n="2" id="btn2">
+            <div class="tile-icon" style="grid-template-columns:1fr; grid-template-rows:1fr 1fr; width:20px; height:28px;">
+              <div class="c"></div><div class="c"></div>
+            </div>
+            <span>2 sheets</span>
+            <small>≈ 2× bigger</small>
+          </button>
+          <button class="tile-btn active" data-n="4" id="btn4">
+            <div class="tile-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:28px; height:28px;">
+              <div class="c"></div><div class="c"></div>
+              <div class="c"></div><div class="c"></div>
+            </div>
+            <span>4 sheets</span>
+            <small>≈ 2.8× bigger</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Overlap -->
+      <div>
+        <span class="opt-label">Glue overlap between sheets</span>
+        <div class="slider-row">
+          <input type="range" id="overlapSlider" min="8" max="30" value="15">
+          <span class="slider-badge" id="overlapBadge">15 mm</span>
+        </div>
+        <div class="slider-hints"><span>Minimal</span><span>Generous</span></div>
+      </div>
+
+      <!-- Quality -->
+      <div>
+        <span class="opt-label">Render quality</span>
+        <div class="slider-row">
+          <input type="range" id="qualSlider" min="1" max="3" step="1" value="2">
+          <span class="slider-badge" id="qualBadge">Good</span>
+        </div>
+        <div class="slider-hints"><span>Fast/small</span><span>Best</span></div>
+      </div>
+
+      <!-- Extras -->
+      <div>
+        <span class="opt-label">Print aids</span>
+        <label class="check-row"><input type="checkbox" id="chkMarks" checked> Alignment marks at seams</label>
+        <label class="check-row"><input type="checkbox" id="chkLabels" checked> Sheet position labels</label>
+        <label class="check-row"><input type="checkbox" id="chkInstruct" checked> Assembly instructions page</label>
+      </div>
+
+    </div>
+
+    <div class="info-pill hidden" id="infoPill"></div>
+  </div>
+
+  <!-- Generate -->
+  <div class="card hidden" id="genCard">
+    <div class="progress-wrap hidden" id="progWrap">
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <p class="prog-text" id="progText">Preparing…</p>
+    </div>
+    <button class="gen-btn" id="genBtn">Generate Tiled PDF</button>
+  </div>
+
+</div><!-- /wrap -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+'use strict';
+
+// ─── PDF.js setup ────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let pdfDoc  = null;
+let pageInf = null; // { widthPt, heightPt, widthMm, heightMm, isPortrait, name, pages }
+let numTiles = 4;
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const dropZone      = document.getElementById('dropZone');
+const fileInput     = document.getElementById('fileInput');
+const previewCard   = document.getElementById('previewCard');
+const previewCanvas = document.getElementById('previewCanvas');
+const infoTable     = document.getElementById('infoTable');
+const optsCard      = document.getElementById('optsCard');
+const genCard       = document.getElementById('genCard');
+const infoPill      = document.getElementById('infoPill');
+const overlapSlider = document.getElementById('overlapSlider');
+const overlapBadge  = document.getElementById('overlapBadge');
+const qualSlider    = document.getElementById('qualSlider');
+const qualBadge     = document.getElementById('qualBadge');
+const progWrap      = document.getElementById('progWrap');
+const progFill      = document.getElementById('progFill');
+const progText      = document.getElementById('progText');
+const genBtn        = document.getElementById('genBtn');
+
+// ─── File handling ────────────────────────────────────────────────────────────
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+// ─── Tile picker ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.tile-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tile-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    numTiles = parseInt(btn.dataset.n);
+    updateInfo();
+  });
+});
+
+// ─── Sliders ─────────────────────────────────────────────────────────────────
+overlapSlider.addEventListener('input', () => {
+  overlapBadge.textContent = overlapSlider.value + ' mm';
+  updateInfo();
+});
+
+const qualLabels = ['Draft', 'Good', 'High'];
+qualSlider.addEventListener('input', () => {
+  qualBadge.textContent = qualLabels[parseInt(qualSlider.value) - 1];
+});
+
+// ─── Load PDF ─────────────────────────────────────────────────────────────────
+async function loadFile(file) {
+  dropZone.querySelector('.primary').textContent = 'Loading…';
+  try {
+    const buf = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const page = await pdfDoc.getPage(1);
+    const vp = page.getViewport({ scale: 1 });
+
+    const PT_TO_MM = 25.4 / 72;
+    pageInf = {
+      widthPt:   vp.width,
+      heightPt:  vp.height,
+      widthMm:   Math.round(vp.width  * PT_TO_MM * 10) / 10,
+      heightMm:  Math.round(vp.height * PT_TO_MM * 10) / 10,
+      isPortrait: vp.height >= vp.width,
+      name:       file.name,
+      pages:      pdfDoc.numPages,
+    };
+
+    // Preview render
+    const previewScale = Math.min(260 / vp.height, 200 / vp.width, 1.5);
+    const pvp = page.getViewport({ scale: previewScale });
+    previewCanvas.width  = pvp.width;
+    previewCanvas.height = pvp.height;
+    previewCanvas.style.maxHeight = '260px';
+    await page.render({ canvasContext: previewCanvas.getContext('2d'), viewport: pvp }).promise;
+
+    // Info table
+    infoTable.innerHTML = `
+      <div class="info-row"><span class="lbl">File</span><span class="val">${file.name}</span></div>
+      <div class="info-row"><span class="lbl">Pages</span><span class="val">${pdfDoc.numPages}${pdfDoc.numPages > 1 ? ' (page 1 will be tiled)' : ''}</span></div>
+      <div class="info-row"><span class="lbl">Page size</span><span class="val">${pageInf.widthMm} × ${pageInf.heightMm} mm</span></div>
+      <div class="info-row"><span class="lbl">Orientation</span><span class="val">${pageInf.isPortrait ? 'Portrait' : 'Landscape'}</span></div>
+    `;
+
+    previewCard.classList.remove('hidden');
+    optsCard.classList.remove('hidden');
+    genCard.classList.remove('hidden');
+    updateInfo();
+    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+  } catch (err) {
+    alert('Could not load PDF: ' + err.message);
+    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+  }
+}
+
+// ─── Info pill ────────────────────────────────────────────────────────────────
+function updateInfo() {
+  if (!pageInf) return;
+
+  const ov       = parseInt(overlapSlider.value);
+  const portrait = pageInf.isPortrait;
+
+  // Layout: cols × rows, and A3 sheet orientation
+  let cols, rows, sheetOri;
+  if (numTiles === 2) {
+    if (portrait) { cols = 1; rows = 2; sheetOri = 'landscape'; }
+    else          { cols = 2; rows = 1; sheetOri = 'portrait';  }
+  } else {
+    cols = 2; rows = 2;
+    sheetOri = portrait ? 'portrait' : 'landscape';
+  }
+
+  const A3W = 420, A3H = 297; // mm
+  const pgW = sheetOri === 'landscape' ? A3W : A3H;
+  const pgH = sheetOri === 'landscape' ? A3H : A3W;
+
+  const totalW  = cols * pgW;
+  const totalH  = rows * pgH;
+  const scaleX  = totalW / pageInf.widthMm;
+  const scaleY  = totalH / pageInf.heightMm;
+  const scale   = Math.min(scaleX, scaleY);
+
+  const finalW  = Math.round(pageInf.widthMm  * scale);
+  const finalH  = Math.round(pageInf.heightMm * scale);
+
+  infoPill.innerHTML = `
+    <strong>Output:</strong> ${numTiles} × A3 ${sheetOri} (${cols === 1 ? '1 column' : '2 columns'}, ${rows === 1 ? '1 row' : '2 rows'}) —
+    <strong>${Math.round(scale * 10) / 10}× enlargement</strong><br>
+    Assembled size: <strong>${finalW} × ${finalH} mm</strong> (${Math.round(finalW / 10)} × ${Math.round(finalH / 10)} cm)
+    · Overlap: ${ov} mm on each shared edge
+  `;
+  infoPill.classList.remove('hidden');
+}
+
+// ─── Progress ────────────────────────────────────────────────────────────────
+function setProgress(pct, msg) {
+  progFill.style.width = pct + '%';
+  progText.textContent = msg;
+}
+
+// ─── Alignment mark ───────────────────────────────────────────────────────────
+function drawCross(ctx, x, y, size, lw) {
+  ctx.save();
+  // White outline for visibility on any content
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = lw * 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
+  // Dark cross
+  ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+  ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
+  // Centre dot
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.beginPath(); ctx.arc(x, y, lw * 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// Dashed seam line
+function drawSeamLine(ctx, x1, y1, x2, y2, lw) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = lw;
+  ctx.setLineDash([lw * 4, lw * 4]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+// ─── Generate ─────────────────────────────────────────────────────────────────
+genBtn.addEventListener('click', generatePDF);
+
+async function generatePDF() {
+  if (!pdfDoc || !pageInf) return;
+
+  genBtn.disabled = true;
+  progWrap.classList.remove('hidden');
+  setProgress(5, 'Preparing…');
+
+  try {
+    const overlapMm   = parseInt(overlapSlider.value);
+    const qualLevel   = parseInt(qualSlider.value);
+    const doMarks     = document.getElementById('chkMarks').checked;
+    const doLabels    = document.getElementById('chkLabels').checked;
+    const doInstruct  = document.getElementById('chkInstruct').checked;
+
+    // ── Layout ──────────────────────────────────────────────────────────────
+    const portrait = pageInf.isPortrait;
+    let cols, rows, sheetOri;
+    if (numTiles === 2) {
+      if (portrait) { cols = 1; rows = 2; sheetOri = 'landscape'; }
+      else          { cols = 2; rows = 1; sheetOri = 'portrait';  }
+    } else {
+      cols = 2; rows = 2;
+      sheetOri = portrait ? 'portrait' : 'landscape';
+    }
+
+    const A3W = 420, A3H = 297;
+    const pgW_mm = sheetOri === 'landscape' ? A3W : A3H;
+    const pgH_mm = sheetOri === 'landscape' ? A3H : A3W;
+
+    // Scale to make the source fill the tile grid
+    const contentScale = Math.min(
+      (cols * pgW_mm) / pageInf.widthMm,
+      (rows * pgH_mm) / pageInf.heightMm
+    );
+
+    // Quality multipliers: draft 2×, good 3×, high 4.5× (capped)
+    const qualMult = [2, 3, 4.5][qualLevel - 1];
+    const renderScale = Math.min(contentScale * qualMult, 9); // cap to avoid canvas OOM
+
+    // ── Render source page ───────────────────────────────────────────────────
+    setProgress(15, 'Rendering source page…');
+    const page = await pdfDoc.getPage(1);
+    const vp   = page.getViewport({ scale: renderScale });
+    const src  = document.createElement('canvas');
+    src.width  = Math.round(vp.width);
+    src.height = Math.round(vp.height);
+    const srcCtx = src.getContext('2d');
+    srcCtx.fillStyle = '#fff';
+    srcCtx.fillRect(0, 0, src.width, src.height);
+    await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
+    setProgress(40, 'Source rendered. Building tiles…');
+
+    // ── Tile maths ───────────────────────────────────────────────────────────
+    const overlapPx  = (overlapMm / 25.4) * 72 * renderScale;
+    const nomTileW   = src.width  / cols;  // nominal tile width (px)
+    const nomTileH   = src.height / rows;  // nominal tile height (px)
+
+    // Sheet labels for 2- and 4-sheet layouts
+    const LABELS_22  = ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'];
+    const LABELS_1x2 = ['Top', 'Bottom'];
+    const LABELS_2x1 = ['Left', 'Right'];
+
+    // ── Create jsPDF ─────────────────────────────────────────────────────────
+    const { jsPDF } = window.jspdf;
+    let doc   = null;
+    let total = cols * rows;
+    let idx   = 0;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        idx++;
+        setProgress(40 + (idx / total) * 48, `Building sheet ${idx} of ${total}…`);
+        await new Promise(r => setTimeout(r, 5)); // yield to UI
+
+        // Overlap margins for this tile
+        const lOv = col > 0             ? overlapPx : 0;
+        const rOv = col < cols - 1      ? overlapPx : 0;
+        const tOv = row > 0             ? overlapPx : 0;
+        const bOv = row < rows - 1      ? overlapPx : 0;
+
+        const sx = Math.max(0, Math.round(col * nomTileW - lOv));
+        const sy = Math.max(0, Math.round(row * nomTileH - tOv));
+        const sw = Math.min(src.width  - sx, Math.round(nomTileW + lOv + rOv));
+        const sh = Math.min(src.height - sy, Math.round(nomTileH + tOv + bOv));
+
+        const tc  = document.createElement('canvas');
+        tc.width  = sw;
+        tc.height = sh;
+        const tCtx = tc.getContext('2d');
+
+        // White background
+        tCtx.fillStyle = '#fff';
+        tCtx.fillRect(0, 0, sw, sh);
+
+        // Content
+        tCtx.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
+
+        // ── Seam lines (dashed) ──────────────────────────────────────────────
+        if (doMarks) {
+          const lw = Math.max(1, renderScale * 0.4);
+          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv), 0, Math.round(lOv), sh, lw);
+          if (rOv > 0) drawSeamLine(tCtx, Math.round(sw - rOv), 0, Math.round(sw - rOv), sh, lw);
+          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv), sw, Math.round(tOv), lw);
+          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(sh - bOv), sw, Math.round(sh - bOv), lw);
+        }
+
+        // ── Alignment crosses ────────────────────────────────────────────────
+        if (doMarks) {
+          const mSz  = overlapPx * 0.35;
+          const mLw  = Math.max(1, renderScale * 0.45);
+          const seamsX = [];
+          const seamsY = [];
+          if (lOv > 0) seamsX.push(Math.round(lOv));
+          if (rOv > 0) seamsX.push(Math.round(sw - rOv));
+          if (tOv > 0) seamsY.push(Math.round(tOv));
+          if (bOv > 0) seamsY.push(Math.round(sh - bOv));
+
+          // Corners of seam intersections
+          seamsX.forEach(x => seamsY.forEach(y => drawCross(tCtx, x, y, mSz, mLw)));
+          // Mid-points along each seam edge
+          seamsX.forEach(x => drawCross(tCtx, x, Math.round(sh / 2), mSz, mLw));
+          seamsY.forEach(y => drawCross(tCtx, Math.round(sw / 2), y, mSz, mLw));
+        }
+
+        // ── Sheet label ──────────────────────────────────────────────────────
+        if (doLabels) {
+          let labelStr;
+          if (cols === 2 && rows === 2) labelStr = LABELS_22[row * 2 + col];
+          else if (cols === 1)           labelStr = LABELS_1x2[row];
+          else                           labelStr = LABELS_2x1[col];
+          labelStr += ` — Sheet ${idx} of ${total}`;
+
+          const fsPx  = Math.max(14, Math.round(overlapPx * 0.45));
+          const padX  = Math.max(8, Math.round(overlapPx * 0.12));
+          const padY  = padX + fsPx;
+          const bPad  = Math.round(fsPx * 0.35);
+          tCtx.font   = `600 ${fsPx}px -apple-system, sans-serif`;
+          const tw    = tCtx.measureText(labelStr).width;
+
+          // Semi-transparent background pill
+          tCtx.fillStyle = 'rgba(255,255,255,0.82)';
+          tCtx.beginPath();
+          tCtx.roundRect(padX - bPad, padY - fsPx - bPad, tw + bPad * 2, fsPx + bPad * 2, 4);
+          tCtx.fill();
+
+          tCtx.fillStyle = 'rgba(30,41,59,0.8)';
+          tCtx.fillText(labelStr, padX, padY);
+        }
+
+        // ── Add to PDF ───────────────────────────────────────────────────────
+        if (!doc) {
+          doc = new jsPDF({ orientation: sheetOri, unit: 'mm', format: 'a3' });
+        } else {
+          doc.addPage('a3', sheetOri);
+        }
+        doc.addImage(tc.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, pgW_mm, pgH_mm);
+      }
+    }
+
+    // ── Assembly instructions page ───────────────────────────────────────────
+    if (doInstruct && doc) {
+      setProgress(90, 'Adding assembly instructions…');
+      await new Promise(r => setTimeout(r, 5));
+      doc.addPage('a3', 'landscape');
+      drawInstructionsPage(doc, cols, rows, sheetOri, pgW_mm, pgH_mm, overlapMm, numTiles);
+    }
+
+    // ── Save ─────────────────────────────────────────────────────────────────
+    setProgress(97, 'Saving…');
+    const outName = pageInf.name.replace(/\.pdf$/i, '') + `_tiled_${numTiles}sheets.pdf`;
+    doc.save(outName);
+
+    setProgress(100, '✓ Download started — check your downloads folder');
+    setTimeout(() => {
+      progWrap.classList.add('hidden');
+      genBtn.disabled = false;
+      setProgress(0, '');
+    }, 4000);
+
+  } catch (err) {
+    console.error(err);
+    setProgress(0, '⚠ Error: ' + err.message);
+    genBtn.disabled = false;
+  }
+}
+
+// ─── Instructions page ───────────────────────────────────────────────────────
+function drawInstructionsPage(doc, cols, rows, sheetOri, pgW, pgH, overlapMm, numTiles) {
+  // A3 landscape: 420 × 297 mm
+  const PW = 420, PH = 297;
+  const mg = 20; // margin mm
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(30, 41, 59);
+  doc.text('Assembly Instructions', PW / 2, mg + 10, { align: 'center' });
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${numTiles}-sheet tiling · ${overlapMm} mm glue overlap · Print each sheet at 100% actual size on A3 paper`,
+    PW / 2, mg + 18, { align: 'center' });
+
+  // Divider
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.4);
+  doc.line(mg, mg + 22, PW - mg, mg + 22);
+
+  // ── Layout diagram ──────────────────────────────────────────────────────────
+  const LABELS_22  = ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'];
+  const LABELS_1x2 = ['Top', 'Bottom'];
+  const LABELS_2x1 = ['Left', 'Right'];
+
+  const diagX   = mg;
+  const diagY   = mg + 32;
+  const cellW   = cols === 2 ? 60 : 80;
+  const cellH   = rows === 2 ? 52 : 70;
+  const cellGap = 6;
+  const diagW   = cols * cellW + (cols - 1) * cellGap;
+  const diagH   = rows * cellH + (rows - 1) * cellGap;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Sheet arrangement', diagX, diagY - 3);
+
+  let sheetIdx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      sheetIdx++;
+      const cx = diagX + c * (cellW + cellGap);
+      const cy = diagY + r * (cellH + cellGap);
+
+      // Cell background
+      doc.setFillColor(239, 246, 255);
+      doc.setDrawColor(59, 130, 246);
+      doc.setLineWidth(0.8);
+      doc.roundedRect(cx, cy, cellW, cellH, 2, 2, 'FD');
+
+      // Sheet number
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(29, 78, 216);
+      doc.text(String(sheetIdx), cx + cellW / 2, cy + cellH * 0.45, { align: 'center' });
+
+      // Sheet label
+      let lbl;
+      if (cols === 2 && rows === 2) lbl = LABELS_22[r * 2 + c];
+      else if (cols === 1)           lbl = LABELS_1x2[r];
+      else                           lbl = LABELS_2x1[c];
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      doc.text(lbl, cx + cellW / 2, cy + cellH * 0.68, { align: 'center' });
+
+      // Orientation note
+      doc.setFontSize(6);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`A3 ${sheetOri}`, cx + cellW / 2, cy + cellH * 0.84, { align: 'center' });
+    }
+  }
+
+  // Overlap arrows between cells
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.4);
+  if (cols > 1) {
+    // Horizontal overlap arrows
+    for (let r = 0; r < rows; r++) {
+      const ax = diagX + cellW + cellGap / 2;
+      const ay = diagY + r * (cellH + cellGap) + cellH / 2;
+      doc.text(`←${overlapMm}mm→`, ax, ay, { align: 'center' });
+    }
+  }
+  if (rows > 1) {
+    // Vertical overlap arrows (rotated text would be ideal; use a note instead)
+    for (let c = 0; c < cols; c++) {
+      const ax = diagX + c * (cellW + cellGap) + cellW / 2;
+      const ay = diagY + cellH + cellGap / 2 + 2;
+      doc.text(`↑${overlapMm}mm↓`, ax, ay, { align: 'center' });
+    }
+  }
+
+  // ── Step-by-step instructions ────────────────────────────────────────────────
+  const stepsX  = diagX + diagW + 18;
+  const stepsY  = diagY;
+  const stepsW  = PW - mg - stepsX;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  doc.text('How to assemble', stepsX, stepsY - 3);
+
+  const steps = [
+    ['1', 'Print each sheet at 100% actual size', 'In your print dialog, set scaling to "Actual size" or 100%.\nDo not fit to page — this will distort the scale.'],
+    ['2', 'Check the sheet labels', 'Each sheet has a label in one corner (Top Left, Top Right,\netc.). Lay them out in the order shown in the diagram.'],
+    ['3', 'Use the dashed seam lines', 'Each sheet shows dashed lines and + marks where it\njoins the adjacent sheet. These are your alignment guides.'],
+    ['4', 'Trim one edge at each join', 'On one of the two sheets at each join, trim along the\ndashed seam line using a craft knife and ruler.'],
+    ['5', 'Align using the + marks', 'Place the trimmed sheet on top of the adjacent sheet.\nLine up the + marks exactly before gluing.'],
+    ['6', 'Glue and press flat', 'Apply a thin, even layer of glue (PVA or stick glue)\nto the overlap area. Press firmly and leave to dry flat.'],
+  ];
+
+  let sy2 = stepsY + 2;
+  steps.forEach(([num, title, body]) => {
+    if (sy2 > PH - mg - 12) return; // safety
+
+    // Number circle
+    doc.setFillColor(59, 130, 246);
+    doc.circle(stepsX + 4, sy2 + 3, 3.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(num, stepsX + 4, sy2 + 3 + 2.5, { align: 'center' });
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, stepsX + 10, sy2 + 4);
+
+    // Body
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    const lines = body.split('\n');
+    lines.forEach((line, li) => {
+      doc.text(line, stepsX + 10, sy2 + 4 + 5 + li * 4.5);
+    });
+
+    sy2 += 4 + 5 + lines.length * 4.5 + 6;
+  });
+
+  // ── Tip box ───────────────────────────────────────────────────────────────
+  const tipY = PH - mg - 22;
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(187, 247, 208);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(mg, tipY, PW - mg * 2, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(21, 128, 61);
+  doc.text('💡 Tips for a polished result:', mg + 4, tipY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(22, 101, 52);
+  const tips = [
+    'Work on a flat, clean surface',
+    'Use a bone folder to press seams flat',
+    'Trim the outer edges for a clean border',
+    'Mount on foam board for display',
+  ];
+  doc.text(tips.join('   ·   '), mg + 4, tipY + 13);
+
+  // Footer
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Generated by PDF Tiler', PW - mg, PH - 8, { align: 'right' });
+}
+</script>
+</body>
+</html>
