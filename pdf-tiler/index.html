@@ -314,8 +314,8 @@
       <div>
         <span class="opt-label">Print aids</span>
         <label class="check-row"><input type="checkbox" id="chkMarks" checked> Alignment marks at seams</label>
-        <label class="check-row"><input type="checkbox" id="chkLabels" checked> Sheet position labels</label>
-        <label class="check-row"><input type="checkbox" id="chkInstruct" checked> Assembly instructions page</label>
+        <label class="check-row"><input type="checkbox" id="chkLabels"> Sheet position labels</label>
+        <label class="check-row"><input type="checkbox" id="chkInstruct"> Assembly instructions page</label>
       </div>
 
     </div>
@@ -494,13 +494,13 @@ function setProgress(pct, msg) {
 function drawCross(ctx, x, y, size, lw) {
   ctx.save();
   // White outline for visibility on any content
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-  ctx.lineWidth = lw * 3;
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = lw * 2.5;
   ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
   // Dark cross
-  ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.28)';
   ctx.lineWidth = lw;
   ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
@@ -513,7 +513,7 @@ function drawCross(ctx, x, y, size, lw) {
 // Dashed seam line
 function drawSeamLine(ctx, x1, y1, x2, y2, lw) {
   ctx.save();
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
   ctx.lineWidth = lw;
   ctx.setLineDash([lw * 4, lw * 4]);
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
