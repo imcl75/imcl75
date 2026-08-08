@@ -152,13 +152,18 @@
     .skill-chip.locked { cursor: default; opacity: 1; }
     .skill-chip.locked:hover { border-color: #059669; background: #f0fdf4; }
     .skill-chip.nn.locked:hover { border-color: #9ca3af; background: #f3f4f6; }
+    /* Blue, matching "actively selected" — a teaching-focus skill is just a
+       flagged subset of what's already selected, same identity colour.
+       Amber is reserved for the year-group-equivalent marker once that
+       mapping step exists — a distinct, narrower meaning, not a section
+       theme. */
     .focus-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
-    .focus-chip:hover { border-color: #d97706; background: #fffbeb; }
-    .focus-chip.on { border-color: #d97706; background: #fffbeb; color: #92400e; font-weight: 600; }
-    .teaching-focus-section { margin-top: 1.2rem; padding: 1rem; background: #fefce8; border: 1.5px solid #fde68a; border-radius: 8px; }
-    .teaching-focus-section h4 { font-size: 0.85rem; font-weight: 700; color: #78350f; margin-bottom: 0.25rem; }
-    .teaching-focus-section .hint { display: block; font-size: 0.78rem; color: #92400e; margin-bottom: 0.75rem; }
-    #teachingFocusEmpty { font-size: 0.78rem; color: #92400e; display: none; }
+    .focus-chip:hover { border-color: #2563eb; background: #eff6ff; }
+    .focus-chip.on { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+    .teaching-focus-section { margin-top: 1.2rem; padding: 1rem; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; }
+    .teaching-focus-section h4 { font-size: 0.85rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.25rem; }
+    .teaching-focus-section .hint { display: block; font-size: 0.78rem; color: #1d4ed8; margin-bottom: 0.75rem; }
+    #teachingFocusEmpty { font-size: 0.78rem; color: #1d4ed8; display: none; }
     .skill-group { margin-bottom: 0.9rem; }
     .skill-group-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
 
