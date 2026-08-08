@@ -141,12 +141,17 @@
     .purpose-chip.on { border-color: #7c3aed; background: #f5f3ff; color: #6d28d9; font-weight: 600; }
     /* Writing skill chips */
     .skill-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
-    .skill-chip:hover { border-color: #059669; background: #f0fdf4; }
-    .skill-chip.on { border-color: #059669; background: #f0fdf4; color: #047857; font-weight: 600; }
-    .skill-chip.nn { border-color: #b45309; background: #fffbeb; color: #92400e; font-weight: 600; cursor: default; }
+    .skill-chip:hover { border-color: #2563eb; background: #eff6ff; }
+    /* Three distinct meanings, three distinct colours: grey = non-negotiable
+       (always required, not a real choice), green = preselected default
+       (Y5 framework expects this in every writing outcome, still shown as
+       locked-on), blue = actively selected by the teacher for this enquiry. */
+    .skill-chip.on:not(.locked) { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+    .skill-chip.on.locked { border-color: #059669; background: #f0fdf4; color: #047857; font-weight: 600; }
+    .skill-chip.nn { border-color: #9ca3af; background: #f3f4f6; color: #4b5563; font-weight: 600; cursor: default; }
     .skill-chip.locked { cursor: default; opacity: 1; }
     .skill-chip.locked:hover { border-color: #059669; background: #f0fdf4; }
-    .skill-chip.nn.locked:hover { border-color: #b45309; background: #fffbeb; }
+    .skill-chip.nn.locked:hover { border-color: #9ca3af; background: #f3f4f6; }
     .focus-chip { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 20px; cursor: pointer; font-size: 0.78rem; transition: all 0.12s; user-select: none; background: white; }
     .focus-chip:hover { border-color: #d97706; background: #fffbeb; }
     .focus-chip.on { border-color: #d97706; background: #fffbeb; color: #92400e; font-weight: 600; }
