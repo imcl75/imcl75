@@ -278,6 +278,7 @@
         <span class="opt-label">Layout <span id="recBadge" class="rec-badge hidden">Auto-selected</span></span>
         <div class="layout-picker" id="layoutPicker">
 
+          <!-- Wide layouts (1 row) -->
           <button class="layout-btn" data-cols="2" data-rows="1" data-ori="landscape" id="btnW2">
             <div class="layout-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr; width:34px; height:18px;">
               <div class="c"></div><div class="c"></div>
@@ -302,6 +303,7 @@
             <span class="lb-desc">Panoramic</span>
           </button>
 
+          <!-- Standard 2×2 -->
           <button class="layout-btn active" data-cols="2" data-rows="2" data-ori="auto" id="btn22">
             <div class="layout-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:26px; height:26px;">
               <div class="c"></div><div class="c"></div>
@@ -311,6 +313,7 @@
             <span class="lb-desc">Standard grid</span>
           </button>
 
+          <!-- Tall layouts (1 column) -->
           <button class="layout-btn" data-cols="1" data-rows="2" data-ori="portrait" id="btnT2">
             <div class="layout-icon" style="grid-template-columns:1fr; grid-template-rows:1fr 1fr; width:18px; height:34px;">
               <div class="c"></div><div class="c"></div>
@@ -408,15 +411,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let pdfDoc       = null;
-let pageInf      = null;
-let sourceType   = null;
-let sourceCanvas = null;
-let htmlContent  = null;
-let captureWidth = 6000;
+let pageInf      = null;   // { widthMm, heightMm, isPortrait, name, type, ... }
+let sourceType   = null;   // 'pdf' | 'image' | 'html'
+let sourceCanvas = null;   // pre-rendered canvas for image / html sources
+let htmlContent  = null;   // stored HTML string for re-render
+let captureWidth = 6000;   // HTML capture width in px
 
+// Layout state — cols × rows + orientation
 let layoutCols = 2;
 let layoutRows = 2;
-let layoutOri  = 'auto';
+let layoutOri  = 'auto'; // 'landscape' | 'portrait' | 'auto' (auto = match source)
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 const dropZone        = document.getElementById('dropZone');
@@ -456,7 +460,7 @@ document.querySelectorAll('.layout-btn').forEach(btn => {
     layoutCols = parseInt(btn.dataset.cols);
     layoutRows = parseInt(btn.dataset.rows);
     layoutOri  = btn.dataset.ori;
-    recBadge.classList.add('hidden');
+    recBadge.classList.add('hidden'); // user overrode auto
     updateInfo();
   });
 });
@@ -481,9 +485,9 @@ qualSlider.addEventListener('input', () => {
   qualBadge.textContent = qualLabels[parseInt(qualSlider.value) - 1];
 });
 
-// ─── Auto-detect optimal layout ──────────────────────────────────────────────
+// ─── Auto-detect optimal layout from content aspect ratio ────────────────────
 function autoDetectLayout(widthMm, heightMm) {
-  const aspect = widthMm / heightMm;
+  const aspect = widthMm / heightMm; // > 1 = wide, < 1 = tall
   if      (aspect > 4.5)  return { cols: 4, rows: 1, ori: 'landscape', id: 'btnW4' };
   else if (aspect > 2.8)  return { cols: 3, rows: 1, ori: 'landscape', id: 'btnW3' };
   else if (aspect > 1.7)  return { cols: 2, rows: 1, ori: 'landscape', id: 'btnW2' };
@@ -494,6 +498,7 @@ function autoDetectLayout(widthMm, heightMm) {
 
 function applyAutoLayout(widthMm, heightMm) {
   const rec = autoDetectLayout(widthMm, heightMm);
+  // Only auto-apply if user hasn't already made a selection this session
   document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
   const target = document.getElementById(rec.id);
   if (target) target.classList.add('active');
@@ -503,6 +508,7 @@ function applyAutoLayout(widthMm, heightMm) {
   recBadge.classList.remove('hidden');
 }
 
+// ─── Resolve sheet orientation ────────────────────────────────────────────────
 function resolveOri(ori) {
   if (ori === 'auto') return (pageInf && pageInf.isPortrait) ? 'portrait' : 'landscape';
   return ori;
@@ -597,20 +603,29 @@ async function renderHTML() {
 
   const iframe = document.createElement('iframe');
   iframe.className = 'tiler-render';
-  iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${captureWidth}px;height:4000px;border:none;visibility:hidden;pointer-events:none;`;
+  // Start with minimal height so the content renders at its natural height
+  // (avoids min-height:100vh or similar inflating scrollHeight to iframe size)
+  iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${captureWidth}px;height:1px;border:none;visibility:hidden;pointer-events:none;`;
   document.body.appendChild(iframe);
 
   try {
     await new Promise((res, rej) => { iframe.onload = res; iframe.onerror = rej; iframe.srcdoc = htmlContent; });
-    await new Promise(r => setTimeout(r, 800));
+    // Longer settle — gives JS-rendered content (timelines, charts) time to draw
+    await new Promise(r => setTimeout(r, 1200));
     setProgress(25, 'Measuring content…');
 
     const iDoc = iframe.contentDocument;
-    const fullW = Math.max(iDoc.documentElement.scrollWidth, captureWidth);
-    const fullH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    const fullW = Math.max(iDoc.documentElement.scrollWidth, iDoc.body.scrollWidth, captureWidth);
+    // Measure true content height while viewport is still small (not inflated by 100vh)
+    const naturalH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    // Expand to actual content size and let any reflow settle
     iframe.style.width  = fullW + 'px';
-    iframe.style.height = fullH + 'px';
+    iframe.style.height = naturalH + 'px';
     await new Promise(r => setTimeout(r, 200));
+    // Re-measure in case expanding width caused a reflow (e.g. wider → less height)
+    const fullH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    iframe.style.height = fullH + 'px';
+    await new Promise(r => setTimeout(r, 100));
     setProgress(35, 'Capturing…');
 
     const canvas = await html2canvas(iDoc.body, {
@@ -678,18 +693,26 @@ function showInfoAndCards() {
 // ─── Info pill ────────────────────────────────────────────────────────────────
 function updateInfo() {
   if (!pageInf) return;
-  const ov       = parseInt(overlapSlider.value);
-  const cols     = layoutCols;
-  const rows     = layoutRows;
+
+  const ov      = parseInt(overlapSlider.value);
+  const cols    = layoutCols;
+  const rows    = layoutRows;
   const sheetOri = resolveOri(layoutOri);
+
   const A3W = 420, A3H = 297;
   const pgW = sheetOri === 'landscape' ? A3W : A3H;
   const pgH = sheetOri === 'landscape' ? A3H : A3W;
-  const scale  = Math.min((cols * pgW) / pageInf.widthMm, (rows * pgH) / pageInf.heightMm);
+
+  const totalW = cols * pgW;
+  const totalH = rows * pgH;
+  const scale  = Math.min(totalW / pageInf.widthMm, totalH / pageInf.heightMm);
+
   const finalW = Math.round(pageInf.widthMm  * scale);
   const finalH = Math.round(pageInf.heightMm * scale);
+  const total  = cols * rows;
+
   infoPill.innerHTML = `
-    <strong>Output:</strong> ${cols * rows} × A3 ${sheetOri} · ${cols} column${cols > 1 ? 's' : ''}, ${rows} row${rows > 1 ? 's' : ''} —
+    <strong>Output:</strong> ${total} × A3 ${sheetOri} in a ${cols === 1 ? '1-column' : cols + '-column'}, ${rows === 1 ? '1-row' : rows + '-row'} grid —
     <strong>${Math.round(scale * 10) / 10}× enlargement</strong><br>
     Assembled size: <strong>${finalW} × ${finalH} mm</strong> (${Math.round(finalW / 10)} × ${Math.round(finalH / 10)} cm)
     · Overlap: ${ov} mm on each shared edge
@@ -780,36 +803,88 @@ async function generatePDF() {
 
     setProgress(40, 'Building tiles…');
 
+    // ── For image / HTML sources, build an intermediate canvas that represents
+    //    the full assembled grid at output resolution, with the content scaled
+    //    and centred. This makes the tile loop trivial (offX=offY=0, 1:1 read)
+    //    and correctly handles any scale factor — enlargement OR reduction.
+    if (sourceType !== 'pdf') {
+      const scale_content = Math.min(
+        (cols * pgW_mm) / pageInf.widthMm,
+        (rows * pgH_mm) / pageInf.heightMm
+      );
+      // Pick output resolution: use source DPI * scale, capped so canvas stays manageable
+      const srcPxPerMm   = src.width / pageInf.widthMm;
+      const rawOutPxPerMm = srcPxPerMm * scale_content;
+      const maxPxPerMm   = qualLevel === 3 ? 5 : qualLevel === 2 ? 4 : 3;
+      const outPxPerMm   = Math.min(rawOutPxPerMm, maxPxPerMm);
+      const maxDim = 15000;
+
+      const interW = Math.min(Math.round(cols * pgW_mm * outPxPerMm), maxDim);
+      const interH = Math.min(Math.round(rows * pgH_mm * outPxPerMm), maxDim);
+
+      // Recompute actual px/mm after possible maxDim clamping
+      const effPxPerMm = Math.min(interW / (cols * pgW_mm), interH / (rows * pgH_mm));
+
+      // Scaled content dimensions on the intermediate canvas
+      const scaledSrcW = Math.round(pageInf.widthMm  * scale_content * effPxPerMm);
+      const scaledSrcH = Math.round(pageInf.heightMm * scale_content * effPxPerMm);
+
+      // Centre within the intermediate canvas (letterbox)
+      const interOffX = Math.round((interW - scaledSrcW) / 2);
+      const interOffY = Math.round((interH - scaledSrcH) / 2);
+
+      setProgress(42, 'Compositing image…');
+      const interCanvas = document.createElement('canvas');
+      interCanvas.width  = interW;
+      interCanvas.height = interH;
+      const interCtx = interCanvas.getContext('2d');
+      interCtx.fillStyle = '#fff';
+      interCtx.fillRect(0, 0, interW, interH);
+      interCtx.drawImage(src, interOffX, interOffY, scaledSrcW, scaledSrcH);
+
+      src = interCanvas;
+      // Rewrite pageInf so tile loop sees src as filling the grid exactly (offX=offY=0)
+      pageInf = { ...pageInf, widthMm: cols * pgW_mm, heightMm: rows * pgH_mm };
+    }
+
     // ── Tile maths ────────────────────────────────────────────────────────────
-    // pxPerMm: source pixels per mm of output
+    // At this point src is always at output resolution and fills widthMm × heightMm.
+    // For PDFs the pre-scaled canvas already does this; for image/HTML the
+    // intermediate canvas above did. Either way: offX ≈ 0, offY ≈ 0.
+    const scale = Math.min(
+      (cols * pgW_mm) / pageInf.widthMm,
+      (rows * pgH_mm) / pageInf.heightMm
+    );
+    // In source pixels, how many px = 1mm on output
     const pxPerMm = src.width / pageInf.widthMm;
-    // Grid size in source-equivalent pixels (the full assembled output space)
+    // Grid size in source pixels
     const gridW_px = Math.round(cols * pgW_mm * pxPerMm);
     const gridH_px = Math.round(rows * pgH_mm * pxPerMm);
-    // Centre content within grid (letterbox if aspect ratio doesn't match)
+    // Letterbox offsets (zero for pre-composited src, small rounding margin for PDFs)
     const offX = Math.round((gridW_px - src.width)  / 2);
     const offY = Math.round((gridH_px - src.height) / 2);
 
+    // Overlap in grid-equivalent pixels
     const overlapPx = overlapMm * pxPerMm;
     const nomTileW  = gridW_px / cols;
     const nomTileH  = gridH_px / rows;
     const markLw    = Math.max(1, pxPerMm * 0.25);
 
     const labelSets = {
-      '1x2': ['Left','Right'],
-      '1x3': ['Left','Centre','Right'],
-      '1x4': ['Far Left','Centre Left','Centre Right','Far Right'],
-      '2x1': ['Top','Bottom'],
-      '3x1': ['Top','Middle','Bottom'],
-      '2x2': ['Top Left','Top Right','Bottom Left','Bottom Right'],
+      '1x2': ['Left', 'Right'],
+      '1x3': ['Left', 'Centre', 'Right'],
+      '1x4': ['Far Left', 'Centre Left', 'Centre Right', 'Far Right'],
+      '2x1': ['Top', 'Bottom'],
+      '3x1': ['Top', 'Middle', 'Bottom'],
+      '2x2': ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'],
     };
     const labelKey = rows === 1 ? `1x${cols}` : cols === 1 ? `${rows}x1` : '2x2';
     const labels   = labelSets[labelKey] || [];
 
     const { jsPDF } = window.jspdf;
-    let doc = null;
-    const total = cols * rows;
-    let idx = 0;
+    let doc   = null;
+    let total = cols * rows;
+    let idx   = 0;
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -822,35 +897,42 @@ async function generatePDF() {
         const tOv = row > 0        ? overlapPx : 0;
         const bOv = row < rows - 1 ? overlapPx : 0;
 
+        // Tile bounds in grid-pixel space
         const tileX = Math.round(col * nomTileW - lOv);
         const tileY = Math.round(row * nomTileH - tOv);
         const tileW = Math.round(nomTileW + lOv + rOv);
         const tileH = Math.round(nomTileH + tOv + bOv);
 
+        // Draw tile onto a blank canvas (fills with white, then copies content)
         const tc = document.createElement('canvas');
         tc.width = tileW; tc.height = tileH;
         const tCtx = tc.getContext('2d');
         tCtx.fillStyle = '#fff';
         tCtx.fillRect(0, 0, tileW, tileH);
 
-        // Copy from source, accounting for letterbox offset
-        const srcX = tileX - offX;
+        // Copy source content at the correct offset
+        const srcX = tileX - offX;  // where in src to start reading
         const srcY = tileY - offY;
+        // Clamp to actual src bounds
         const clipX = Math.max(0, srcX);
         const clipY = Math.max(0, srcY);
         const clipW = Math.min(src.width,  srcX + tileW) - clipX;
         const clipH = Math.min(src.height, srcY + tileH) - clipY;
         if (clipW > 0 && clipH > 0) {
-          tCtx.drawImage(src, clipX, clipY, clipW, clipH, clipX - srcX, clipY - srcY, clipW, clipH);
+          const destX = clipX - srcX;
+          const destY = clipY - srcY;
+          tCtx.drawImage(src, clipX, clipY, clipW, clipH, destX, destY, clipW, clipH);
         }
 
+        // ── Seam lines ───────────────────────────────────────────────────────
         if (doMarks) {
-          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv),        0,     Math.round(lOv),        tileH, markLw);
-          if (rOv > 0) drawSeamLine(tCtx, Math.round(tileW - rOv),0,     Math.round(tileW - rOv),tileH, markLw);
-          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv),           tileW, Math.round(tOv),        markLw);
-          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(tileH - bOv),  tileW, Math.round(tileH - bOv), markLw);
+          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv),      0,  Math.round(lOv),      tileH, markLw);
+          if (rOv > 0) drawSeamLine(tCtx, Math.round(tileW - rOv), 0, Math.round(tileW - rOv), tileH, markLw);
+          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv),       tileW, Math.round(tOv),      markLw);
+          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(tileH - bOv), tileW, Math.round(tileH - bOv), markLw);
         }
 
+        // ── Crosses ──────────────────────────────────────────────────────────
         if (doMarks) {
           const mSz    = overlapPx * 0.35;
           const seamsX = [], seamsY = [];
@@ -863,6 +945,7 @@ async function generatePDF() {
           seamsY.forEach(y => drawCross(tCtx, Math.round(tileW / 2), y, mSz, markLw));
         }
 
+        // ── Sheet label ──────────────────────────────────────────────────────
         if (doLabels) {
           const labelStr = (labels[row * cols + col] || `Sheet ${idx}`) + ` — ${idx} of ${total}`;
           const fsPx = Math.max(14, Math.round(overlapPx * 0.45));
