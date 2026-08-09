@@ -250,8 +250,8 @@
   <div class="drop-zone" id="dropZone">
     <div class="icon">📄</div>
     <p class="primary">Drop a PDF here, or click to browse</p>
-    <p class="secondary">First page will be tiled · A4 portrait or landscape · any PDF</p>
-    <input type="file" id="fileInput" accept=".pdf">
+    <p class="secondary">PDF, PNG, JPG, WebP or HTML file · First page of PDFs · full page of images &amp; web pages</p>
+    <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.html,.htm">
   </div>
 
   <!-- Preview -->
@@ -318,6 +318,20 @@
         <label class="check-row"><input type="checkbox" id="chkInstruct"> Assembly instructions page</label>
       </div>
 
+      <!-- HTML render width (hidden until HTML file loaded) -->
+      <div id="renderWidthRow" class="hidden" style="grid-column:1/-1;">
+        <span class="opt-label">HTML render width (pixels) — sets how wide the page is rendered before tiling</span>
+        <div class="slider-row">
+          <input type="number" id="renderWidthInp" value="2600" min="800" max="8000" step="100"
+            style="flex:1; padding:0.35rem 0.6rem; border:2px solid #e2e8f0; border-radius:8px; font-size:0.85rem; font-weight:600; color:#1e293b; outline:none;">
+          <button id="reRenderBtn"
+            style="flex-shrink:0; padding:0.35rem 1rem; background:#2563eb; color:#fff; border:none; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+            Re-render
+          </button>
+        </div>
+        <div class="slider-hints"><span>Narrower = faster · 800–1400 for portrait pages</span><span>Wider for scrolling / panoramic content</span></div>
+      </div>
+
     </div>
 
     <div class="info-pill hidden" id="infoPill"></div>
@@ -336,6 +350,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 'use strict';
 
@@ -344,9 +359,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let pdfDoc  = null;
-let pageInf = null; // { widthPt, heightPt, widthMm, heightMm, isPortrait, name, pages }
-let numTiles = 4;
+let pdfDoc       = null;
+let pageInf      = null; // { widthMm, heightMm, isPortrait, name, ... }
+let numTiles     = 4;
+let sourceType   = null;   // 'pdf' | 'image' | 'html'
+let sourceCanvas = null;   // pre-rendered canvas for image / html sources
+let htmlContent  = null;   // stored HTML string for re-render
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 const dropZone      = document.getElementById('dropZone');
@@ -361,10 +379,13 @@ const overlapSlider = document.getElementById('overlapSlider');
 const overlapBadge  = document.getElementById('overlapBadge');
 const qualSlider    = document.getElementById('qualSlider');
 const qualBadge     = document.getElementById('qualBadge');
-const progWrap      = document.getElementById('progWrap');
-const progFill      = document.getElementById('progFill');
-const progText      = document.getElementById('progText');
-const genBtn        = document.getElementById('genBtn');
+const progWrap       = document.getElementById('progWrap');
+const progFill       = document.getElementById('progFill');
+const progText       = document.getElementById('progText');
+const genBtn         = document.getElementById('genBtn');
+const renderWidthRow = document.getElementById('renderWidthRow');
+const renderWidthInp = document.getElementById('renderWidthInp');
+const reRenderBtn    = document.getElementById('reRenderBtn');
 
 // ─── File handling ────────────────────────────────────────────────────────────
 dropZone.addEventListener('click', () => fileInput.click());
@@ -398,8 +419,28 @@ qualSlider.addEventListener('input', () => {
   qualBadge.textContent = qualLabels[parseInt(qualSlider.value) - 1];
 });
 
+// ─── Load dispatcher ──────────────────────────────────────────────────────────
+function loadFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    sourceType = 'pdf'; loadPDF(file);
+  } else if (['png','jpg','jpeg','webp','gif'].includes(ext)) {
+    sourceType = 'image'; loadImage(file);
+  } else if (ext === 'html' || ext === 'htm') {
+    sourceType = 'html';
+    file.text().then(txt => { htmlContent = txt; renderHTML(); });
+  } else {
+    alert('Supported: PDF, PNG, JPG, WebP, GIF, HTML');
+  }
+}
+
+// ─── Re-render button ─────────────────────────────────────────────────────────
+reRenderBtn.addEventListener('click', () => {
+  if (sourceType === 'html' && htmlContent) renderHTML();
+});
+
 // ─── Load PDF ─────────────────────────────────────────────────────────────────
-async function loadFile(file) {
+async function loadPDF(file) {
   dropZone.querySelector('.primary').textContent = 'Loading…';
   try {
     const buf = await file.arrayBuffer();
@@ -416,9 +457,9 @@ async function loadFile(file) {
       isPortrait: vp.height >= vp.width,
       name:       file.name,
       pages:      pdfDoc.numPages,
+      type:       'PDF',
     };
 
-    // Preview render
     const previewScale = Math.min(260 / vp.height, 200 / vp.width, 1.5);
     const pvp = page.getViewport({ scale: previewScale });
     previewCanvas.width  = pvp.width;
@@ -426,23 +467,161 @@ async function loadFile(file) {
     previewCanvas.style.maxHeight = '260px';
     await page.render({ canvasContext: previewCanvas.getContext('2d'), viewport: pvp }).promise;
 
-    // Info table
-    infoTable.innerHTML = `
-      <div class="info-row"><span class="lbl">File</span><span class="val">${file.name}</span></div>
-      <div class="info-row"><span class="lbl">Pages</span><span class="val">${pdfDoc.numPages}${pdfDoc.numPages > 1 ? ' (page 1 will be tiled)' : ''}</span></div>
-      <div class="info-row"><span class="lbl">Page size</span><span class="val">${pageInf.widthMm} × ${pageInf.heightMm} mm</span></div>
-      <div class="info-row"><span class="lbl">Orientation</span><span class="val">${pageInf.isPortrait ? 'Portrait' : 'Landscape'}</span></div>
-    `;
-
-    previewCard.classList.remove('hidden');
-    optsCard.classList.remove('hidden');
-    genCard.classList.remove('hidden');
-    updateInfo();
-    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+    sourceCanvas = null;
+    renderWidthRow.classList.add('hidden');
+    showInfoAndCards();
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
   } catch (err) {
     alert('Could not load PDF: ' + err.message);
-    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
   }
+}
+
+// ─── Load image ───────────────────────────────────────────────────────────────
+function loadImage(file) {
+  dropZone.querySelector('.primary').textContent = 'Loading…';
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const PX_TO_MM = 25.4 / 96;
+    sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = w; sourceCanvas.height = h;
+    sourceCanvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    pageInf = {
+      widthMm:   Math.round(w * PX_TO_MM * 10) / 10,
+      heightMm:  Math.round(h * PX_TO_MM * 10) / 10,
+      isPortrait: h >= w,
+      name:       file.name,
+      type:       'Image',
+      widthPx: w, heightPx: h,
+    };
+
+    const sc = Math.min(260 / h, 200 / w, 1);
+    previewCanvas.width  = Math.round(w * sc);
+    previewCanvas.height = Math.round(h * sc);
+    previewCanvas.style.maxHeight = '260px';
+    previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+
+    renderWidthRow.classList.add('hidden');
+    showInfoAndCards();
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  };
+  img.onerror = () => {
+    alert('Could not load image.');
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  };
+  img.src = url;
+}
+
+// ─── Render HTML via html2canvas ──────────────────────────────────────────────
+async function renderHTML() {
+  const renderWidth = parseInt(renderWidthInp.value) || 2600;
+  dropZone.querySelector('.primary').textContent = 'Rendering HTML…';
+  progWrap.classList.remove('hidden');
+  genCard.classList.remove('hidden');
+  setProgress(10, 'Loading HTML into render frame…');
+
+  // Remove any stale iframes
+  document.querySelectorAll('iframe.tiler-render').forEach(f => f.remove());
+
+  const iframe = document.createElement('iframe');
+  iframe.className = 'tiler-render';
+  iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${renderWidth}px;height:4000px;border:none;visibility:hidden;pointer-events:none;`;
+  document.body.appendChild(iframe);
+
+  try {
+    await new Promise((res, rej) => {
+      iframe.onload = res; iframe.onerror = rej;
+      iframe.srcdoc = htmlContent;
+    });
+
+    // Let scripts run and layout settle
+    await new Promise(r => setTimeout(r, 800));
+    setProgress(25, 'Measuring content…');
+
+    const iDoc = iframe.contentDocument;
+    const fullW = Math.max(iDoc.documentElement.scrollWidth, renderWidth);
+    const fullH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    iframe.style.width  = fullW  + 'px';
+    iframe.style.height = fullH  + 'px';
+
+    await new Promise(r => setTimeout(r, 200));
+    setProgress(35, 'Capturing with html2canvas…');
+
+    const canvas = await html2canvas(iDoc.body, {
+      width:           fullW,
+      height:          fullH,
+      windowWidth:     fullW,
+      windowHeight:    fullH,
+      x: 0, y: 0, scrollX: 0, scrollY: 0,
+      scale:           1,
+      useCORS:         true,
+      allowTaint:      true,
+      logging:         false,
+      backgroundColor: '#ffffff',
+    });
+
+    document.body.removeChild(iframe);
+    sourceCanvas = canvas;
+
+    const PX_TO_MM = 25.4 / 96;
+    pageInf = {
+      widthMm:   Math.round(fullW * PX_TO_MM * 10) / 10,
+      heightMm:  Math.round(fullH * PX_TO_MM * 10) / 10,
+      isPortrait: fullH >= fullW,
+      name:       'webpage',
+      type:       'HTML',
+      widthPx: fullW, heightPx: fullH,
+    };
+
+    const sc = Math.min(260 / fullH, 200 / fullW, 1);
+    previewCanvas.width  = Math.round(fullW * sc);
+    previewCanvas.height = Math.round(fullH * sc);
+    previewCanvas.style.maxHeight = '260px';
+    previewCanvas.getContext('2d').drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+
+    renderWidthRow.classList.remove('hidden');
+    showInfoAndCards();
+    progWrap.classList.add('hidden');
+    setProgress(0, '');
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+
+  } catch (err) {
+    document.querySelectorAll('iframe.tiler-render').forEach(f => f.remove());
+    console.error(err);
+    progWrap.classList.add('hidden');
+    alert(
+      'HTML rendering failed: ' + err.message +
+      '\n\nAlternative: open the HTML file in Chrome, press F12, ' +
+      'then Ctrl+Shift+P → "Capture full size screenshot" → drop the PNG here.'
+    );
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  }
+}
+
+// ─── Show info cards ──────────────────────────────────────────────────────────
+function showInfoAndCards() {
+  let sizeStr, extraRow = '';
+  if (pageInf.type === 'PDF') {
+    sizeStr = `${pageInf.widthMm} × ${pageInf.heightMm} mm`;
+    if (pageInf.pages > 1) extraRow = `<div class="info-row"><span class="lbl">Pages</span><span class="val">${pageInf.pages} (page 1 tiled)</span></div>`;
+  } else {
+    sizeStr = `${pageInf.widthPx} × ${pageInf.heightPx} px`;
+  }
+  infoTable.innerHTML = `
+    <div class="info-row"><span class="lbl">File</span><span class="val">${pageInf.name}</span></div>
+    <div class="info-row"><span class="lbl">Type</span><span class="val">${pageInf.type}</span></div>
+    ${extraRow}
+    <div class="info-row"><span class="lbl">Size</span><span class="val">${sizeStr}</span></div>
+    <div class="info-row"><span class="lbl">Orientation</span><span class="val">${pageInf.isPortrait ? 'Portrait' : 'Landscape'}</span></div>
+  `;
+  previewCard.classList.remove('hidden');
+  optsCard.classList.remove('hidden');
+  genCard.classList.remove('hidden');
+  updateInfo();
 }
 
 // ─── Info pill ────────────────────────────────────────────────────────────────
@@ -525,20 +704,22 @@ function drawSeamLine(ctx, x1, y1, x2, y2, lw) {
 genBtn.addEventListener('click', generatePDF);
 
 async function generatePDF() {
-  if (!pdfDoc || !pageInf) return;
+  if (!pageInf) return;
+  if (sourceType === 'pdf' && !pdfDoc) return;
+  if (sourceType !== 'pdf' && !sourceCanvas) return;
 
   genBtn.disabled = true;
   progWrap.classList.remove('hidden');
   setProgress(5, 'Preparing…');
 
   try {
-    const overlapMm   = parseInt(overlapSlider.value);
-    const qualLevel   = parseInt(qualSlider.value);
-    const doMarks     = document.getElementById('chkMarks').checked;
-    const doLabels    = document.getElementById('chkLabels').checked;
-    const doInstruct  = document.getElementById('chkInstruct').checked;
+    const overlapMm  = parseInt(overlapSlider.value);
+    const qualLevel  = parseInt(qualSlider.value);
+    const doMarks    = document.getElementById('chkMarks').checked;
+    const doLabels   = document.getElementById('chkLabels').checked;
+    const doInstruct = document.getElementById('chkInstruct').checked;
 
-    // ── Layout ──────────────────────────────────────────────────────────────
+    // ── Layout ───────────────────────────────────────────────────────────────
     const portrait = pageInf.isPortrait;
     let cols, rows, sheetOri;
     if (numTiles === 2) {
@@ -553,40 +734,49 @@ async function generatePDF() {
     const pgW_mm = sheetOri === 'landscape' ? A3W : A3H;
     const pgH_mm = sheetOri === 'landscape' ? A3H : A3W;
 
-    // Scale to make the source fill the tile grid
-    const contentScale = Math.min(
-      (cols * pgW_mm) / pageInf.widthMm,
-      (rows * pgH_mm) / pageInf.heightMm
-    );
+    // ── Build source canvas ───────────────────────────────────────────────────
+    let src;
 
-    // Quality multipliers: draft 2×, good 3×, high 4.5× (capped)
-    const qualMult = [2, 3, 4.5][qualLevel - 1];
-    const renderScale = Math.min(contentScale * qualMult, 9); // cap to avoid canvas OOM
+    if (sourceType === 'pdf') {
+      const contentScale = Math.min(
+        (cols * pgW_mm) / pageInf.widthMm,
+        (rows * pgH_mm) / pageInf.heightMm
+      );
+      const qualMult    = [2, 3, 4.5][qualLevel - 1];
+      const renderScale = Math.min(contentScale * qualMult, 9);
 
-    // ── Render source page ───────────────────────────────────────────────────
-    setProgress(15, 'Rendering source page…');
-    const page = await pdfDoc.getPage(1);
-    const vp   = page.getViewport({ scale: renderScale });
-    const src  = document.createElement('canvas');
-    src.width  = Math.round(vp.width);
-    src.height = Math.round(vp.height);
-    const srcCtx = src.getContext('2d');
-    srcCtx.fillStyle = '#fff';
-    srcCtx.fillRect(0, 0, src.width, src.height);
-    await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
-    setProgress(40, 'Source rendered. Building tiles…');
+      setProgress(15, 'Rendering PDF page…');
+      const page = await pdfDoc.getPage(1);
+      const vp   = page.getViewport({ scale: renderScale });
+      src        = document.createElement('canvas');
+      src.width  = Math.round(vp.width);
+      src.height = Math.round(vp.height);
+      const srcCtx = src.getContext('2d');
+      srcCtx.fillStyle = '#fff';
+      srcCtx.fillRect(0, 0, src.width, src.height);
+      await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
+    } else {
+      // Image / HTML: sourceCanvas is already the full-res render.
+      // Quality slider controls JPEG output compression instead.
+      src = sourceCanvas;
+    }
 
-    // ── Tile maths ───────────────────────────────────────────────────────────
-    const overlapPx  = (overlapMm / 25.4) * 72 * renderScale;
-    const nomTileW   = src.width  / cols;  // nominal tile width (px)
-    const nomTileH   = src.height / rows;  // nominal tile height (px)
+    setProgress(40, 'Building tiles…');
 
-    // Sheet labels for 2- and 4-sheet layouts
+    // ── Tile maths ────────────────────────────────────────────────────────────
+    // overlapPx: pixels in src that equal overlapMm on the printed output
+    const overlapPx = overlapMm * src.width / (cols * pgW_mm);
+    const nomTileW  = src.width  / cols;
+    const nomTileH  = src.height / rows;
+
+    // Line weight scaled to source resolution (~0.25mm on output)
+    const pxPerMm = src.width / (cols * pgW_mm);
+    const markLw  = Math.max(1, pxPerMm * 0.25);
+
     const LABELS_22  = ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'];
     const LABELS_1x2 = ['Top', 'Bottom'];
     const LABELS_2x1 = ['Left', 'Right'];
 
-    // ── Create jsPDF ─────────────────────────────────────────────────────────
     const { jsPDF } = window.jspdf;
     let doc   = null;
     let total = cols * rows;
@@ -596,13 +786,12 @@ async function generatePDF() {
       for (let col = 0; col < cols; col++) {
         idx++;
         setProgress(40 + (idx / total) * 48, `Building sheet ${idx} of ${total}…`);
-        await new Promise(r => setTimeout(r, 5)); // yield to UI
+        await new Promise(r => setTimeout(r, 5));
 
-        // Overlap margins for this tile
-        const lOv = col > 0             ? overlapPx : 0;
-        const rOv = col < cols - 1      ? overlapPx : 0;
-        const tOv = row > 0             ? overlapPx : 0;
-        const bOv = row < rows - 1      ? overlapPx : 0;
+        const lOv = col > 0        ? overlapPx : 0;
+        const rOv = col < cols - 1 ? overlapPx : 0;
+        const tOv = row > 0        ? overlapPx : 0;
+        const bOv = row < rows - 1 ? overlapPx : 0;
 
         const sx = Math.max(0, Math.round(col * nomTileW - lOv));
         const sy = Math.max(0, Math.round(row * nomTileH - tOv));
@@ -610,42 +799,31 @@ async function generatePDF() {
         const sh = Math.min(src.height - sy, Math.round(nomTileH + tOv + bOv));
 
         const tc  = document.createElement('canvas');
-        tc.width  = sw;
-        tc.height = sh;
+        tc.width  = sw; tc.height = sh;
         const tCtx = tc.getContext('2d');
-
-        // White background
         tCtx.fillStyle = '#fff';
         tCtx.fillRect(0, 0, sw, sh);
-
-        // Content
         tCtx.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
 
-        // ── Seam lines (dashed) ──────────────────────────────────────────────
+        // ── Seam lines ───────────────────────────────────────────────────────
         if (doMarks) {
-          const lw = Math.max(1, renderScale * 0.4);
-          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv), 0, Math.round(lOv), sh, lw);
-          if (rOv > 0) drawSeamLine(tCtx, Math.round(sw - rOv), 0, Math.round(sw - rOv), sh, lw);
-          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv), sw, Math.round(tOv), lw);
-          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(sh - bOv), sw, Math.round(sh - bOv), lw);
+          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv),      0,  Math.round(lOv),      sh, markLw);
+          if (rOv > 0) drawSeamLine(tCtx, Math.round(sw - rOv), 0,  Math.round(sw - rOv), sh, markLw);
+          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv),       sw, Math.round(tOv),      markLw);
+          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(sh - bOv),  sw, Math.round(sh - bOv), markLw);
         }
 
-        // ── Alignment crosses ────────────────────────────────────────────────
+        // ── Crosses ──────────────────────────────────────────────────────────
         if (doMarks) {
-          const mSz  = overlapPx * 0.35;
-          const mLw  = Math.max(1, renderScale * 0.45);
-          const seamsX = [];
-          const seamsY = [];
+          const mSz    = overlapPx * 0.35;
+          const seamsX = [], seamsY = [];
           if (lOv > 0) seamsX.push(Math.round(lOv));
           if (rOv > 0) seamsX.push(Math.round(sw - rOv));
           if (tOv > 0) seamsY.push(Math.round(tOv));
           if (bOv > 0) seamsY.push(Math.round(sh - bOv));
-
-          // Corners of seam intersections
-          seamsX.forEach(x => seamsY.forEach(y => drawCross(tCtx, x, y, mSz, mLw)));
-          // Mid-points along each seam edge
-          seamsX.forEach(x => drawCross(tCtx, x, Math.round(sh / 2), mSz, mLw));
-          seamsY.forEach(y => drawCross(tCtx, Math.round(sw / 2), y, mSz, mLw));
+          seamsX.forEach(x => seamsY.forEach(y => drawCross(tCtx, x, y, mSz, markLw)));
+          seamsX.forEach(x => drawCross(tCtx, x, Math.round(sh / 2), mSz, markLw));
+          seamsY.forEach(y => drawCross(tCtx, Math.round(sw / 2), y, mSz, markLw));
         }
 
         // ── Sheet label ──────────────────────────────────────────────────────
@@ -656,34 +834,31 @@ async function generatePDF() {
           else                           labelStr = LABELS_2x1[col];
           labelStr += ` — Sheet ${idx} of ${total}`;
 
-          const fsPx  = Math.max(14, Math.round(overlapPx * 0.45));
-          const padX  = Math.max(8, Math.round(overlapPx * 0.12));
-          const padY  = padX + fsPx;
-          const bPad  = Math.round(fsPx * 0.35);
-          tCtx.font   = `600 ${fsPx}px -apple-system, sans-serif`;
-          const tw    = tCtx.measureText(labelStr).width;
-
-          // Semi-transparent background pill
+          const fsPx = Math.max(14, Math.round(overlapPx * 0.45));
+          const padX = Math.max(8,  Math.round(overlapPx * 0.12));
+          const padY = padX + fsPx;
+          const bPad = Math.round(fsPx * 0.35);
+          tCtx.font  = `600 ${fsPx}px -apple-system, sans-serif`;
+          const tw   = tCtx.measureText(labelStr).width;
           tCtx.fillStyle = 'rgba(255,255,255,0.82)';
           tCtx.beginPath();
           tCtx.roundRect(padX - bPad, padY - fsPx - bPad, tw + bPad * 2, fsPx + bPad * 2, 4);
           tCtx.fill();
-
           tCtx.fillStyle = 'rgba(30,41,59,0.8)';
           tCtx.fillText(labelStr, padX, padY);
         }
 
-        // ── Add to PDF ───────────────────────────────────────────────────────
         if (!doc) {
           doc = new jsPDF({ orientation: sheetOri, unit: 'mm', format: 'a3' });
         } else {
           doc.addPage('a3', sheetOri);
         }
-        doc.addImage(tc.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, pgW_mm, pgH_mm);
+        // JPEG quality: PDF always high; image/html follows quality slider
+        const jpegQ = sourceType === 'pdf' ? 0.93 : [0.82, 0.90, 0.96][qualLevel - 1];
+        doc.addImage(tc.toDataURL('image/jpeg', jpegQ), 'JPEG', 0, 0, pgW_mm, pgH_mm);
       }
     }
 
-    // ── Assembly instructions page ───────────────────────────────────────────
     if (doInstruct && doc) {
       setProgress(90, 'Adding assembly instructions…');
       await new Promise(r => setTimeout(r, 5));
@@ -691,10 +866,9 @@ async function generatePDF() {
       drawInstructionsPage(doc, cols, rows, sheetOri, pgW_mm, pgH_mm, overlapMm, numTiles);
     }
 
-    // ── Save ─────────────────────────────────────────────────────────────────
     setProgress(97, 'Saving…');
-    const outName = pageInf.name.replace(/\.pdf$/i, '') + `_tiled_${numTiles}sheets.pdf`;
-    doc.save(outName);
+    const baseName = pageInf.name.replace(/\.(pdf|html?|png|jpe?g|webp|gif)$/i, '');
+    doc.save(baseName + `_tiled_${numTiles}sheets.pdf`);
 
     setProgress(100, '✓ Download started — check your downloads folder');
     setTimeout(() => {
