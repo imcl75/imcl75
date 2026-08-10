@@ -245,7 +245,7 @@
 <body>
 
 <header>
-  <h1>PDF Tiler</h1>
+  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.4.0</span></h1>
   <p>Tile a PDF, image or web page across A3 sheets</p>
 </header>
 
@@ -628,9 +628,14 @@ async function renderHTML() {
     await new Promise(r => setTimeout(r, 100));
     setProgress(35, 'Capturing…');
 
+    // Render at up to 2× device pixel ratio for print-quality resolution.
+    // For a 6 000px-wide capture this gives a 12 000px canvas ≈ 192 DPI on A3.
+    // We cap the effective canvas at ~12 000px wide to avoid memory issues on
+    // very wide content (Maximum preset etc.).
+    const h2cScale = Math.max(1, Math.min(2, 12000 / fullW));
     const canvas = await html2canvas(iDoc.body, {
       width: fullW, height: fullH, windowWidth: fullW, windowHeight: fullH,
-      x: 0, y: 0, scrollX: 0, scrollY: 0, scale: 1,
+      x: 0, y: 0, scrollX: 0, scrollY: 0, scale: h2cScale,
       useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff',
     });
     document.body.removeChild(iframe);
