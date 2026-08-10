@@ -812,11 +812,13 @@ async function generatePDF() {
         (cols * pgW_mm) / pageInf.widthMm,
         (rows * pgH_mm) / pageInf.heightMm
       );
-      // Pick output resolution: use source DPI * scale, capped so canvas stays manageable
-      const srcPxPerMm   = src.width / pageInf.widthMm;
-      const rawOutPxPerMm = srcPxPerMm * scale_content;
-      const maxPxPerMm   = qualLevel === 3 ? 5 : qualLevel === 2 ? 4 : 3;
-      const outPxPerMm   = Math.min(rawOutPxPerMm, maxPxPerMm);
+      // Output resolution: use the source resolution (px/mm), NOT multiplied by scale.
+      // Multiplying by scale < 1 would actively degrade quality below the source.
+      // Cap at quality-appropriate limits to keep intermediate canvas size manageable.
+      // 6 px/mm ≈ 152 DPI · 8 px/mm ≈ 203 DPI · 12 px/mm ≈ 305 DPI
+      const srcPxPerMm = src.width / pageInf.widthMm;
+      const maxPxPerMm = qualLevel === 3 ? 12 : qualLevel === 2 ? 8 : 6;
+      const outPxPerMm = Math.min(srcPxPerMm, maxPxPerMm);
       const maxDim = 15000;
 
       const interW = Math.min(Math.round(cols * pgW_mm * outPxPerMm), maxDim);
