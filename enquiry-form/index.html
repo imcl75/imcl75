@@ -66,6 +66,12 @@
 
     /* Grid */
     .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+    /* Reading lessons */
+    .reading-week-block { padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: 0.75rem; }
+    .reading-week-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+    .reading-week-block h3 { font-size: 0.85rem; font-weight: 700; color: var(--wfa-dark); margin: 0 0 0.5rem; }
 
     /* Error */
     .errmsg { font-size: 0.78rem; color: var(--danger); margin-top: 0.3rem; display: none; }
@@ -126,7 +132,7 @@
     section { display: none; }
     section.active { display: block; }
 
-    @media (max-width: 580px) { .g2 { grid-template-columns: 1fr; } .steps { flex-wrap: wrap; } }
+    @media (max-width: 580px) { .g2 { grid-template-columns: 1fr; } .g3 { grid-template-columns: 1fr; } .steps { flex-wrap: wrap; } }
 
     /* Topic chips */
     .topic-chip { display: inline-flex; align-items: center; padding: 0.4rem 0.75rem; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.82rem; transition: all 0.12s; user-select: none; background: white; }
@@ -498,6 +504,18 @@
         <div id="schedulePreview" style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;"></div>
       </div>
 
+    </div>
+
+    <div class="card">
+      <h2>Reading lessons</h2>
+      <p class="subtitle">Real day/date and fluency choices for this enquiry's reading weeks — feeds the Being a Reader pack generator directly, so Claude can generate the packs without you filling in the live form.</p>
+      <div class="field">
+        <label class="field-label" for="f_reading_weeks">Number of reading weeks <span class="optional">(optional)</span>
+          <span class="hint">Usually the content weeks only, not the writing week — 2 for a typical 12-lesson enquiry. Set to 0 if this enquiry doesn't need reading packs.</span>
+        </label>
+        <input type="number" id="f_reading_weeks" min="0" max="6" value="2" oninput="renderReadingWeeks()">
+      </div>
+      <div id="readingWeeksContainer"></div>
     </div>
 
     <div class="card">
@@ -1287,6 +1305,95 @@ function updateSchedulePreview() {
   document.getElementById('err_schedule').classList.remove('show');
 }
 
+// ── Reading lessons ──────────────────────────────────────────────────────
+// Mirrors being-a-reader-web/templates/index.html's own Lesson dates section
+// (FLUENCY_ACTIVITIES, date→day derivation) so Claude can assemble a real
+// /generate submission from this brief directly, without Innes filling in
+// the live form himself. Real dates/fluency choices are Innes's own
+// scheduling call — nothing here is invented or defaulted.
+const READING_FLUENCY_ACTIVITIES = {
+  'Expression & Volume': ['Echo read', 'Hot seat read', 'Stress that word'],
+  'Phrasing':            ['Punctuation conductor', 'Chunk it'],
+  'Smoothness':          ['Multiple reads', 'Smooth it out'],
+  'Pace':                ['Adjusting pace', 'Key ideas', 'Speed dial'],
+};
+const READING_LESSON_TYPES = [
+  { key: 'vocabulary', label: 'Vocabulary' },
+  { key: 'retrieval',  label: 'Retrieval' },
+  { key: 'inference',  label: 'Inference' },
+];
+
+function renderReadingWeeks() {
+  const n = Math.max(0, Math.min(6, parseInt(fv('f_reading_weeks')) || 0));
+  const container = document.getElementById('readingWeeksContainer');
+  container.innerHTML = '';
+  for (let w = 1; w <= n; w++) {
+    const wk = `w${w}`;
+    const block = document.createElement('div');
+    block.className = 'reading-week-block';
+    block.innerHTML = `<h3>Reading week ${w}</h3>` +
+      READING_LESSON_TYPES.map(lt => `
+        <div class="g3" style="align-items:end;margin-bottom:0.6rem;">
+          <div class="field">
+            <label class="field-label">${lt.label} date</label>
+            <input type="date" id="rl_${wk}_${lt.key}_date">
+          </div>
+          <div class="field">
+            <label class="field-label">Fluency focus</label>
+            <select id="rl_${wk}_${lt.key}_focus" onchange="populateReadingActivity('${wk}','${lt.key}')">
+              <option value="">— select —</option>
+              <option>Expression &amp; Volume</option>
+              <option>Phrasing</option>
+              <option>Smoothness</option>
+              <option>Pace</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Fluency activity</label>
+            <select id="rl_${wk}_${lt.key}_activity">
+              <option value="">— select focus first —</option>
+            </select>
+          </div>
+        </div>
+      `).join('');
+    container.appendChild(block);
+  }
+}
+
+function populateReadingActivity(wk, ltKey, selectedActivity) {
+  const focusEl = document.getElementById(`rl_${wk}_${ltKey}_focus`);
+  const actEl = document.getElementById(`rl_${wk}_${ltKey}_activity`);
+  if (!focusEl || !actEl) return;
+  const focus = focusEl.value;
+  const prev = selectedActivity !== undefined ? selectedActivity : actEl.value;
+  actEl.innerHTML = '<option value="">— choose activity —</option>';
+  (READING_FLUENCY_ACTIVITIES[focus] || []).forEach(a => {
+    const o = document.createElement('option');
+    o.textContent = a; o.value = a;
+    if (a === prev) o.selected = true;
+    actEl.appendChild(o);
+  });
+}
+
+function collectReadingLessons() {
+  const n = Math.max(0, Math.min(6, parseInt(fv('f_reading_weeks')) || 0));
+  if (n === 0) return null;
+  const out = {};
+  for (let w = 1; w <= n; w++) {
+    const wk = `w${w}`;
+    out[wk] = {};
+    READING_LESSON_TYPES.forEach(lt => {
+      const date = fv(`rl_${wk}_${lt.key}_date`);
+      const focus = fv(`rl_${wk}_${lt.key}_focus`);
+      const activity = fv(`rl_${wk}_${lt.key}_activity`);
+      if (date || focus || activity) {
+        out[wk][lt.key] = { date: date || null, fluency_focus: focus || null, fluency_activity: activity || null };
+      }
+    });
+  }
+  return out;
+}
+
 // ── Week / path ────────────────────────────────────────────────────────────
 function updateWeeks() {
   const t = document.getElementById('f_term').value;
@@ -1386,6 +1493,7 @@ function collect() {
     lesson_schedule: sched,
     weekly_slots: slots,
     lessons_per_week: slots.length,
+    reading_lessons: collectReadingLessons(),
     xccw_style: 'dotted',
     include_timeline: pill('timeline') !== 'no',
     timeline_notes: fv('f_timeline_notes') || null,
@@ -2237,6 +2345,8 @@ function saveState() {
         });
         return s;
       })(),
+      reading_weeks: fv('f_reading_weeks'),
+      reading_lessons: collectReadingLessons(),
     };
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
     const ind = document.getElementById('save-indicator');
@@ -2361,6 +2471,28 @@ function applyRestoredState() {
     });
     updateSchedulePreview();
   }
+
+  // Reading lessons — resize the week blocks first, then restore values
+  if (_savedState.reading_weeks) {
+    const rw = document.getElementById('f_reading_weeks');
+    if (rw) rw.value = _savedState.reading_weeks;
+  }
+  renderReadingWeeks();
+  if (_savedState.reading_lessons) {
+    Object.entries(_savedState.reading_lessons).forEach(([wk, lessons]) => {
+      Object.entries(lessons).forEach(([ltKey, vals]) => {
+        if (!vals) return;
+        const dateEl = document.getElementById(`rl_${wk}_${ltKey}_date`);
+        const focusEl = document.getElementById(`rl_${wk}_${ltKey}_focus`);
+        if (!dateEl || !focusEl) return;
+        if (vals.date) dateEl.value = vals.date;
+        if (vals.fluency_focus) {
+          focusEl.value = vals.fluency_focus;
+          populateReadingActivity(wk, ltKey, vals.fluency_activity);
+        }
+      });
+    });
+  }
 }
 
 function checkForSavedDraft() {
@@ -2400,6 +2532,7 @@ applyTimelineVisibility();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderBar();
+renderReadingWeeks();
 </script>
 </body>
 </html>
