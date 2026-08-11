@@ -72,6 +72,13 @@
     .reading-week-block { padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: 0.75rem; }
     .reading-week-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
     .reading-week-block h3 { font-size: 0.85rem; font-weight: 700; color: var(--wfa-dark); margin: 0 0 0.5rem; }
+    .reading-days-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .reading-day-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: all 0.12s; user-select: none; background: white; }
+    .reading-day-pill:hover { border-color: var(--accent); background: #eff6ff; }
+    .reading-day-pill input { display: none; }
+    .reading-day-pill.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+    .reading-lesson-row { display: grid; grid-template-columns: 110px 1fr; gap: 0.75rem; align-items: center; margin-bottom: 0.4rem; }
+    .reading-lesson-row .rl-label { font-size: 0.82rem; color: var(--muted); }
 
     /* Error */
     .errmsg { font-size: 0.78rem; color: var(--danger); margin-top: 0.3rem; display: none; }
@@ -453,7 +460,7 @@
       <div class="g2">
         <div class="field">
           <label class="field-label" for="f_first_date">First lesson date</label>
-          <input type="date" id="f_first_date" oninput="applyReadingLessonMinDate()">
+          <input type="date" id="f_first_date" oninput="recomputeReadingLessonDates()">
           <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
         </div>
         <div class="field">
@@ -508,12 +515,25 @@
 
     <div class="card">
       <h2>Reading lessons</h2>
-      <p class="subtitle">Real day/date and fluency choices for this enquiry's reading weeks — feeds the Being a Reader pack generator directly, so Claude can generate the packs without you filling in the live form.</p>
+      <p class="subtitle">Feeds the Being a Reader pack generator directly — Claude runs it automatically once the enquiry is signed off. Dates are computed from the days below; fluency focus/activity are chosen by Claude and varied across weeks unless you override a date here.</p>
       <div class="field">
         <label class="field-label" for="f_reading_weeks">Number of reading weeks <span class="optional">(optional)</span>
           <span class="hint">Usually the content weeks only, not the writing week — 2 for a typical 12-lesson enquiry. Set to 0 if this enquiry doesn't need reading packs.</span>
         </label>
         <input type="number" id="f_reading_weeks" min="0" max="6" value="2" oninput="renderReadingWeeks()">
+      </div>
+      <div class="field">
+        <label class="field-label">Reading days
+          <span class="hint">Pick exactly 3 — in day order they map to Vocabulary → Retrieval → Inference. Same 3 days every reading week.</span>
+        </label>
+        <div class="reading-days-row" id="readingDaysRow">
+          <label class="reading-day-pill" data-day="Mon"><input type="checkbox">Mon</label>
+          <label class="reading-day-pill" data-day="Tue"><input type="checkbox">Tue</label>
+          <label class="reading-day-pill" data-day="Wed"><input type="checkbox">Wed</label>
+          <label class="reading-day-pill" data-day="Thu"><input type="checkbox">Thu</label>
+          <label class="reading-day-pill" data-day="Fri"><input type="checkbox">Fri</label>
+        </div>
+        <div class="errmsg" id="err_reading_days">Pick exactly 3 reading days.</div>
       </div>
       <div id="readingWeeksContainer"></div>
     </div>
@@ -1306,23 +1326,35 @@ function updateSchedulePreview() {
 }
 
 // ── Reading lessons ──────────────────────────────────────────────────────
-// Mirrors being-a-reader-web/templates/index.html's own Lesson dates section
-// (FLUENCY_ACTIVITIES, date→day derivation) so Claude can assemble a real
-// /generate submission from this brief directly, without Innes filling in
-// the live form himself. Real dates/fluency choices are Innes's own
-// scheduling call — nothing here is invented or defaulted.
-const READING_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const READING_FLUENCY_ACTIVITIES = {
-  'Expression & Volume': ['Echo read', 'Hot seat read', 'Stress that word'],
-  'Phrasing':            ['Punctuation conductor', 'Chunk it'],
-  'Smoothness':          ['Multiple reads', 'Smooth it out'],
-  'Pace':                ['Adjusting pace', 'Key ideas', 'Speed dial'],
-};
+// Streamlined 2026-08-11 (Innes): "tool could ask for lesson days and date
+// of 1st lesson... I'd even be happy to defer to you on the fluency focus
+// and activity." Dates are computed from a single "reading days" picker
+// (which 3 weekdays, mapped in day order to Vocabulary/Retrieval/
+// Inference) + the enquiry's own first lesson date — no per-lesson date
+// entry, no fluency picker at all. scripts/shared/generate_reading_pack.py
+// assigns fluency_focus/activity itself, rotated so it varies week to
+// week. A computed date is real (grounded in a day Innes actually picked),
+// so it's treated as real data immediately — editing one directly still
+// works and is preserved across recomputes via the `.manual` marker.
 const READING_LESSON_TYPES = [
   { key: 'vocabulary', label: 'Vocabulary' },
   { key: 'retrieval',  label: 'Retrieval' },
   { key: 'inference',  label: 'Inference' },
 ];
+
+document.querySelectorAll('.reading-day-pill').forEach(pill => {
+  pill.addEventListener('click', (e) => {
+    e.preventDefault();
+    pill.classList.toggle('on');
+    validate(4);
+    recomputeReadingLessonDates();
+  });
+});
+
+function getReadingDays() {
+  return DAYS_ORDER.filter(day =>
+    document.querySelector(`.reading-day-pill[data-day="${day}"]`)?.classList.contains('on'));
+}
 
 function renderReadingWeeks() {
   const n = Math.max(0, Math.min(6, parseInt(fv('f_reading_weeks')) || 0));
@@ -1334,32 +1366,19 @@ function renderReadingWeeks() {
     block.className = 'reading-week-block';
     block.innerHTML = `<h3>Reading week ${w}</h3>` +
       READING_LESSON_TYPES.map(lt => `
-        <div class="g3" style="align-items:end;margin-bottom:0.6rem;">
-          <div class="field">
-            <label class="field-label">${lt.label} date</label>
-            <input type="date" id="rl_${wk}_${lt.key}_date">
-          </div>
-          <div class="field">
-            <label class="field-label">Fluency focus</label>
-            <select id="rl_${wk}_${lt.key}_focus" onchange="populateReadingActivity('${wk}','${lt.key}')">
-              <option value="">— select —</option>
-              <option>Expression &amp; Volume</option>
-              <option>Phrasing</option>
-              <option>Smoothness</option>
-              <option>Pace</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label">Fluency activity</label>
-            <select id="rl_${wk}_${lt.key}_activity">
-              <option value="">— select focus first —</option>
-            </select>
-          </div>
+        <div class="reading-lesson-row">
+          <span class="rl-label">${lt.label}</span>
+          <input type="date" id="rl_${wk}_${lt.key}_date">
         </div>
       `).join('');
     container.appendChild(block);
+    READING_LESSON_TYPES.forEach(lt => {
+      const el = document.getElementById(`rl_${wk}_${lt.key}_date`);
+      el.addEventListener('input', () => el.classList.add('manual'));
+    });
   }
   applyReadingLessonMinDate();
+  recomputeReadingLessonDates();
 }
 
 // A reading lesson can't happen before the enquiry's own first lesson —
@@ -1373,18 +1392,29 @@ function applyReadingLessonMinDate() {
   });
 }
 
-function populateReadingActivity(wk, ltKey, selectedActivity) {
-  const focusEl = document.getElementById(`rl_${wk}_${ltKey}_focus`);
-  const actEl = document.getElementById(`rl_${wk}_${ltKey}_activity`);
-  if (!focusEl || !actEl) return;
-  const focus = focusEl.value;
-  const prev = selectedActivity !== undefined ? selectedActivity : actEl.value;
-  actEl.innerHTML = '<option value="">— choose activity —</option>';
-  (READING_FLUENCY_ACTIVITIES[focus] || []).forEach(a => {
-    const o = document.createElement('option');
-    o.textContent = a; o.value = a;
-    if (a === prev) o.selected = true;
-    actEl.appendChild(o);
+// Fills every date field that hasn't been manually edited (no `.manual`
+// class) from first_lesson_date + reading days + a 7-day-per-week offset.
+// Never touches a field the person filling this in has actually set.
+function recomputeReadingLessonDates() {
+  applyReadingLessonMinDate();
+  const first = fv('f_first_date');
+  const days = getReadingDays();
+  if (!first || days.length !== 3) return;
+  const [fy, fm, fd] = first.split('-').map(Number);
+  const firstDate = new Date(fy, fm - 1, fd);
+  const firstWeekMonday = new Date(firstDate);
+  firstWeekMonday.setDate(firstWeekMonday.getDate() - ((firstDate.getDay() + 6) % 7)); // Mon of that week
+  const dayOffset = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4 };
+
+  document.querySelectorAll('#readingWeeksContainer .reading-week-block').forEach((block, wi) => {
+    const w = wi + 1;
+    READING_LESSON_TYPES.forEach((lt, i) => {
+      const el = document.getElementById(`rl_w${w}_${lt.key}_date`);
+      if (!el || el.classList.contains('manual')) return;
+      const dt = new Date(firstWeekMonday);
+      dt.setDate(dt.getDate() + 7 * (w - 1) + dayOffset[days[i]]);
+      el.value = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    });
   });
 }
 
@@ -1397,11 +1427,7 @@ function collectReadingLessons() {
     out[wk] = {};
     READING_LESSON_TYPES.forEach(lt => {
       const date = fv(`rl_${wk}_${lt.key}_date`);
-      const focus = fv(`rl_${wk}_${lt.key}_focus`);
-      const activity = fv(`rl_${wk}_${lt.key}_activity`);
-      if (date || focus || activity) {
-        out[wk][lt.key] = { date: date || null, fluency_focus: focus || null, fluency_activity: activity || null };
-      }
+      if (date) out[wk][lt.key] = { date };
     });
   }
   return out;
@@ -1564,6 +1590,7 @@ const RULES = {
     {type:'field', id:'f_week'},
     {type:'field', id:'f_first_date'},
     {type:'schedule'},
+    {type:'readingDays'},
   ],
   5: [],
 };
@@ -1590,6 +1617,15 @@ function validate(step) {
         ok = false;
       } else {
         document.getElementById('err_schedule').classList.remove('show');
+      }
+    } else if (r.type === 'readingDays') {
+      const weeks = Math.max(0, parseInt(fv('f_reading_weeks')) || 0);
+      const e = document.getElementById('err_reading_days');
+      if (weeks > 0 && getReadingDays().length !== 3) {
+        if (e) e.classList.add('show');
+        ok = false;
+      } else {
+        if (e) e.classList.remove('show');
       }
     } else {
       const el = document.getElementById(r.id);
@@ -2045,17 +2081,20 @@ function rvWarn(msg) {
 
 // ── Reading lessons review — surfaces exactly what's about to be sent,
 // including gaps/out-of-order dates a blank Review would otherwise hide. ──
+const READING_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
 function buildReadingLessonsReview(readingLessons) {
+  const days = getReadingDays();
   if (!readingLessons) return rvRow('Reading packs', 'None — 0 reading weeks set');
   const weekKeys = Object.keys(readingLessons).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
   if (!weekKeys.length) return rvRow('Reading packs', 'None — 0 reading weeks set');
 
   const firstLessonDate = fv('f_first_date');
   const labels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
-  let out = '';
+  let out = rvRow('Reading days', days.length === 3 ? days.join(', ') + ' — fluency focus/activity chosen by Claude, varied across weeks' : '⚠ pick exactly 3 reading days');
   let prevDate = null;
 
-  weekKeys.forEach((wk, wi) => {
+  weekKeys.forEach(wk => {
     const lessons = readingLessons[wk] || {};
     const lessonKeys = Object.keys(lessons);
     const weekNum = wk.slice(1);
@@ -2065,13 +2104,8 @@ function buildReadingLessonsReview(readingLessons) {
     }
     ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
       const v = lessons[ltKey];
-      if (!v) {
-        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: no lesson entered`);
-        return;
-      }
-      const missing = ['date', 'fluency_focus', 'fluency_activity'].filter(k => !v[k]);
-      if (missing.length) {
-        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: missing ${missing.join(', ')}`);
+      if (!v || !v.date) {
+        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: no date set`);
         return;
       }
       let dayName = '';
@@ -2083,7 +2117,7 @@ function buildReadingLessonsReview(readingLessons) {
       if (firstLessonDate && v.date < firstLessonDate) flag = ' ⚠ before the enquiry\'s first lesson';
       if (prevDate && v.date < prevDate) flag += ' ⚠ earlier than a previous reading lesson';
       prevDate = v.date;
-      const row = `Reading week ${weekNum} — ${labels[ltKey]}: ${dayName} ${v.date} · ${v.fluency_focus} (${v.fluency_activity})${flag}`;
+      const row = `Reading week ${weekNum} — ${labels[ltKey]}: ${dayName} ${v.date}${flag}`;
       out += flag ? rvWarn(row) : rvRow('', row);
     });
   });
@@ -2287,7 +2321,10 @@ function buildPrompt(d) {
   L.push('');
   L.push('─── READING LESSONS ────────────────────────────────────────');
   L.push('Real scheduling for the Being a Reader packs — generate via');
-  L.push('scripts/shared/generate_reading_pack.py, never invent these values.');
+  L.push('scripts/shared/generate_reading_pack.py. Dates below are real');
+  L.push('(Innes\'s own reading days), never invent or move them. Fluency');
+  L.push('focus/activity are NOT set here — generate_reading_pack.py assigns');
+  L.push('them automatically, rotated so they vary week to week.');
   L.push('');
   if (!d.reading_lessons || !Object.keys(d.reading_lessons).length) {
     L.push('None — 0 reading weeks set for this enquiry.');
@@ -2301,10 +2338,8 @@ function buildPrompt(d) {
       } else {
         ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
           const v = lessons[ltKey];
-          if (!v) { L.push(`  ${rlLabels[ltKey]}: NOT SET`); return; }
-          const missing = ['date', 'fluency_focus', 'fluency_activity'].filter(k => !v[k]);
-          if (missing.length) { L.push(`  ${rlLabels[ltKey]}: INCOMPLETE — missing ${missing.join(', ')}`); return; }
-          L.push(`  ${rlLabels[ltKey]}: ${v.date} — ${v.fluency_focus} (${v.fluency_activity})`);
+          if (!v || !v.date) { L.push(`  ${rlLabels[ltKey]}: NOT SET`); return; }
+          L.push(`  ${rlLabels[ltKey]}: ${v.date}`);
         });
       }
       L.push('');
@@ -2439,6 +2474,7 @@ function saveState() {
         return s;
       })(),
       reading_weeks: fv('f_reading_weeks'),
+      reading_days: getReadingDays(),
       reading_lessons: collectReadingLessons(),
     };
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -2565,7 +2601,14 @@ function applyRestoredState() {
     updateSchedulePreview();
   }
 
-  // Reading lessons — resize the week blocks first, then restore values
+  // Reading lessons — days + week count first, then render (which
+  // computes default dates), then apply any saved dates as manual
+  // overrides so a recompute never clobbers them again.
+  if (_savedState.reading_days) {
+    document.querySelectorAll('.reading-day-pill').forEach(pill => {
+      pill.classList.toggle('on', _savedState.reading_days.includes(pill.dataset.day));
+    });
+  }
   if (_savedState.reading_weeks) {
     const rw = document.getElementById('f_reading_weeks');
     if (rw) rw.value = _savedState.reading_weeks;
@@ -2574,15 +2617,11 @@ function applyRestoredState() {
   if (_savedState.reading_lessons) {
     Object.entries(_savedState.reading_lessons).forEach(([wk, lessons]) => {
       Object.entries(lessons).forEach(([ltKey, vals]) => {
-        if (!vals) return;
+        if (!vals || !vals.date) return;
         const dateEl = document.getElementById(`rl_${wk}_${ltKey}_date`);
-        const focusEl = document.getElementById(`rl_${wk}_${ltKey}_focus`);
-        if (!dateEl || !focusEl) return;
-        if (vals.date) dateEl.value = vals.date;
-        if (vals.fluency_focus) {
-          focusEl.value = vals.fluency_focus;
-          populateReadingActivity(wk, ltKey, vals.fluency_activity);
-        }
+        if (!dateEl) return;
+        dateEl.value = vals.date;
+        dateEl.classList.add('manual');
       });
     });
   }
