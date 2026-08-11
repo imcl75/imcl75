@@ -612,9 +612,21 @@ const WRITING_SKILLS_NF = {
       ]
     },
     {
+      // 4 skills added 2026-08-11 (Innes + Claude) — the master table has
+      // 22 Composition rows, but WRITING_SKILLS_NF is specifically the
+      // NON-FICTION framework (see its own name); most of the master
+      // table's Composition rows (similes, alliteration, dialogue, power
+      // of three, hyperbole, metaphor, personification, allusion, idiom,
+      // describing settings/characters) are narrative-craft skills,
+      // genuinely out of scope here, not a missing chip. These 4 are the
+      // real non-fiction rows that had no chip at all.
       area: 'Composition',
       skills: [
         { id: 'comp1', label: 'Range of purposes & audiences', export: 'Write for a range of purposes and audiences', preselect: true },
+        { id: 'comp2', label: 'Imperative verbs (instructions)', export: 'Use imperative verbs for instructions' },
+        { id: 'comp3', label: 'Sequence & linking adverbs', export: 'Sequence and linking adverbs' },
+        { id: 'comp4', label: 'Technical & precise vocabulary', export: 'Technical and precise vocabulary linked to the enquiry' },
+        { id: 'comp5', label: 'Precise pronouns', export: 'Precise pronouns' },
       ]
     },
     {
@@ -884,6 +896,30 @@ const EQUIVALENT_LOOKUP = {
     Y2: 'Write for same range of purposes/audiences as Y1',
     Y3: 'Write for a range of purposes/audiences',
     Y4: 'Write for a range of purposes/audiences (developing figurative language and non-fiction features)',
+  },
+  'Use imperative verbs for instructions': {
+    Y1: 'Use simple narrative story language', // as given in the master table
+    Y2: 'Use imperative verbs for instructions',
+    Y3: 'Consistently use non-fiction language features (technical language, precise nouns/pronouns)',
+    Y4: 'Expand non-fiction language features (precise nouns/pronouns, technical vocabulary linked to enquiry)',
+  },
+  'Sequence and linking adverbs': {
+    Y1: 'Write for purposes/audiences: entertain, inform, argue, explain — based on personal experience and high-quality texts',
+    Y2: 'Use sequence adverbs: firstly, next, then',
+    Y3: 'Consistently use non-fiction language features (technical language, precise nouns/pronouns)',
+    Y4: 'Expand non-fiction language features (precise nouns/pronouns, technical vocabulary linked to enquiry)',
+  },
+  'Technical and precise vocabulary linked to the enquiry': {
+    Y1: 'Write for purposes/audiences: entertain, inform, argue, explain — based on personal experience and high-quality texts',
+    Y2: 'Consistently use non-fiction language features (technical language)',
+    Y3: 'Consistently use non-fiction language features (technical language, precise nouns/pronouns)',
+    Y4: 'Expand non-fiction language features (precise nouns/pronouns, technical vocabulary linked to enquiry)',
+  },
+  'Precise pronouns': {
+    Y1: 'Use personal pronouns — he, she, they, we, I',
+    Y2: 'Use simple pronouns; use third person for reports',
+    Y3: 'Consistently use non-fiction language features (technical language, precise nouns/pronouns)',
+    Y4: 'Expand non-fiction language features (precise nouns/pronouns, technical vocabulary linked to enquiry)',
   },
   // Sentence Structure
   'Simple sentences': {
