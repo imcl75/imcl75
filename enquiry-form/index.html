@@ -631,9 +631,17 @@ const WRITING_SKILLS_NF = {
       ]
     },
     {
+      // Split 2026-08-11 (Innes) — the master equivalents table
+      // (enquiry-builder-writing-progression.md) gives simple present/
+      // past/future genuinely different Y1 equivalents each ("present
+      // tense with some accuracy" vs "past tense with some accuracy" vs
+      // future tense's own row) — one blended "Simple tense" chip
+      // couldn't resolve to a single correct equivalent.
       area: 'Tense & Verb Form',
       skills: [
-        { id: 'tvf1', label: 'Simple tense', export: 'Simple tense (past, present, future)' },
+        { id: 'tvf1a', label: 'Simple present tense', export: 'Simple present tense' },
+        { id: 'tvf1b', label: 'Simple past tense', export: 'Simple past tense' },
+        { id: 'tvf1c', label: 'Simple future tense', export: 'Simple future tense' },
         { id: 'tvf2', label: 'Progressive tense', export: 'Progressive tense (ongoing actions)' },
         { id: 'tvf3', label: 'Perfect tense', export: 'Perfect tense (completed actions)' },
       ]
@@ -659,7 +667,13 @@ const WRITING_SKILLS_NF = {
         { id: 'punc6', label: 'Dashes', export: 'Dashes' },
         { id: 'punc7', label: 'Commas (clauses)', export: 'Commas to mark subordinate and relative clauses' },
         { id: 'punc8', label: 'Apostrophes (contraction)', export: "Apostrophes for contraction" },
-        { id: 'punc9', label: 'Apostrophes (possession)', export: "Apostrophes for possession" },
+        // Split 2026-08-11 (Innes) — the master equivalents table gives
+        // singular vs plural possession different Y4 equivalents ("use
+        // apostrophes for singular possession correctly" vs "begin using
+        // apostrophes for plural possession"), so one blended chip
+        // couldn't resolve to a single correct equivalent either.
+        { id: 'punc9a', label: 'Apostrophes (singular possession)', export: "Apostrophes for singular possession" },
+        { id: 'punc9b', label: 'Apostrophes (plural possession)', export: "Apostrophes for plural possession" },
       ]
     },
     {
@@ -824,6 +838,269 @@ const EQUIVALENT_SKILLS_BY_YEAR = {
   },
 };
 const EQUIV_CUSTOM = '__custom__';
+
+// ── Direct Y1-Y4 lookup, keyed by WRITING_SKILLS_NF chip `export` string ────
+// Added 2026-08-11 (Innes + Claude, enquiry-builder-briefing-tool-plan.md
+// Phase 1). Source: enquiry-builder-writing-progression.md's master
+// skill-by-skill mapping (docs/project/writing-skills-progression-map-v3.xlsx),
+// matched by hand against every WRITING_SKILLS_NF['Y5'] chip — NOT a fuzzy/
+// automatic match, each entry below was individually verified against its
+// real master-table row. Used by autoFillEquivalents() to pre-populate a
+// flagged Teaching Focus skill's Year-group equivalents instead of Innes
+// having to browse EQUIVALENT_SKILLS_BY_YEAR's unfiltered generic list or
+// type custom text every time. A chip with no entry here just gets no
+// auto-fill (same "don't force an ungrounded guess" rule as everywhere else
+// in this project) — Innes can still add rows manually via the existing
+// dropdown/custom-text flow, untouched by this addition.
+//
+// A few chips blend two distinct master-table rows into one Y5 skill (e.g.
+// "Progressive tense" covers both present- and past-progressive, which have
+// different real Y1 answers; "Adverbials (time & place)" covers both time
+// and place, which differ from Y3 onward) — those are marked BLENDED below
+// and the equivalent text combines both rather than picking one arbitrarily.
+const EQUIVALENT_LOOKUP = {
+  // Non-Negotiable
+  'Co-ordinating and subordinating conjunctions': { // BLENDED: compound + complex structure rows
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use co-ordination (and/or/but/so) and subordination (when/if/that/because)',
+    Y3: 'Extend range with compound (co-ordinating) and complex (subordinating) sentences',
+    Y4: 'Write compound and complex sentences using a range of co-ordinating and subordinating conjunctions',
+  },
+  'Commas in lists': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use commas in lists',
+    Y4: 'Commas in lists — secure',
+  },
+  'Simple paragraphs': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Start to use paragraphs to group related information',
+    Y3: 'Use paragraphs to group related information by time, place or topic',
+    Y4: 'Organise content into relevant paragraphs (new paragraph for change in time, place or topic)',
+  },
+  // Composition
+  'Write for a range of purposes and audiences': {
+    Y1: 'Write for purposes/audiences: entertain, inform, argue, explain — based on personal experience and high-quality texts',
+    Y2: 'Write for same range of purposes/audiences as Y1',
+    Y3: 'Write for a range of purposes/audiences',
+    Y4: 'Write for a range of purposes/audiences (developing figurative language and non-fiction features)',
+  },
+  // Sentence Structure
+  'Simple sentences': {
+    Y1: 'Compose simple sentences',
+    Y2: 'Write simple sentences',
+    Y3: 'Use a range of simple sentences',
+    Y4: 'Use simple sentences as part of a varied range',
+  },
+  'Compound sentences': {
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use co-ordination: and, or, but, so',
+    Y3: 'Extend compound sentences using co-ordinating conjunctions',
+    Y4: 'Write compound sentences using a range of co-ordinating conjunctions',
+  },
+  'Subordination at the start of a sentence': { // same master row covers all 3 clause positions generically
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use subordination: when, if, that, because',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Vary subordinate clause position (start or end of sentence)',
+  },
+  'Subordination in the middle of a sentence': {
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use subordination: when, if, that, because',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Vary subordinate clause position (start or end of sentence)',
+  },
+  'Subordination at the end of a sentence': {
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use subordination: when, if, that, because',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Vary subordinate clause position (start or end of sentence)',
+  },
+  'Relative clauses': { // defining + non-defining rows give identical equivalents
+    Y1: "Use 'and' to join words and clauses",
+    Y2: 'Use subordination: when, if, that, because',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Use fronted adverbials with a comma (time, place, manner)',
+  },
+  'Modal verbs (degrees of possibility)': {
+    Y1: 'Use present tense with some accuracy',
+    Y2: 'Use subordination: when, if, that, because',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Use fronted adverbials with a comma (time, place, manner)',
+  },
+  'Adverbs of possibility': {
+    Y1: 'Use expanded noun phrases',
+    Y2: 'Use adverbs descriptively',
+    Y3: 'Extend complex sentences using a wider range of subordinating conjunctions',
+    Y4: 'Use fronted adverbials with a comma (time, place, manner)',
+  },
+  // Tense & Verb Form (split 2026-08-11 — see WRITING_SKILLS_NF comment)
+  'Simple present tense': {
+    Y1: 'Use present tense with some accuracy',
+    Y2: 'Use simple present tense mostly correctly and consistently',
+    Y3: 'Use present tense correctly and consistently',
+    Y4: 'Maintain present tense correctly and consistently through an extended piece',
+  },
+  'Simple past tense': {
+    Y1: 'Use past tense with some accuracy',
+    Y2: 'Use simple past tense mostly correctly and consistently',
+    Y3: 'Use past tense correctly and consistently',
+    Y4: 'Maintain past tense correctly and consistently through an extended piece',
+  },
+  'Simple future tense': {
+    Y1: 'Use past tense with some accuracy', // as given in the master table — future has no Y1 statement of its own
+    Y2: 'Use simple future tense',
+    Y3: 'Use simple future tense',
+    Y4: 'Use simple future tense consistently and accurately',
+  },
+  'Progressive tense (ongoing actions)': { // BLENDED: present-progressive + past-progressive rows differ at Y1
+    Y1: 'Use present or past tense with some accuracy (ongoing actions)',
+    Y2: 'Use present/past continuous form mostly correctly and consistently',
+    Y3: 'Use progressive form correctly and consistently',
+    Y4: 'Use progressive tense (ongoing actions) consistently and accurately',
+  },
+  'Perfect tense (completed actions)': {
+    Y1: 'Use present tense with some accuracy',
+    Y2: 'Use present tense correctly',
+    Y3: 'Use present perfect form correctly',
+    Y4: 'Use present perfect form for completed actions and consequences',
+  },
+  // Cohesion
+  'Organisational and presentational devices (bullet points, diagrams, font)': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Use sub-headings as simple organisational devices',
+    Y3: 'Use bullet points, diagrams, pictures and varied font to structure text and guide the reader',
+    Y4: 'Use bullet points, diagrams, pictures and varied font to structure text and guide the reader',
+  },
+  'Conjunctions for cohesion': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Write linked sentences independently',
+    Y3: 'Link sentences with time adverbials (Next, Then, After that etc)',
+    Y4: 'Link sentences with adverbials; know when to start a new paragraph',
+  },
+  'Adverbials of time and place': { // BLENDED: time + place rows differ from Y3 onward
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Write linked sentences independently',
+    Y3: 'Use conjunctions, prepositions and adverbs to express time and place',
+    Y4: 'Use fronted adverbials of time and place with a comma',
+  },
+  'Synonyms for cohesion': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Write linked sentences independently',
+    Y3: 'Link sentences with time adverbials (Next, Then, After that etc)',
+    Y4: 'Maintain cohesion via varied nouns and pronouns',
+  },
+  'Relative pronouns (who, which, where, when, that, whose)': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Write linked sentences independently',
+    Y3: 'Use conjunctions, prepositions and adverbs to express place',
+    Y4: 'Use pronouns for cohesion and to avoid repetition',
+  },
+  // Punctuation
+  'Capital letters': {
+    Y1: 'Use capital letters to start sentences — mostly accurate',
+    Y2: 'Demarcate most sentences with capital letters correctly',
+    Y3: 'KS1 sentence demarcation secure (capital letters, full stops, question marks)',
+    Y4: 'Capital letters correct and consistent',
+  },
+  'Full stops': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Demarcate most sentences with full stops correctly',
+    Y3: 'KS1 sentence demarcation secure (capital letters, full stops, question marks)',
+    Y4: 'Full stops and other sentence ending punctuation correct and consistent',
+  },
+  'Question marks': {
+    Y1: 'Begin using question marks',
+    Y2: 'Demarcate most sentences with question marks correctly',
+    Y3: 'KS1 sentence demarcation secure (capital letters, full stops, question marks)',
+    Y4: 'Question marks correct and consistent',
+  },
+  'Brackets': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use brackets with support',
+    Y4: 'Use brackets with increasing independence',
+  },
+  'Hyphens': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use commas in lists',
+    Y4: 'Comma after fronted adverbial — expected',
+  },
+  'Dashes': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use commas in lists',
+    Y4: 'Comma after fronted adverbial — expected',
+  },
+  'Commas to mark subordinate and relative clauses': { // both master rows give identical equivalents
+    Y1: 'Use capital letters to start sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use commas in lists',
+    Y4: 'Comma after fronted adverbial — expected',
+  },
+  'Apostrophes for contraction': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using apostrophes for contractions',
+    Y3: 'Use apostrophes for contractions correctly',
+    Y4: 'Apostrophes for contractions — secure',
+  },
+  'Apostrophes for singular possession': { // split 2026-08-11 — see WRITING_SKILLS_NF comment
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Apostrophes for contractions',
+    Y3: 'Begin using apostrophes for singular possession',
+    Y4: 'Use apostrophes for singular possession correctly',
+  },
+  'Apostrophes for plural possession': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Apostrophes for contractions',
+    Y3: 'Begin using apostrophes for singular possession',
+    Y4: 'Begin using apostrophes for plural possession',
+  },
+  // Editing & Revising — BLENDED across grammar/punctuation/spelling (er1)
+  // and sentence-structure/composition/cohesion (er2) master rows, which
+  // share near-identical Y1-Y4 shapes except spelling's own Y2 answer.
+  'Edit writing for Y5 grammar, punctuation and spelling': {
+    Y1: 'Edit to correct simple errors',
+    Y2: 'Edit to correct errors',
+    Y3: 'Edit for Y3 GPS accuracy (grammar, punctuation, spelling)',
+    Y4: 'Edit for Y4 GPS accuracy',
+  },
+  'Revise using Y5 composition, sentence structure and cohesion skills': {
+    Y1: 'Re-read writing to check it makes sense',
+    Y2: 'Re-read writing to check it makes sense',
+    Y3: 'Revise by adding or better using sentence structure, composition and cohesion skills (uplevelling = revising)',
+    Y4: 'Revise by adding clauses and words to improve sentence structure, or including broader skills beyond the success criteria',
+  },
+  // Spelling
+  'Year 5/6 statutory spelling word list': {
+    Y1: 'Spell many Y1 common exception words',
+    Y2: 'Spell many Y2 common exception words',
+    Y3: 'Spell some words from the Y3/4 statutory list',
+    Y4: 'Spell most words from the Y3/4 statutory list',
+  },
+  // Handwriting
+  'Write in a consistent and joined style with increased quality and speed': {
+    Y1: 'Form most lower-case letters in the correct direction with correct start and finish points',
+    Y2: 'Form ascenders and descenders with correct relative size',
+    Y3: 'Form ascenders and descenders with correct relative size',
+    Y4: 'Form ascenders and descenders with correct relative size',
+  },
+};
+
+function autoFillEquivalents(skillExport) {
+  // Only fills a genuinely fresh skill — never overwrites rows Innes has
+  // already added/edited by hand (e.g. from re-toggling a chip off and on).
+  if (equivState[skillExport] && equivState[skillExport].length) return;
+  const lookup = EQUIVALENT_LOOKUP[skillExport];
+  if (!lookup) return; // no clean master-table match — leave empty, same as before this feature existed
+  equivState[skillExport] = [];
+  ['Y1', 'Y2', 'Y3', 'Y4'].forEach(y => {
+    if (lookup[y]) {
+      equivState[skillExport].push({ id: equivNextId++, year: y, skill: lookup[y], custom: true });
+    }
+  });
+}
 
 // ── CLF topic data ─────────────────────────────────────────────────────────
 const CLF_TOPICS = {
@@ -1260,7 +1537,13 @@ function renderTeachingFocusChips() {
     chip.dataset.export = exp;
     chip.textContent = eligibleChips.find(c => c.dataset.export === exp)?.textContent || exp;
     chip.title = exp;
-    chip.addEventListener('click', () => { chip.classList.toggle('on'); saveState(); renderEquivalents(); });
+    chip.addEventListener('click', () => {
+      const turningOn = !chip.classList.contains('on');
+      chip.classList.toggle('on');
+      if (turningOn) autoFillEquivalents(exp);
+      saveState();
+      renderEquivalents();
+    });
     area.appendChild(chip);
   });
   applyTeachingFocusChipState();
