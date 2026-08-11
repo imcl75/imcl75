@@ -25,7 +25,7 @@
     header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
     header p  { font-size: 0.85rem; opacity: 0.55; }
 
-    .wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
 
     /* ── Drop zone ─────────────────────────────── */
     .drop-zone {
@@ -38,10 +38,7 @@
       transition: border-color 0.15s, background 0.15s;
       margin-bottom: 1.5rem;
     }
-    .drop-zone:hover, .drop-zone.over {
-      border-color: #3b82f6;
-      background: #eff6ff;
-    }
+    .drop-zone:hover, .drop-zone.over { border-color: #3b82f6; background: #eff6ff; }
     .drop-zone .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
     .drop-zone .primary { font-weight: 600; color: #1e293b; margin-bottom: 0.25rem; }
     .drop-zone .secondary { font-size: 0.8rem; color: #94a3b8; }
@@ -65,16 +62,12 @@
     }
 
     /* ── Preview ─────────────────────────────────── */
-    .preview-row {
-      display: flex;
-      gap: 1.5rem;
-      align-items: flex-start;
-    }
+    .preview-row { display: flex; gap: 1.5rem; align-items: flex-start; }
     #previewCanvas {
       border-radius: 6px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.15);
       flex-shrink: 0;
-      max-height: 260px;
+      max-height: 220px;
       width: auto;
     }
     .info-table { flex: 1; font-size: 0.85rem; }
@@ -94,7 +87,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem 2rem;
     }
-    @media (max-width: 560px) { .opts-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 580px) { .opts-grid { grid-template-columns: 1fr; } }
 
     .opt-label {
       font-size: 0.8rem;
@@ -103,45 +96,62 @@
       margin-bottom: 0.6rem;
       display: block;
     }
+    .opt-label .rec-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.1rem 0.45rem;
+      border-radius: 20px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+      letter-spacing: 0.02em;
+    }
 
-    /* tile picker */
-    .tile-picker { display: flex; gap: 0.75rem; }
-    .tile-btn {
+    /* ── Layout picker ──────────────────────────── */
+    .layout-picker {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+    .layout-btn {
       flex: 1;
+      min-width: 70px;
       border: 2px solid #e2e8f0;
       border-radius: 10px;
       background: #f8fafc;
       cursor: pointer;
-      padding: 0.75rem 0.5rem;
+      padding: 0.6rem 0.4rem 0.5rem;
       text-align: center;
       transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
     }
-    .tile-btn:hover { border-color: #93c5fd; background: #eff6ff; }
-    .tile-btn.active {
+    .layout-btn:hover { border-color: #93c5fd; background: #eff6ff; }
+    .layout-btn.active {
       border-color: #3b82f6;
       background: #eff6ff;
       color: #1d4ed8;
     }
-    .tile-icon {
+    .layout-icon {
       display: inline-grid;
       gap: 2px;
-      margin-bottom: 0.4rem;
     }
-    .tile-icon .c {
-      background: #3b82f6;
-      border-radius: 2px;
+    .layout-icon .c {
+      background: #94a3b8;
+      border-radius: 1.5px;
     }
-    .tile-btn.active .tile-icon .c { background: #1d4ed8; }
-    .tile-btn span { font-size: 0.78rem; font-weight: 600; display: block; }
-    .tile-btn small { font-size: 0.7rem; color: #94a3b8; display: block; margin-top: 0.2rem; }
+    .layout-btn.active .layout-icon .c { background: #3b82f6; }
+    .layout-btn .lb-name  { font-size: 0.78rem; font-weight: 700; display: block; }
+    .layout-btn .lb-desc  { font-size: 0.67rem; color: #94a3b8; display: block; }
+    .layout-btn.active .lb-desc { color: #60a5fa; }
 
     /* sliders */
     .slider-row { display: flex; align-items: center; gap: 0.75rem; }
-    input[type="range"] {
-      flex: 1;
-      accent-color: #3b82f6;
-      cursor: pointer;
-    }
+    input[type="range"] { flex: 1; accent-color: #3b82f6; cursor: pointer; }
     .slider-badge {
       background: #eff6ff;
       color: #1d4ed8;
@@ -159,6 +169,29 @@
       color: #cbd5e1;
       margin-top: 0.3rem;
     }
+
+    /* ── Capture width presets ──────────────────── */
+    .width-presets { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .width-btn {
+      flex: 1;
+      min-width: 80px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+      cursor: pointer;
+      padding: 0.5rem 0.4rem;
+      text-align: center;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.15rem;
+    }
+    .width-btn:hover  { border-color: #93c5fd; background: #eff6ff; }
+    .width-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+    .width-btn .wb-name { font-size: 0.78rem; font-weight: 700; }
+    .width-btn .wb-desc { font-size: 0.68rem; color: #94a3b8; }
+    .width-btn.active .wb-desc { color: #60a5fa; }
 
     /* checkboxes */
     .check-row {
@@ -196,52 +229,24 @@
       font-weight: 700;
       cursor: pointer;
       transition: background 0.15s, transform 0.1s;
-      letter-spacing: -0.01em;
     }
     .gen-btn:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
     .gen-btn:active:not(:disabled) { transform: translateY(0); }
     .gen-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
 
     .progress-wrap { margin-bottom: 1rem; }
-    .prog-bar {
-      background: #e2e8f0;
-      border-radius: 99px;
-      height: 6px;
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-    }
-    .prog-fill {
-      background: linear-gradient(90deg, #3b82f6, #6366f1);
-      height: 100%;
-      border-radius: 99px;
-      transition: width 0.3s ease;
-    }
+    .prog-bar { background: #e2e8f0; border-radius: 99px; height: 6px; overflow: hidden; margin-bottom: 0.5rem; }
+    .prog-fill { background: linear-gradient(90deg, #3b82f6, #6366f1); height: 100%; border-radius: 99px; transition: width 0.3s ease; }
     .prog-text { font-size: 0.8rem; color: #64748b; text-align: center; }
 
     .hidden { display: none !important; }
-
-    /* assembly diagram (shown inside info pill) */
-    .asm-diagram {
-      display: inline-grid;
-      gap: 3px;
-      vertical-align: middle;
-      margin: 0 4px;
-    }
-    .asm-cell {
-      width: 18px;
-      height: 24px;
-      background: #dcfce7;
-      border: 1.5px solid #16a34a;
-      border-radius: 2px;
-      display: inline-block;
-    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>PDF Tiler</h1>
-  <p>Tile an A4 PDF across A3 sheets to print it larger</p>
+  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.4.0</span></h1>
+  <p>Tile a PDF, image or web page across A3 sheets</p>
 </header>
 
 <div class="wrap">
@@ -249,14 +254,14 @@
   <!-- Drop zone -->
   <div class="drop-zone" id="dropZone">
     <div class="icon">📄</div>
-    <p class="primary">Drop a PDF here, or click to browse</p>
-    <p class="secondary">First page will be tiled · A4 portrait or landscape · any PDF</p>
-    <input type="file" id="fileInput" accept=".pdf">
+    <p class="primary">Drop a file here, or click to browse</p>
+    <p class="secondary">PDF · PNG · JPG · WebP · HTML — first page of PDFs, full content of images and web pages</p>
+    <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.html,.htm">
   </div>
 
   <!-- Preview -->
   <div class="card hidden" id="previewCard">
-    <p class="card-title">Source page</p>
+    <p class="card-title">Source</p>
     <div class="preview-row">
       <canvas id="previewCanvas"></canvas>
       <div class="info-table" id="infoTable"></div>
@@ -268,25 +273,63 @@
     <p class="card-title">Options</p>
     <div class="opts-grid">
 
-      <!-- Tile count -->
-      <div>
-        <span class="opt-label">Number of A3 sheets</span>
-        <div class="tile-picker">
-          <button class="tile-btn" data-n="2" id="btn2">
-            <div class="tile-icon" style="grid-template-columns:1fr; grid-template-rows:1fr 1fr; width:20px; height:28px;">
+      <!-- Layout picker — full width -->
+      <div style="grid-column:1/-1;">
+        <span class="opt-label">Layout <span id="recBadge" class="rec-badge hidden">Auto-selected</span></span>
+        <div class="layout-picker" id="layoutPicker">
+
+          <!-- Wide layouts (1 row) -->
+          <button class="layout-btn" data-cols="2" data-rows="1" data-ori="landscape" id="btnW2">
+            <div class="layout-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr; width:34px; height:18px;">
               <div class="c"></div><div class="c"></div>
             </div>
-            <span>2 sheets</span>
-            <small>≈ 2× bigger</small>
+            <span class="lb-name">2 wide</span>
+            <span class="lb-desc">1 row × 2 sheets</span>
           </button>
-          <button class="tile-btn active" data-n="4" id="btn4">
-            <div class="tile-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:28px; height:28px;">
+
+          <button class="layout-btn" data-cols="3" data-rows="1" data-ori="landscape" id="btnW3">
+            <div class="layout-icon" style="grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr; width:46px; height:16px;">
+              <div class="c"></div><div class="c"></div><div class="c"></div>
+            </div>
+            <span class="lb-name">3 wide</span>
+            <span class="lb-desc">1 row × 3 sheets</span>
+          </button>
+
+          <button class="layout-btn" data-cols="4" data-rows="1" data-ori="landscape" id="btnW4">
+            <div class="layout-icon" style="grid-template-columns:1fr 1fr 1fr 1fr; grid-template-rows:1fr; width:52px; height:14px;">
+              <div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div>
+            </div>
+            <span class="lb-name">4 wide</span>
+            <span class="lb-desc">Panoramic</span>
+          </button>
+
+          <!-- Standard 2×2 -->
+          <button class="layout-btn active" data-cols="2" data-rows="2" data-ori="auto" id="btn22">
+            <div class="layout-icon" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:26px; height:26px;">
               <div class="c"></div><div class="c"></div>
               <div class="c"></div><div class="c"></div>
             </div>
-            <span>4 sheets</span>
-            <small>≈ 2.8× bigger</small>
+            <span class="lb-name">2 × 2</span>
+            <span class="lb-desc">Standard grid</span>
           </button>
+
+          <!-- Tall layouts (1 column) -->
+          <button class="layout-btn" data-cols="1" data-rows="2" data-ori="portrait" id="btnT2">
+            <div class="layout-icon" style="grid-template-columns:1fr; grid-template-rows:1fr 1fr; width:18px; height:34px;">
+              <div class="c"></div><div class="c"></div>
+            </div>
+            <span class="lb-name">2 tall</span>
+            <span class="lb-desc">1 col × 2 sheets</span>
+          </button>
+
+          <button class="layout-btn" data-cols="1" data-rows="3" data-ori="portrait" id="btnT3">
+            <div class="layout-icon" style="grid-template-columns:1fr; grid-template-rows:1fr 1fr 1fr; width:16px; height:44px;">
+              <div class="c"></div><div class="c"></div><div class="c"></div>
+            </div>
+            <span class="lb-name">3 tall</span>
+            <span class="lb-desc">1 col × 3 sheets</span>
+          </button>
+
         </div>
       </div>
 
@@ -318,6 +361,29 @@
         <label class="check-row"><input type="checkbox" id="chkInstruct"> Assembly instructions page</label>
       </div>
 
+      <!-- HTML capture width (hidden until HTML file loaded) -->
+      <div id="captureWidthRow" class="hidden" style="grid-column:1/-1;">
+        <span class="opt-label">Capture width — wider captures more horizontal content</span>
+        <div class="width-presets">
+          <button class="width-btn" data-w="1400" id="wbNarrow">
+            <span class="wb-name">Narrow</span>
+            <span class="wb-desc">Portrait pages</span>
+          </button>
+          <button class="width-btn" data-w="3000" id="wbWide">
+            <span class="wb-name">Wide</span>
+            <span class="wb-desc">Most pages</span>
+          </button>
+          <button class="width-btn active" data-w="6000" id="wbXwide">
+            <span class="wb-name">Extra wide</span>
+            <span class="wb-desc">Scrolling / panoramic</span>
+          </button>
+          <button class="width-btn" data-w="9000" id="wbMax">
+            <span class="wb-name">Maximum</span>
+            <span class="wb-desc">Very wide timelines</span>
+          </button>
+        </div>
+      </div>
+
     </div>
 
     <div class="info-pill hidden" id="infoPill"></div>
@@ -336,35 +402,45 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 'use strict';
 
-// ─── PDF.js setup ────────────────────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let pdfDoc  = null;
-let pageInf = null; // { widthPt, heightPt, widthMm, heightMm, isPortrait, name, pages }
-let numTiles = 4;
+let pdfDoc       = null;
+let pageInf      = null;   // { widthMm, heightMm, isPortrait, name, type, ... }
+let sourceType   = null;   // 'pdf' | 'image' | 'html'
+let sourceCanvas = null;   // pre-rendered canvas for image / html sources
+let htmlContent  = null;   // stored HTML string for re-render
+let captureWidth = 6000;   // HTML capture width in px
+
+// Layout state — cols × rows + orientation
+let layoutCols = 2;
+let layoutRows = 2;
+let layoutOri  = 'auto'; // 'landscape' | 'portrait' | 'auto' (auto = match source)
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
-const dropZone      = document.getElementById('dropZone');
-const fileInput     = document.getElementById('fileInput');
-const previewCard   = document.getElementById('previewCard');
-const previewCanvas = document.getElementById('previewCanvas');
-const infoTable     = document.getElementById('infoTable');
-const optsCard      = document.getElementById('optsCard');
-const genCard       = document.getElementById('genCard');
-const infoPill      = document.getElementById('infoPill');
-const overlapSlider = document.getElementById('overlapSlider');
-const overlapBadge  = document.getElementById('overlapBadge');
-const qualSlider    = document.getElementById('qualSlider');
-const qualBadge     = document.getElementById('qualBadge');
-const progWrap      = document.getElementById('progWrap');
-const progFill      = document.getElementById('progFill');
-const progText      = document.getElementById('progText');
-const genBtn        = document.getElementById('genBtn');
+const dropZone        = document.getElementById('dropZone');
+const fileInput       = document.getElementById('fileInput');
+const previewCard     = document.getElementById('previewCard');
+const previewCanvas   = document.getElementById('previewCanvas');
+const infoTable       = document.getElementById('infoTable');
+const optsCard        = document.getElementById('optsCard');
+const genCard         = document.getElementById('genCard');
+const infoPill        = document.getElementById('infoPill');
+const overlapSlider   = document.getElementById('overlapSlider');
+const overlapBadge    = document.getElementById('overlapBadge');
+const qualSlider      = document.getElementById('qualSlider');
+const qualBadge       = document.getElementById('qualBadge');
+const progWrap        = document.getElementById('progWrap');
+const progFill        = document.getElementById('progFill');
+const progText        = document.getElementById('progText');
+const genBtn          = document.getElementById('genBtn');
+const captureWidthRow = document.getElementById('captureWidthRow');
+const recBadge        = document.getElementById('recBadge');
 
 // ─── File handling ────────────────────────────────────────────────────────────
 dropZone.addEventListener('click', () => fileInput.click());
@@ -372,18 +448,30 @@ dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classL
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
 dropZone.addEventListener('drop', e => {
   e.preventDefault(); dropZone.classList.remove('over');
-  const f = e.dataTransfer.files[0];
-  if (f) loadFile(f);
+  const f = e.dataTransfer.files[0]; if (f) loadFile(f);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
-// ─── Tile picker ──────────────────────────────────────────────────────────────
-document.querySelectorAll('.tile-btn').forEach(btn => {
+// ─── Layout picker ────────────────────────────────────────────────────────────
+document.querySelectorAll('.layout-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tile-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    numTiles = parseInt(btn.dataset.n);
+    layoutCols = parseInt(btn.dataset.cols);
+    layoutRows = parseInt(btn.dataset.rows);
+    layoutOri  = btn.dataset.ori;
+    recBadge.classList.add('hidden'); // user overrode auto
     updateInfo();
+  });
+});
+
+// ─── Capture width presets ────────────────────────────────────────────────────
+document.querySelectorAll('.width-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.width-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    captureWidth = parseInt(btn.dataset.w);
+    if (sourceType === 'html' && htmlContent) renderHTML();
   });
 });
 
@@ -392,91 +480,244 @@ overlapSlider.addEventListener('input', () => {
   overlapBadge.textContent = overlapSlider.value + ' mm';
   updateInfo();
 });
-
 const qualLabels = ['Draft', 'Good', 'High'];
 qualSlider.addEventListener('input', () => {
   qualBadge.textContent = qualLabels[parseInt(qualSlider.value) - 1];
 });
 
+// ─── Auto-detect optimal layout from content aspect ratio ────────────────────
+function autoDetectLayout(widthMm, heightMm) {
+  const aspect = widthMm / heightMm; // > 1 = wide, < 1 = tall
+  if      (aspect > 4.5)  return { cols: 4, rows: 1, ori: 'landscape', id: 'btnW4' };
+  else if (aspect > 2.8)  return { cols: 3, rows: 1, ori: 'landscape', id: 'btnW3' };
+  else if (aspect > 1.7)  return { cols: 2, rows: 1, ori: 'landscape', id: 'btnW2' };
+  else if (aspect > 0.6)  return { cols: 2, rows: 2, ori: 'auto',      id: 'btn22' };
+  else if (aspect > 0.3)  return { cols: 1, rows: 2, ori: 'portrait',  id: 'btnT2' };
+  else                    return { cols: 1, rows: 3, ori: 'portrait',  id: 'btnT3' };
+}
+
+function applyAutoLayout(widthMm, heightMm) {
+  const rec = autoDetectLayout(widthMm, heightMm);
+  // Only auto-apply if user hasn't already made a selection this session
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  const target = document.getElementById(rec.id);
+  if (target) target.classList.add('active');
+  layoutCols = rec.cols;
+  layoutRows = rec.rows;
+  layoutOri  = rec.ori;
+  recBadge.classList.remove('hidden');
+}
+
+// ─── Resolve sheet orientation ────────────────────────────────────────────────
+function resolveOri(ori) {
+  if (ori === 'auto') return (pageInf && pageInf.isPortrait) ? 'portrait' : 'landscape';
+  return ori;
+}
+
+// ─── Load dispatcher ──────────────────────────────────────────────────────────
+function loadFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    sourceType = 'pdf'; loadPDF(file);
+  } else if (['png','jpg','jpeg','webp','gif'].includes(ext)) {
+    sourceType = 'image'; loadImage(file);
+  } else if (ext === 'html' || ext === 'htm') {
+    sourceType = 'html';
+    file.text().then(txt => { htmlContent = txt; renderHTML(); });
+  } else {
+    alert('Supported: PDF, PNG, JPG, WebP, GIF, HTML');
+  }
+}
+
 // ─── Load PDF ─────────────────────────────────────────────────────────────────
-async function loadFile(file) {
+async function loadPDF(file) {
   dropZone.querySelector('.primary').textContent = 'Loading…';
   try {
-    const buf = await file.arrayBuffer();
-    pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const buf  = await file.arrayBuffer();
+    pdfDoc     = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
     const page = await pdfDoc.getPage(1);
-    const vp = page.getViewport({ scale: 1 });
-
-    const PT_TO_MM = 25.4 / 72;
+    const vp   = page.getViewport({ scale: 1 });
+    const PT   = 25.4 / 72;
     pageInf = {
-      widthPt:   vp.width,
-      heightPt:  vp.height,
-      widthMm:   Math.round(vp.width  * PT_TO_MM * 10) / 10,
-      heightMm:  Math.round(vp.height * PT_TO_MM * 10) / 10,
+      widthPt: vp.width, heightPt: vp.height,
+      widthMm:  Math.round(vp.width  * PT * 10) / 10,
+      heightMm: Math.round(vp.height * PT * 10) / 10,
       isPortrait: vp.height >= vp.width,
-      name:       file.name,
-      pages:      pdfDoc.numPages,
+      name: file.name, pages: pdfDoc.numPages, type: 'PDF',
     };
-
-    // Preview render
-    const previewScale = Math.min(260 / vp.height, 200 / vp.width, 1.5);
-    const pvp = page.getViewport({ scale: previewScale });
-    previewCanvas.width  = pvp.width;
-    previewCanvas.height = pvp.height;
-    previewCanvas.style.maxHeight = '260px';
+    const sc = Math.min(220 / vp.height, 180 / vp.width, 1.5);
+    const pvp = page.getViewport({ scale: sc });
+    previewCanvas.width = pvp.width; previewCanvas.height = pvp.height;
     await page.render({ canvasContext: previewCanvas.getContext('2d'), viewport: pvp }).promise;
-
-    // Info table
-    infoTable.innerHTML = `
-      <div class="info-row"><span class="lbl">File</span><span class="val">${file.name}</span></div>
-      <div class="info-row"><span class="lbl">Pages</span><span class="val">${pdfDoc.numPages}${pdfDoc.numPages > 1 ? ' (page 1 will be tiled)' : ''}</span></div>
-      <div class="info-row"><span class="lbl">Page size</span><span class="val">${pageInf.widthMm} × ${pageInf.heightMm} mm</span></div>
-      <div class="info-row"><span class="lbl">Orientation</span><span class="val">${pageInf.isPortrait ? 'Portrait' : 'Landscape'}</span></div>
-    `;
-
-    previewCard.classList.remove('hidden');
-    optsCard.classList.remove('hidden');
-    genCard.classList.remove('hidden');
-    updateInfo();
-    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+    sourceCanvas = null;
+    captureWidthRow.classList.add('hidden');
+    applyAutoLayout(pageInf.widthMm, pageInf.heightMm);
+    showInfoAndCards();
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
   } catch (err) {
     alert('Could not load PDF: ' + err.message);
-    dropZone.querySelector('.primary').textContent = 'Drop a PDF here, or click to browse';
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
   }
+}
+
+// ─── Load image ───────────────────────────────────────────────────────────────
+function loadImage(file) {
+  dropZone.querySelector('.primary').textContent = 'Loading…';
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const PX = 25.4 / 96;
+    sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = w; sourceCanvas.height = h;
+    sourceCanvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    pageInf = {
+      widthMm:  Math.round(w * PX * 10) / 10,
+      heightMm: Math.round(h * PX * 10) / 10,
+      isPortrait: h >= w, name: file.name, type: 'Image', widthPx: w, heightPx: h,
+    };
+    const sc = Math.min(220 / h, 180 / w, 1);
+    previewCanvas.width  = Math.round(w * sc);
+    previewCanvas.height = Math.round(h * sc);
+    previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+    captureWidthRow.classList.add('hidden');
+    applyAutoLayout(pageInf.widthMm, pageInf.heightMm);
+    showInfoAndCards();
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  };
+  img.onerror = () => {
+    alert('Could not load image.');
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  };
+  img.src = url;
+}
+
+// ─── Render HTML via html2canvas ──────────────────────────────────────────────
+async function renderHTML() {
+  dropZone.querySelector('.primary').textContent = 'Rendering HTML…';
+  progWrap.classList.remove('hidden');
+  genCard.classList.remove('hidden');
+  setProgress(10, 'Loading page…');
+  document.querySelectorAll('iframe.tiler-render').forEach(f => f.remove());
+
+  const iframe = document.createElement('iframe');
+  iframe.className = 'tiler-render';
+  // Start with minimal height so the content renders at its natural height
+  // (avoids min-height:100vh or similar inflating scrollHeight to iframe size)
+  iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${captureWidth}px;height:1px;border:none;visibility:hidden;pointer-events:none;`;
+  document.body.appendChild(iframe);
+
+  try {
+    await new Promise((res, rej) => { iframe.onload = res; iframe.onerror = rej; iframe.srcdoc = htmlContent; });
+    // Longer settle — gives JS-rendered content (timelines, charts) time to draw
+    await new Promise(r => setTimeout(r, 1200));
+    setProgress(25, 'Measuring content…');
+
+    const iDoc = iframe.contentDocument;
+    const fullW = Math.max(iDoc.documentElement.scrollWidth, iDoc.body.scrollWidth, captureWidth);
+    // Measure true content height while viewport is still small (not inflated by 100vh)
+    const naturalH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    // Expand to actual content size and let any reflow settle
+    iframe.style.width  = fullW + 'px';
+    iframe.style.height = naturalH + 'px';
+    await new Promise(r => setTimeout(r, 200));
+    // Re-measure in case expanding width caused a reflow (e.g. wider → less height)
+    const fullH = Math.max(iDoc.documentElement.scrollHeight, iDoc.body.scrollHeight);
+    iframe.style.height = fullH + 'px';
+    await new Promise(r => setTimeout(r, 100));
+    setProgress(35, 'Capturing…');
+
+    // Render at up to 2× device pixel ratio for print-quality resolution.
+    // For a 6 000px-wide capture this gives a 12 000px canvas ≈ 192 DPI on A3.
+    // We cap the effective canvas at ~12 000px wide to avoid memory issues on
+    // very wide content (Maximum preset etc.).
+    const h2cScale = Math.max(1, Math.min(2, 12000 / fullW));
+    const canvas = await html2canvas(iDoc.body, {
+      width: fullW, height: fullH, windowWidth: fullW, windowHeight: fullH,
+      x: 0, y: 0, scrollX: 0, scrollY: 0, scale: h2cScale,
+      useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff',
+    });
+    document.body.removeChild(iframe);
+    sourceCanvas = canvas;
+
+    const PX = 25.4 / 96;
+    pageInf = {
+      widthMm:  Math.round(fullW * PX * 10) / 10,
+      heightMm: Math.round(fullH * PX * 10) / 10,
+      isPortrait: fullH >= fullW, name: 'webpage', type: 'HTML', widthPx: fullW, heightPx: fullH,
+    };
+
+    const sc = Math.min(220 / fullH, 180 / fullW, 1);
+    previewCanvas.width  = Math.round(fullW * sc);
+    previewCanvas.height = Math.round(fullH * sc);
+    previewCanvas.getContext('2d').drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+
+    captureWidthRow.classList.remove('hidden');
+    applyAutoLayout(pageInf.widthMm, pageInf.heightMm);
+    showInfoAndCards();
+    progWrap.classList.add('hidden');
+    setProgress(0, '');
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+
+  } catch (err) {
+    document.querySelectorAll('iframe.tiler-render').forEach(f => f.remove());
+    progWrap.classList.add('hidden');
+    alert(
+      'HTML rendering failed: ' + err.message +
+      '\n\nAlternative: open the file in Chrome, press F12, ' +
+      'then Ctrl+Shift+P → "Capture full size screenshot" → drop the PNG here.'
+    );
+    dropZone.querySelector('.primary').textContent = 'Drop a file here, or click to browse';
+  }
+}
+
+// ─── Show info cards ──────────────────────────────────────────────────────────
+function showInfoAndCards() {
+  let sizeStr, extraRow = '';
+  if (pageInf.type === 'PDF') {
+    sizeStr  = `${pageInf.widthMm} × ${pageInf.heightMm} mm`;
+    if (pageInf.pages > 1)
+      extraRow = `<div class="info-row"><span class="lbl">Pages</span><span class="val">${pageInf.pages} (page 1 tiled)</span></div>`;
+  } else {
+    sizeStr = `${pageInf.widthPx} × ${pageInf.heightPx} px`;
+  }
+  infoTable.innerHTML = `
+    <div class="info-row"><span class="lbl">File</span><span class="val">${pageInf.name}</span></div>
+    <div class="info-row"><span class="lbl">Type</span><span class="val">${pageInf.type}</span></div>
+    ${extraRow}
+    <div class="info-row"><span class="lbl">Size</span><span class="val">${sizeStr}</span></div>
+    <div class="info-row"><span class="lbl">Orientation</span><span class="val">${pageInf.isPortrait ? 'Portrait' : 'Landscape'}</span></div>
+  `;
+  previewCard.classList.remove('hidden');
+  optsCard.classList.remove('hidden');
+  genCard.classList.remove('hidden');
+  updateInfo();
 }
 
 // ─── Info pill ────────────────────────────────────────────────────────────────
 function updateInfo() {
   if (!pageInf) return;
 
-  const ov       = parseInt(overlapSlider.value);
-  const portrait = pageInf.isPortrait;
+  const ov      = parseInt(overlapSlider.value);
+  const cols    = layoutCols;
+  const rows    = layoutRows;
+  const sheetOri = resolveOri(layoutOri);
 
-  // Layout: cols × rows, and A3 sheet orientation
-  let cols, rows, sheetOri;
-  if (numTiles === 2) {
-    if (portrait) { cols = 1; rows = 2; sheetOri = 'landscape'; }
-    else          { cols = 2; rows = 1; sheetOri = 'portrait';  }
-  } else {
-    cols = 2; rows = 2;
-    sheetOri = portrait ? 'portrait' : 'landscape';
-  }
-
-  const A3W = 420, A3H = 297; // mm
+  const A3W = 420, A3H = 297;
   const pgW = sheetOri === 'landscape' ? A3W : A3H;
   const pgH = sheetOri === 'landscape' ? A3H : A3W;
 
-  const totalW  = cols * pgW;
-  const totalH  = rows * pgH;
-  const scaleX  = totalW / pageInf.widthMm;
-  const scaleY  = totalH / pageInf.heightMm;
-  const scale   = Math.min(scaleX, scaleY);
+  const totalW = cols * pgW;
+  const totalH = rows * pgH;
+  const scale  = Math.min(totalW / pageInf.widthMm, totalH / pageInf.heightMm);
 
-  const finalW  = Math.round(pageInf.widthMm  * scale);
-  const finalH  = Math.round(pageInf.heightMm * scale);
+  const finalW = Math.round(pageInf.widthMm  * scale);
+  const finalH = Math.round(pageInf.heightMm * scale);
+  const total  = cols * rows;
 
   infoPill.innerHTML = `
-    <strong>Output:</strong> ${numTiles} × A3 ${sheetOri} (${cols === 1 ? '1 column' : '2 columns'}, ${rows === 1 ? '1 row' : '2 rows'}) —
+    <strong>Output:</strong> ${total} × A3 ${sheetOri} in a ${cols === 1 ? '1-column' : cols + '-column'}, ${rows === 1 ? '1-row' : rows + '-row'} grid —
     <strong>${Math.round(scale * 10) / 10}× enlargement</strong><br>
     Assembled size: <strong>${finalW} × ${finalH} mm</strong> (${Math.round(finalW / 10)} × ${Math.round(finalH / 10)} cm)
     · Overlap: ${ov} mm on each shared edge
@@ -490,27 +731,22 @@ function setProgress(pct, msg) {
   progText.textContent = msg;
 }
 
-// ─── Alignment mark ───────────────────────────────────────────────────────────
+// ─── Alignment marks ──────────────────────────────────────────────────────────
 function drawCross(ctx, x, y, size, lw) {
   ctx.save();
-  // White halo (very faint, just enough to read on dark content)
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-  ctx.lineWidth = lw * 1.8;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = lw * 1.8; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
-  // Thin pale cross
   ctx.strokeStyle = 'rgba(0,0,0,0.12)';
   ctx.lineWidth = lw * 0.75;
   ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
-  // Centre dot (subtle — just enough to pinpoint the seam)
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
   ctx.beginPath(); ctx.arc(x, y, lw * 1.1, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
 
-// Dashed seam line
 function drawSeamLine(ctx, x1, y1, x2, y2, lw) {
   ctx.save();
   ctx.strokeStyle = 'rgba(0,0,0,0.12)';
@@ -525,68 +761,133 @@ function drawSeamLine(ctx, x1, y1, x2, y2, lw) {
 genBtn.addEventListener('click', generatePDF);
 
 async function generatePDF() {
-  if (!pdfDoc || !pageInf) return;
+  if (!pageInf) return;
+  if (sourceType === 'pdf' && !pdfDoc) return;
+  if (sourceType !== 'pdf' && !sourceCanvas) return;
 
   genBtn.disabled = true;
   progWrap.classList.remove('hidden');
   setProgress(5, 'Preparing…');
 
   try {
-    const overlapMm   = parseInt(overlapSlider.value);
-    const qualLevel   = parseInt(qualSlider.value);
-    const doMarks     = document.getElementById('chkMarks').checked;
-    const doLabels    = document.getElementById('chkLabels').checked;
-    const doInstruct  = document.getElementById('chkInstruct').checked;
+    const overlapMm  = parseInt(overlapSlider.value);
+    const qualLevel  = parseInt(qualSlider.value);
+    const doMarks    = document.getElementById('chkMarks').checked;
+    const doLabels   = document.getElementById('chkLabels').checked;
+    const doInstruct = document.getElementById('chkInstruct').checked;
 
-    // ── Layout ──────────────────────────────────────────────────────────────
-    const portrait = pageInf.isPortrait;
-    let cols, rows, sheetOri;
-    if (numTiles === 2) {
-      if (portrait) { cols = 1; rows = 2; sheetOri = 'landscape'; }
-      else          { cols = 2; rows = 1; sheetOri = 'portrait';  }
-    } else {
-      cols = 2; rows = 2;
-      sheetOri = portrait ? 'portrait' : 'landscape';
-    }
-
+    const cols     = layoutCols;
+    const rows     = layoutRows;
+    const sheetOri = resolveOri(layoutOri);
     const A3W = 420, A3H = 297;
     const pgW_mm = sheetOri === 'landscape' ? A3W : A3H;
     const pgH_mm = sheetOri === 'landscape' ? A3H : A3W;
 
-    // Scale to make the source fill the tile grid
-    const contentScale = Math.min(
+    // ── Build source canvas ───────────────────────────────────────────────────
+    let src;
+    if (sourceType === 'pdf') {
+      const contentScale = Math.min(
+        (cols * pgW_mm) / pageInf.widthMm,
+        (rows * pgH_mm) / pageInf.heightMm
+      );
+      const qualMult    = [2, 3, 4.5][qualLevel - 1];
+      const renderScale = Math.min(contentScale * qualMult, 9);
+      setProgress(15, 'Rendering PDF page…');
+      const page = await pdfDoc.getPage(1);
+      const vp   = page.getViewport({ scale: renderScale });
+      src        = document.createElement('canvas');
+      src.width  = Math.round(vp.width);
+      src.height = Math.round(vp.height);
+      const srcCtx = src.getContext('2d');
+      srcCtx.fillStyle = '#fff';
+      srcCtx.fillRect(0, 0, src.width, src.height);
+      await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
+    } else {
+      src = sourceCanvas;
+    }
+
+    setProgress(40, 'Building tiles…');
+
+    // ── For image / HTML sources, build an intermediate canvas that represents
+    //    the full assembled grid at output resolution, with the content scaled
+    //    and centred. This makes the tile loop trivial (offX=offY=0, 1:1 read)
+    //    and correctly handles any scale factor — enlargement OR reduction.
+    if (sourceType !== 'pdf') {
+      const scale_content = Math.min(
+        (cols * pgW_mm) / pageInf.widthMm,
+        (rows * pgH_mm) / pageInf.heightMm
+      );
+      // Output resolution: use the source resolution (px/mm), NOT multiplied by scale.
+      // Multiplying by scale < 1 would actively degrade quality below the source.
+      // Cap at quality-appropriate limits to keep intermediate canvas size manageable.
+      // 6 px/mm ≈ 152 DPI · 8 px/mm ≈ 203 DPI · 12 px/mm ≈ 305 DPI
+      const srcPxPerMm = src.width / pageInf.widthMm;
+      const maxPxPerMm = qualLevel === 3 ? 12 : qualLevel === 2 ? 8 : 6;
+      const outPxPerMm = Math.min(srcPxPerMm, maxPxPerMm);
+      const maxDim = 15000;
+
+      const interW = Math.min(Math.round(cols * pgW_mm * outPxPerMm), maxDim);
+      const interH = Math.min(Math.round(rows * pgH_mm * outPxPerMm), maxDim);
+
+      // Recompute actual px/mm after possible maxDim clamping
+      const effPxPerMm = Math.min(interW / (cols * pgW_mm), interH / (rows * pgH_mm));
+
+      // Scaled content dimensions on the intermediate canvas
+      const scaledSrcW = Math.round(pageInf.widthMm  * scale_content * effPxPerMm);
+      const scaledSrcH = Math.round(pageInf.heightMm * scale_content * effPxPerMm);
+
+      // Centre within the intermediate canvas (letterbox)
+      const interOffX = Math.round((interW - scaledSrcW) / 2);
+      const interOffY = Math.round((interH - scaledSrcH) / 2);
+
+      setProgress(42, 'Compositing image…');
+      const interCanvas = document.createElement('canvas');
+      interCanvas.width  = interW;
+      interCanvas.height = interH;
+      const interCtx = interCanvas.getContext('2d');
+      interCtx.fillStyle = '#fff';
+      interCtx.fillRect(0, 0, interW, interH);
+      interCtx.drawImage(src, interOffX, interOffY, scaledSrcW, scaledSrcH);
+
+      src = interCanvas;
+      // Rewrite pageInf so tile loop sees src as filling the grid exactly (offX=offY=0)
+      pageInf = { ...pageInf, widthMm: cols * pgW_mm, heightMm: rows * pgH_mm };
+    }
+
+    // ── Tile maths ────────────────────────────────────────────────────────────
+    // At this point src is always at output resolution and fills widthMm × heightMm.
+    // For PDFs the pre-scaled canvas already does this; for image/HTML the
+    // intermediate canvas above did. Either way: offX ≈ 0, offY ≈ 0.
+    const scale = Math.min(
       (cols * pgW_mm) / pageInf.widthMm,
       (rows * pgH_mm) / pageInf.heightMm
     );
+    // In source pixels, how many px = 1mm on output
+    const pxPerMm = src.width / pageInf.widthMm;
+    // Grid size in source pixels
+    const gridW_px = Math.round(cols * pgW_mm * pxPerMm);
+    const gridH_px = Math.round(rows * pgH_mm * pxPerMm);
+    // Letterbox offsets (zero for pre-composited src, small rounding margin for PDFs)
+    const offX = Math.round((gridW_px - src.width)  / 2);
+    const offY = Math.round((gridH_px - src.height) / 2);
 
-    // Quality multipliers: draft 2×, good 3×, high 4.5× (capped)
-    const qualMult = [2, 3, 4.5][qualLevel - 1];
-    const renderScale = Math.min(contentScale * qualMult, 9); // cap to avoid canvas OOM
+    // Overlap in grid-equivalent pixels
+    const overlapPx = overlapMm * pxPerMm;
+    const nomTileW  = gridW_px / cols;
+    const nomTileH  = gridH_px / rows;
+    const markLw    = Math.max(1, pxPerMm * 0.25);
 
-    // ── Render source page ───────────────────────────────────────────────────
-    setProgress(15, 'Rendering source page…');
-    const page = await pdfDoc.getPage(1);
-    const vp   = page.getViewport({ scale: renderScale });
-    const src  = document.createElement('canvas');
-    src.width  = Math.round(vp.width);
-    src.height = Math.round(vp.height);
-    const srcCtx = src.getContext('2d');
-    srcCtx.fillStyle = '#fff';
-    srcCtx.fillRect(0, 0, src.width, src.height);
-    await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
-    setProgress(40, 'Source rendered. Building tiles…');
+    const labelSets = {
+      '1x2': ['Left', 'Right'],
+      '1x3': ['Left', 'Centre', 'Right'],
+      '1x4': ['Far Left', 'Centre Left', 'Centre Right', 'Far Right'],
+      '2x1': ['Top', 'Bottom'],
+      '3x1': ['Top', 'Middle', 'Bottom'],
+      '2x2': ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'],
+    };
+    const labelKey = rows === 1 ? `1x${cols}` : cols === 1 ? `${rows}x1` : '2x2';
+    const labels   = labelSets[labelKey] || [];
 
-    // ── Tile maths ───────────────────────────────────────────────────────────
-    const overlapPx  = (overlapMm / 25.4) * 72 * renderScale;
-    const nomTileW   = src.width  / cols;  // nominal tile width (px)
-    const nomTileH   = src.height / rows;  // nominal tile height (px)
-
-    // Sheet labels for 2- and 4-sheet layouts
-    const LABELS_22  = ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'];
-    const LABELS_1x2 = ['Top', 'Bottom'];
-    const LABELS_2x1 = ['Left', 'Right'];
-
-    // ── Create jsPDF ─────────────────────────────────────────────────────────
     const { jsPDF } = window.jspdf;
     let doc   = null;
     let total = cols * rows;
@@ -596,105 +897,98 @@ async function generatePDF() {
       for (let col = 0; col < cols; col++) {
         idx++;
         setProgress(40 + (idx / total) * 48, `Building sheet ${idx} of ${total}…`);
-        await new Promise(r => setTimeout(r, 5)); // yield to UI
+        await new Promise(r => setTimeout(r, 5));
 
-        // Overlap margins for this tile
-        const lOv = col > 0             ? overlapPx : 0;
-        const rOv = col < cols - 1      ? overlapPx : 0;
-        const tOv = row > 0             ? overlapPx : 0;
-        const bOv = row < rows - 1      ? overlapPx : 0;
+        const lOv = col > 0        ? overlapPx : 0;
+        const rOv = col < cols - 1 ? overlapPx : 0;
+        const tOv = row > 0        ? overlapPx : 0;
+        const bOv = row < rows - 1 ? overlapPx : 0;
 
-        const sx = Math.max(0, Math.round(col * nomTileW - lOv));
-        const sy = Math.max(0, Math.round(row * nomTileH - tOv));
-        const sw = Math.min(src.width  - sx, Math.round(nomTileW + lOv + rOv));
-        const sh = Math.min(src.height - sy, Math.round(nomTileH + tOv + bOv));
+        // Tile bounds in grid-pixel space
+        const tileX = Math.round(col * nomTileW - lOv);
+        const tileY = Math.round(row * nomTileH - tOv);
+        const tileW = Math.round(nomTileW + lOv + rOv);
+        const tileH = Math.round(nomTileH + tOv + bOv);
 
-        const tc  = document.createElement('canvas');
-        tc.width  = sw;
-        tc.height = sh;
+        // Draw tile onto a blank canvas (fills with white, then copies content)
+        const tc = document.createElement('canvas');
+        tc.width = tileW; tc.height = tileH;
         const tCtx = tc.getContext('2d');
-
-        // White background
         tCtx.fillStyle = '#fff';
-        tCtx.fillRect(0, 0, sw, sh);
+        tCtx.fillRect(0, 0, tileW, tileH);
 
-        // Content
-        tCtx.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
-
-        // ── Seam lines (dashed) ──────────────────────────────────────────────
-        if (doMarks) {
-          const lw = Math.max(1, renderScale * 0.4);
-          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv), 0, Math.round(lOv), sh, lw);
-          if (rOv > 0) drawSeamLine(tCtx, Math.round(sw - rOv), 0, Math.round(sw - rOv), sh, lw);
-          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv), sw, Math.round(tOv), lw);
-          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(sh - bOv), sw, Math.round(sh - bOv), lw);
+        // Copy source content at the correct offset
+        const srcX = tileX - offX;  // where in src to start reading
+        const srcY = tileY - offY;
+        // Clamp to actual src bounds
+        const clipX = Math.max(0, srcX);
+        const clipY = Math.max(0, srcY);
+        const clipW = Math.min(src.width,  srcX + tileW) - clipX;
+        const clipH = Math.min(src.height, srcY + tileH) - clipY;
+        if (clipW > 0 && clipH > 0) {
+          const destX = clipX - srcX;
+          const destY = clipY - srcY;
+          tCtx.drawImage(src, clipX, clipY, clipW, clipH, destX, destY, clipW, clipH);
         }
 
-        // ── Alignment crosses ────────────────────────────────────────────────
+        // ── Seam lines ───────────────────────────────────────────────────────
         if (doMarks) {
-          const mSz  = overlapPx * 0.35;
-          const mLw  = Math.max(1, renderScale * 0.45);
-          const seamsX = [];
-          const seamsY = [];
-          if (lOv > 0) seamsX.push(Math.round(lOv));
-          if (rOv > 0) seamsX.push(Math.round(sw - rOv));
-          if (tOv > 0) seamsY.push(Math.round(tOv));
-          if (bOv > 0) seamsY.push(Math.round(sh - bOv));
+          if (lOv > 0) drawSeamLine(tCtx, Math.round(lOv),      0,  Math.round(lOv),      tileH, markLw);
+          if (rOv > 0) drawSeamLine(tCtx, Math.round(tileW - rOv), 0, Math.round(tileW - rOv), tileH, markLw);
+          if (tOv > 0) drawSeamLine(tCtx, 0, Math.round(tOv),       tileW, Math.round(tOv),      markLw);
+          if (bOv > 0) drawSeamLine(tCtx, 0, Math.round(tileH - bOv), tileW, Math.round(tileH - bOv), markLw);
+        }
 
-          // Corners of seam intersections
-          seamsX.forEach(x => seamsY.forEach(y => drawCross(tCtx, x, y, mSz, mLw)));
-          // Mid-points along each seam edge
-          seamsX.forEach(x => drawCross(tCtx, x, Math.round(sh / 2), mSz, mLw));
-          seamsY.forEach(y => drawCross(tCtx, Math.round(sw / 2), y, mSz, mLw));
+        // ── Crosses ──────────────────────────────────────────────────────────
+        if (doMarks) {
+          const mSz    = overlapPx * 0.35;
+          const seamsX = [], seamsY = [];
+          if (lOv > 0) seamsX.push(Math.round(lOv));
+          if (rOv > 0) seamsX.push(Math.round(tileW - rOv));
+          if (tOv > 0) seamsY.push(Math.round(tOv));
+          if (bOv > 0) seamsY.push(Math.round(tileH - bOv));
+          seamsX.forEach(x => seamsY.forEach(y => drawCross(tCtx, x, y, mSz, markLw)));
+          seamsX.forEach(x => drawCross(tCtx, x, Math.round(tileH / 2), mSz, markLw));
+          seamsY.forEach(y => drawCross(tCtx, Math.round(tileW / 2), y, mSz, markLw));
         }
 
         // ── Sheet label ──────────────────────────────────────────────────────
         if (doLabels) {
-          let labelStr;
-          if (cols === 2 && rows === 2) labelStr = LABELS_22[row * 2 + col];
-          else if (cols === 1)           labelStr = LABELS_1x2[row];
-          else                           labelStr = LABELS_2x1[col];
-          labelStr += ` — Sheet ${idx} of ${total}`;
-
-          const fsPx  = Math.max(14, Math.round(overlapPx * 0.45));
-          const padX  = Math.max(8, Math.round(overlapPx * 0.12));
-          const padY  = padX + fsPx;
-          const bPad  = Math.round(fsPx * 0.35);
-          tCtx.font   = `600 ${fsPx}px -apple-system, sans-serif`;
-          const tw    = tCtx.measureText(labelStr).width;
-
-          // Semi-transparent background pill
+          const labelStr = (labels[row * cols + col] || `Sheet ${idx}`) + ` — ${idx} of ${total}`;
+          const fsPx = Math.max(14, Math.round(overlapPx * 0.45));
+          const padX = Math.max(8,  Math.round(overlapPx * 0.12));
+          const padY = padX + fsPx;
+          const bPad = Math.round(fsPx * 0.35);
+          tCtx.font = `600 ${fsPx}px -apple-system, sans-serif`;
+          const tw = tCtx.measureText(labelStr).width;
           tCtx.fillStyle = 'rgba(255,255,255,0.82)';
           tCtx.beginPath();
           tCtx.roundRect(padX - bPad, padY - fsPx - bPad, tw + bPad * 2, fsPx + bPad * 2, 4);
           tCtx.fill();
-
           tCtx.fillStyle = 'rgba(30,41,59,0.8)';
           tCtx.fillText(labelStr, padX, padY);
         }
 
-        // ── Add to PDF ───────────────────────────────────────────────────────
         if (!doc) {
           doc = new jsPDF({ orientation: sheetOri, unit: 'mm', format: 'a3' });
         } else {
           doc.addPage('a3', sheetOri);
         }
-        doc.addImage(tc.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, pgW_mm, pgH_mm);
+        const jpegQ = sourceType === 'pdf' ? 0.93 : [0.82, 0.90, 0.96][qualLevel - 1];
+        doc.addImage(tc.toDataURL('image/jpeg', jpegQ), 'JPEG', 0, 0, pgW_mm, pgH_mm);
       }
     }
 
-    // ── Assembly instructions page ───────────────────────────────────────────
     if (doInstruct && doc) {
       setProgress(90, 'Adding assembly instructions…');
       await new Promise(r => setTimeout(r, 5));
       doc.addPage('a3', 'landscape');
-      drawInstructionsPage(doc, cols, rows, sheetOri, pgW_mm, pgH_mm, overlapMm, numTiles);
+      drawInstructionsPage(doc, cols, rows, sheetOri, pgW_mm, pgH_mm, overlapMm, total);
     }
 
-    // ── Save ─────────────────────────────────────────────────────────────────
     setProgress(97, 'Saving…');
-    const outName = pageInf.name.replace(/\.pdf$/i, '') + `_tiled_${numTiles}sheets.pdf`;
-    doc.save(outName);
+    const baseName = pageInf.name.replace(/\.(pdf|html?|png|jpe?g|webp|gif)$/i, '');
+    doc.save(`${baseName}_tiled_${cols}x${rows}.pdf`);
 
     setProgress(100, '✓ Download started — check your downloads folder');
     setTimeout(() => {
@@ -712,175 +1006,139 @@ async function generatePDF() {
 
 // ─── Instructions page ───────────────────────────────────────────────────────
 function drawInstructionsPage(doc, cols, rows, sheetOri, pgW, pgH, overlapMm, numTiles) {
-  // A3 landscape: 420 × 297 mm
-  const PW = 420, PH = 297;
-  const mg = 20; // margin mm
+  const PW = 420, PH = 297, mg = 20;
 
-  // Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(30, 41, 59);
   doc.text('Assembly Instructions', PW / 2, mg + 10, { align: 'center' });
 
-  // Subtitle
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${numTiles}-sheet tiling · ${overlapMm} mm glue overlap · Print each sheet at 100% actual size on A3 paper`,
+  doc.text(`${numTiles}-sheet tiling · ${overlapMm} mm glue overlap · Print each sheet at 100% actual size on A3`,
     PW / 2, mg + 18, { align: 'center' });
 
-  // Divider
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.4);
   doc.line(mg, mg + 22, PW - mg, mg + 22);
 
-  // ── Layout diagram ──────────────────────────────────────────────────────────
-  const LABELS_22  = ['Top Left', 'Top Right', 'Bottom Left', 'Bottom Right'];
-  const LABELS_1x2 = ['Top', 'Bottom'];
-  const LABELS_2x1 = ['Left', 'Right'];
-
-  const diagX   = mg;
-  const diagY   = mg + 32;
-  const cellW   = cols === 2 ? 60 : 80;
-  const cellH   = rows === 2 ? 52 : 70;
-  const cellGap = 6;
-  const diagW   = cols * cellW + (cols - 1) * cellGap;
-  const diagH   = rows * cellH + (rows - 1) * cellGap;
+  const diagX  = mg;
+  const diagY  = mg + 32;
+  const cellW  = cols <= 2 ? 60 : cols === 3 ? 46 : 36;
+  const cellH  = rows <= 2 ? 52 : rows === 3 ? 38 : 30;
+  const gap    = 5;
+  const diagW  = cols * cellW + (cols - 1) * gap;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
   doc.text('Sheet arrangement', diagX, diagY - 3);
 
-  let sheetIdx = 0;
+  const labelSets = {
+    '1x2': ['Left','Right'],
+    '1x3': ['Left','Centre','Right'],
+    '1x4': ['Far Left','Centre Left','Centre Right','Far Right'],
+    '2x1': ['Top','Bottom'],
+    '3x1': ['Top','Middle','Bottom'],
+    '2x2': ['Top Left','Top Right','Bottom Left','Bottom Right'],
+  };
+  const labelKey = rows === 1 ? `1x${cols}` : cols === 1 ? `${rows}x1` : '2x2';
+  const labels   = labelSets[labelKey] || [];
+
+  let si = 0;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      sheetIdx++;
-      const cx = diagX + c * (cellW + cellGap);
-      const cy = diagY + r * (cellH + cellGap);
-
-      // Cell background
+      si++;
+      const cx = diagX + c * (cellW + gap);
+      const cy = diagY + r * (cellH + gap);
       doc.setFillColor(239, 246, 255);
       doc.setDrawColor(59, 130, 246);
       doc.setLineWidth(0.8);
       doc.roundedRect(cx, cy, cellW, cellH, 2, 2, 'FD');
-
-      // Sheet number
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
+      doc.setFontSize(16);
       doc.setTextColor(29, 78, 216);
-      doc.text(String(sheetIdx), cx + cellW / 2, cy + cellH * 0.45, { align: 'center' });
-
-      // Sheet label
-      let lbl;
-      if (cols === 2 && rows === 2) lbl = LABELS_22[r * 2 + c];
-      else if (cols === 1)           lbl = LABELS_1x2[r];
-      else                           lbl = LABELS_2x1[c];
+      doc.text(String(si), cx + cellW / 2, cy + cellH * 0.48, { align: 'center' });
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(71, 85, 105);
-      doc.text(lbl, cx + cellW / 2, cy + cellH * 0.68, { align: 'center' });
-
-      // Orientation note
+      doc.text(labels[r * cols + c] || '', cx + cellW / 2, cy + cellH * 0.7, { align: 'center' });
       doc.setFontSize(6);
       doc.setTextColor(148, 163, 184);
-      doc.text(`A3 ${sheetOri}`, cx + cellW / 2, cy + cellH * 0.84, { align: 'center' });
+      doc.text(`A3 ${sheetOri}`, cx + cellW / 2, cy + cellH * 0.85, { align: 'center' });
     }
   }
 
-  // Overlap arrows between cells
   doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(0.4);
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
   if (cols > 1) {
-    // Horizontal overlap arrows
     for (let r = 0; r < rows; r++) {
-      const ax = diagX + cellW + cellGap / 2;
-      const ay = diagY + r * (cellH + cellGap) + cellH / 2;
+      const ax = diagX + cellW + gap / 2;
+      const ay = diagY + r * (cellH + gap) + cellH / 2;
       doc.text(`←${overlapMm}mm→`, ax, ay, { align: 'center' });
     }
   }
   if (rows > 1) {
-    // Vertical overlap arrows (rotated text would be ideal; use a note instead)
     for (let c = 0; c < cols; c++) {
-      const ax = diagX + c * (cellW + cellGap) + cellW / 2;
-      const ay = diagY + cellH + cellGap / 2 + 2;
+      const ax = diagX + c * (cellW + gap) + cellW / 2;
+      const ay = diagY + cellH + gap / 2 + 2;
       doc.text(`↑${overlapMm}mm↓`, ax, ay, { align: 'center' });
     }
   }
 
-  // ── Step-by-step instructions ────────────────────────────────────────────────
-  const stepsX  = diagX + diagW + 18;
-  const stepsY  = diagY;
-  const stepsW  = PW - mg - stepsX;
-
+  const stepsX = diagX + diagW + 18;
+  const stepsY = diagY;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
   doc.text('How to assemble', stepsX, stepsY - 3);
 
   const steps = [
-    ['1', 'Print each sheet at 100% actual size', 'In your print dialog, set scaling to "Actual size" or 100%.\nDo not fit to page — this will distort the scale.'],
-    ['2', 'Check the sheet labels', 'Each sheet has a label in one corner (Top Left, Top Right,\netc.). Lay them out in the order shown in the diagram.'],
-    ['3', 'Use the dashed seam lines', 'Each sheet shows dashed lines and + marks where it\njoins the adjacent sheet. These are your alignment guides.'],
-    ['4', 'Trim one edge at each join', 'On one of the two sheets at each join, trim along the\ndashed seam line using a craft knife and ruler.'],
-    ['5', 'Align using the + marks', 'Place the trimmed sheet on top of the adjacent sheet.\nLine up the + marks exactly before gluing.'],
-    ['6', 'Glue and press flat', 'Apply a thin, even layer of glue (PVA or stick glue)\nto the overlap area. Press firmly and leave to dry flat.'],
+    ['1', 'Print at 100% actual size', 'Set scaling to "Actual size" or 100% in your print dialog.\nDo not fit to page — this will distort the scale.'],
+    ['2', 'Lay out the sheets', 'Each sheet is numbered. Arrange them in the order\nshown in the diagram above.'],
+    ['3', 'Find the dashed seam lines', 'Each sheet shows dashed lines and + marks where it\njoins the next. These are your alignment guides.'],
+    ['4', 'Trim one edge at each join', 'On one of the two sheets at each join, trim along the\ndashed seam line with a craft knife and ruler.'],
+    ['5', 'Align using the + marks', 'Overlap the trimmed sheet onto its neighbour.\nLine up the + marks exactly before gluing.'],
+    ['6', 'Glue and press flat', 'Apply PVA or stick glue to the overlap area.\nPress firmly and leave to dry flat.'],
   ];
 
-  let sy2 = stepsY + 2;
+  let sy = stepsY + 2;
   steps.forEach(([num, title, body]) => {
-    if (sy2 > PH - mg - 12) return; // safety
-
-    // Number circle
+    if (sy > PH - mg - 12) return;
     doc.setFillColor(59, 130, 246);
-    doc.circle(stepsX + 4, sy2 + 3, 3.5, 'F');
+    doc.circle(stepsX + 4, sy + 3, 3.5, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(num, stepsX + 4, sy2 + 3 + 2.5, { align: 'center' });
-
-    // Title
+    doc.text(num, stepsX + 4, sy + 3 + 2.5, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(30, 41, 59);
-    doc.text(title, stepsX + 10, sy2 + 4);
-
-    // Body
+    doc.text(title, stepsX + 10, sy + 4);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
     const lines = body.split('\n');
-    lines.forEach((line, li) => {
-      doc.text(line, stepsX + 10, sy2 + 4 + 5 + li * 4.5);
-    });
-
-    sy2 += 4 + 5 + lines.length * 4.5 + 6;
+    lines.forEach((line, li) => doc.text(line, stepsX + 10, sy + 4 + 5 + li * 4.5));
+    sy += 4 + 5 + lines.length * 4.5 + 6;
   });
 
-  // ── Tip box ───────────────────────────────────────────────────────────────
   const tipY = PH - mg - 22;
   doc.setFillColor(240, 253, 244);
   doc.setDrawColor(187, 247, 208);
   doc.setLineWidth(0.5);
   doc.roundedRect(mg, tipY, PW - mg * 2, 18, 2, 2, 'FD');
-
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(21, 128, 61);
-  doc.text('💡 Tips for a polished result:', mg + 4, tipY + 7);
-
+  doc.text('Tips:', mg + 4, tipY + 7);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(22, 101, 52);
-  const tips = [
-    'Work on a flat, clean surface',
-    'Use a bone folder to press seams flat',
-    'Trim the outer edges for a clean border',
-    'Mount on foam board for display',
-  ];
-  doc.text(tips.join('   ·   '), mg + 4, tipY + 13);
-
-  // Footer
+  doc.text('Work on a flat surface  ·  Use a bone folder to press seams  ·  Trim outer edges for a clean border  ·  Mount on foam board for display', mg + 4, tipY + 13);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(203, 213, 225);
