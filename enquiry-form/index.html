@@ -453,7 +453,7 @@
       <div class="g2">
         <div class="field">
           <label class="field-label" for="f_first_date">First lesson date</label>
-          <input type="date" id="f_first_date">
+          <input type="date" id="f_first_date" oninput="applyReadingLessonMinDate()">
           <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
         </div>
         <div class="field">
@@ -1311,6 +1311,7 @@ function updateSchedulePreview() {
 // /generate submission from this brief directly, without Innes filling in
 // the live form himself. Real dates/fluency choices are Innes's own
 // scheduling call — nothing here is invented or defaulted.
+const READING_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const READING_FLUENCY_ACTIVITIES = {
   'Expression & Volume': ['Echo read', 'Hot seat read', 'Stress that word'],
   'Phrasing':            ['Punctuation conductor', 'Chunk it'],
@@ -1358,6 +1359,18 @@ function renderReadingWeeks() {
       `).join('');
     container.appendChild(block);
   }
+  applyReadingLessonMinDate();
+}
+
+// A reading lesson can't happen before the enquiry's own first lesson —
+// the real bug this guards against (Rivers, 2026-08-11): a reading date
+// entered before first_lesson_date with nothing catching it until Claude
+// read the exported JSON by eye.
+function applyReadingLessonMinDate() {
+  const min = fv('f_first_date');
+  document.querySelectorAll('#readingWeeksContainer input[type="date"]').forEach(el => {
+    if (min) el.min = min; else el.removeAttribute('min');
+  });
 }
 
 function populateReadingActivity(wk, ltKey, selectedActivity) {
@@ -2026,6 +2039,56 @@ function rvMono(lbl, val) {
   if (!val) return '';
   return `<div class="rv-row"><span class="rv-lbl">${lbl}</span><span class="rv-val rv-mono">${val}</span></div>`;
 }
+function rvWarn(msg) {
+  return `<div class="rv-row"><span class="rv-lbl"></span><span class="rv-val" style="color:var(--danger);font-weight:600;">⚠ ${msg}</span></div>`;
+}
+
+// ── Reading lessons review — surfaces exactly what's about to be sent,
+// including gaps/out-of-order dates a blank Review would otherwise hide. ──
+function buildReadingLessonsReview(readingLessons) {
+  if (!readingLessons) return rvRow('Reading packs', 'None — 0 reading weeks set');
+  const weekKeys = Object.keys(readingLessons).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
+  if (!weekKeys.length) return rvRow('Reading packs', 'None — 0 reading weeks set');
+
+  const firstLessonDate = fv('f_first_date');
+  const labels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
+  let out = '';
+  let prevDate = null;
+
+  weekKeys.forEach((wk, wi) => {
+    const lessons = readingLessons[wk] || {};
+    const lessonKeys = Object.keys(lessons);
+    const weekNum = wk.slice(1);
+    if (!lessonKeys.length) {
+      out += rvWarn(`Reading week ${weekNum}: nothing entered`);
+      return;
+    }
+    ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
+      const v = lessons[ltKey];
+      if (!v) {
+        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: no lesson entered`);
+        return;
+      }
+      const missing = ['date', 'fluency_focus', 'fluency_activity'].filter(k => !v[k]);
+      if (missing.length) {
+        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: missing ${missing.join(', ')}`);
+        return;
+      }
+      let dayName = '';
+      try {
+        const [y, m, d] = v.date.split('-').map(Number);
+        dayName = READING_DAY_NAMES[new Date(y, m - 1, d).getDay()];
+      } catch (e) {}
+      let flag = '';
+      if (firstLessonDate && v.date < firstLessonDate) flag = ' ⚠ before the enquiry\'s first lesson';
+      if (prevDate && v.date < prevDate) flag += ' ⚠ earlier than a previous reading lesson';
+      prevDate = v.date;
+      const row = `Reading week ${weekNum} — ${labels[ltKey]}: ${dayName} ${v.date} · ${v.fluency_focus} (${v.fluency_activity})${flag}`;
+      out += flag ? rvWarn(row) : rvRow('', row);
+    });
+  });
+  return out;
+}
 
 function buildReview() {
   const d = collect();
@@ -2076,6 +2139,10 @@ function buildReview() {
       ${rvRow('First lesson', d.first_lesson_date)}
       ${rvRow('Lessons', d.num_lessons ? String(d.num_lessons) : 'Claude to decide')}
       ${rvRow('Weekly schedule', `${d.lessons_per_week} lesson${d.lessons_per_week !== 1 ? 's' : ''}/week — ${slotDesc}`)}
+    </div>
+    <div class="rv-section">
+      <h3>Reading lessons</h3>
+      ${buildReadingLessonsReview(d.reading_lessons)}
     </div>
     <div class="rv-section">
       <h3>Delivery</h3>
@@ -2217,6 +2284,32 @@ function buildPrompt(d) {
   if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
   if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
   if (d.other_notes) { L.push(''); L.push('Additional notes:'); L.push(d.other_notes); }
+  L.push('');
+  L.push('─── READING LESSONS ────────────────────────────────────────');
+  L.push('Real scheduling for the Being a Reader packs — generate via');
+  L.push('scripts/shared/generate_reading_pack.py, never invent these values.');
+  L.push('');
+  if (!d.reading_lessons || !Object.keys(d.reading_lessons).length) {
+    L.push('None — 0 reading weeks set for this enquiry.');
+  } else {
+    const rlLabels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
+    Object.keys(d.reading_lessons).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).forEach(wk => {
+      const lessons = d.reading_lessons[wk] || {};
+      L.push(`Reading week ${wk.slice(1)}:`);
+      if (!Object.keys(lessons).length) {
+        L.push('  NOTHING ENTERED — do not generate this week until Innes fills it in.');
+      } else {
+        ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
+          const v = lessons[ltKey];
+          if (!v) { L.push(`  ${rlLabels[ltKey]}: NOT SET`); return; }
+          const missing = ['date', 'fluency_focus', 'fluency_activity'].filter(k => !v[k]);
+          if (missing.length) { L.push(`  ${rlLabels[ltKey]}: INCOMPLETE — missing ${missing.join(', ')}`); return; }
+          L.push(`  ${rlLabels[ltKey]}: ${v.date} — ${v.fluency_focus} (${v.fluency_activity})`);
+        });
+      }
+      L.push('');
+    });
+  }
   L.push('');
   L.push('─── DELIVERY PATH ──────────────────────────────────────────');
   const root = d.delivery.root || 'NOT SET';
