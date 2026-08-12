@@ -188,6 +188,18 @@
     .equiv-section { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
     .equiv-section h4 { font-size: 0.85rem; font-weight: 700; color: #374151; margin-bottom: 0.25rem; }
     .equiv-section > .hint { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.9rem; }
+    .novelty-section { margin-top: 1.2rem; padding: 1rem; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; }
+    .novelty-section h4 { font-size: 0.85rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.25rem; }
+    .novelty-section .hint { display: block; font-size: 0.78rem; color: #1d4ed8; margin-bottom: 0.75rem; }
+    .novelty-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; }
+    .novelty-row + .novelty-row { border-top: 1px solid #bfdbfe; }
+    .novelty-skill { font-size: 0.82rem; font-weight: 600; color: #1e3a8a; }
+    .novelty-toggle { display: inline-flex; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; background: white; flex-shrink: 0; }
+    .novelty-opt { border: none; background: white; color: var(--muted); font-size: 0.76rem; font-weight: 600; padding: 0.32rem 0.75rem; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+    .novelty-opt + .novelty-opt { border-left: 1.5px solid var(--border); }
+    .novelty-opt.active[data-state="taught"] { background: #eff6ff; color: #1d4ed8; }
+    .novelty-opt.active[data-state="new"] { background: #fef2f2; color: #b91c1c; }
+
     .equiv-block { margin-bottom: 1.1rem; }
     .equiv-block:last-child { margin-bottom: 0; }
     .equiv-block-label { font-size: 0.78rem; font-weight: 600; color: #92400e; margin-bottom: 0.4rem; display: block; }
@@ -413,6 +425,12 @@
           <span class="hint">Which of these will you explicitly teach in the lesson sequence? These get embedded in lesson slides and LP questions. Locked or baseline skills are not listed — they are expected and modelled, not the teaching focus.</span>
           <div id="teachingFocusArea"></div>
           <div id="teachingFocusEmpty">Select skills above to see them here.</div>
+        </div>
+
+        <div class="novelty-section" id="noveltySection" style="display:none;">
+          <h4>Is this new to the class?</h4>
+          <span class="hint">For each teaching-focus skill, flag whether this is genuinely the first time they're seeing it, or a skill they've met before (an earlier year group, an earlier enquiry, or elsewhere) and are now applying again. Defaults to "Already taught" — that's the common case. Claude uses this to decide how much explicit teaching the lesson needs before they practise it.</span>
+          <div id="noveltyRows"></div>
         </div>
 
         <div class="equiv-section" id="equivSection" style="display:none;">
@@ -1524,6 +1542,7 @@ function collect() {
     writing_skills: getSelectedWritingSkills(),
     writing_skills_teaching_focus: getWritingSkillsTeachingFocus(),
     writing_skill_equivalents: getWritingSkillEquivalents(),
+    writing_skill_novelty: getWritingSkillNovelty(),
     start_term: t ? parseInt(t) : null,
     start_week: w ? parseInt(w) : null,
     txwy,
@@ -1736,15 +1755,75 @@ function renderTeachingFocusChips() {
       if (turningOn) autoFillEquivalents(exp);
       saveState();
       renderEquivalents();
+      renderNovelty();
     });
     area.appendChild(chip);
   });
   applyTeachingFocusChipState();
   renderEquivalents();
+  renderNovelty();
 }
 
 function getWritingSkillsTeachingFocus() {
   return Array.from(document.querySelectorAll('.focus-chip.on')).map(c => c.dataset.export);
+}
+
+// ── Is this new to the class? ───────────────────────────────────────────────
+// noveltyState: { [focusSkillExport]: boolean } — true = genuinely new,
+// false/absent = already taught (the default — most skills are revisits,
+// built on an earlier year group, an earlier enquiry, or elsewhere Innes
+// has taught it). Enquiry-wide, one flag per teaching-focus skill, same as
+// Year-group equivalents — Claude looks this up once it assigns a lesson's
+// writing_skill_focus during MTP planning, same pattern as equivState.
+let noveltyState = {};
+
+function renderNovelty() {
+  const section = document.getElementById('noveltySection');
+  const rowsEl = document.getElementById('noveltyRows');
+  if (!section || !rowsEl) return;
+
+  const focusChips = Array.from(document.querySelectorAll('.focus-chip.on'));
+  section.style.display = focusChips.length ? 'block' : 'none';
+  if (!focusChips.length) { rowsEl.innerHTML = ''; return; }
+
+  rowsEl.innerHTML = '';
+  focusChips.forEach(chip => {
+    const skillExport = chip.dataset.export;
+    const isNew = !!noveltyState[skillExport];
+
+    const row = document.createElement('div');
+    row.className = 'novelty-row';
+
+    const label = document.createElement('span');
+    label.className = 'novelty-skill';
+    label.textContent = chip.textContent;
+    row.appendChild(label);
+
+    const toggle = document.createElement('span');
+    toggle.className = 'novelty-toggle';
+    [['taught', 'Already taught', false], ['new', 'First time', true]].forEach(([state, text, value]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.state = state;
+      btn.textContent = text;
+      btn.className = 'novelty-opt' + (isNew === value ? ' active' : '');
+      btn.addEventListener('click', () => {
+        noveltyState[skillExport] = value;
+        saveState();
+        renderNovelty();
+      });
+      toggle.appendChild(btn);
+    });
+    row.appendChild(toggle);
+    rowsEl.appendChild(row);
+  });
+}
+
+function getWritingSkillNovelty() {
+  return Array.from(document.querySelectorAll('.focus-chip.on')).map(chip => ({
+    focus: chip.dataset.export,
+    new: !!noveltyState[chip.dataset.export],
+  }));
 }
 
 // ── Year-group equivalents ──────────────────────────────────────────────────
@@ -2161,6 +2240,12 @@ function buildReview() {
       })()}
       ${d.writing_skills_teaching_focus && d.writing_skills_teaching_focus.length ? rvRow('Teaching focus', d.writing_skills_teaching_focus.join(' · ')) : ''}
       ${(() => {
+        const nv = d.writing_skill_novelty || [];
+        if (!nv.length) return '';
+        const summary = nv.map(n => `${n.focus}: ${n.new ? 'First time' : 'Already taught'}`).join(' | ');
+        return rvRow('New to the class?', summary);
+      })()}
+      ${(() => {
         const eq = d.writing_skill_equivalents || [];
         if (!eq.length) return '';
         const summary = eq.map(e => `${e.focus} → ${e.year}: ${e.equivalent}`).join(' | ');
@@ -2280,6 +2365,21 @@ function buildPrompt(d) {
     L.push('  · Sentences children write during integrated lessons should feed into the final');
     L.push('    writing outcome so the planning lesson can reuse/adapt them.');
     L.push('');
+    const nv = d.writing_skill_novelty || [];
+    if (nv.length) {
+      L.push('IS THIS NEW TO THE CLASS? (drives lesson.technique_focus_mode):');
+      nv.forEach(n => L.push(`  "${n.focus}": ${n.new ? 'new — first time being taught' : 'already taught — a revisit'}`));
+      L.push('  · Once you assign a lesson\'s writing_skill_focus, set that lesson\'s');
+      L.push('    technique_focus_mode to "new" or "revisit" from this list — never guess or');
+      L.push('    infer from enquiry order. A skill not listed here has no flag set; ask Innes');
+      L.push('    rather than assume.');
+      L.push('  · "new" needs a real taught sequence in the deck before practice (worked');
+      L.push('    examples with varied pronouns/forms, an identify task applied to this');
+      L.push('    lesson\'s own content, a modelled example) — "revisit" only needs a short');
+      L.push('    reminder folded into the existing practice task. See enquiry-builder-');
+      L.push('    schema.md\'s "Teaching a lesson\'s writing_skill_focus in the deck" section.');
+      L.push('');
+    }
     const eq = d.writing_skill_equivalents || [];
     if (eq.length) {
       L.push('YEAR-GROUP EQUIVALENTS (for Levelled/below-year-group children\'s technique_practice):');
@@ -2466,6 +2566,7 @@ function saveState() {
       skillChipsOn: Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)')).map(c => c.dataset.export),
       teachingFocusOn: getWritingSkillsTeachingFocus(),
       equivState: equivState,
+      noveltyState: noveltyState,
       schedule: (() => {
         const s = {};
         document.querySelectorAll('.schedule-check').forEach(c => {
@@ -2516,6 +2617,11 @@ function applyTeachingFocusChipState() {
     let maxId = 0;
     Object.values(equivState).forEach(rows => rows.forEach(r => { if (r.id > maxId) maxId = r.id; }));
     equivNextId = maxId + 1;
+  }
+  // Novelty restores alongside teaching focus too, same reason —
+  // renderNovelty() (called right after this) needs noveltyState populated.
+  if (_savedState.noveltyState) {
+    noveltyState = _savedState.noveltyState;
   }
 }
 
