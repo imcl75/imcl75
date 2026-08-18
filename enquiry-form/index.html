@@ -475,15 +475,17 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="f_first_date">First lesson date</label>
-        <input type="date" id="f_first_date">
+        <label class="field-label" for="f_first_date">First lesson date
+          <span class="hint" id="firstDateAutoHint">Set the term/week above and tick a lesson in Week 1 to calculate this automatically.</span>
+        </label>
+        <input type="date" id="f_first_date" oninput="this.classList.add('manual'); updateAutoFirstLessonDate(); validate(4);">
+        <button type="button" class="btn-sec" id="firstDateResetBtn" style="display:none;font-size:0.75rem;padding:0.3rem 0.7rem;margin-top:0.4rem;" onclick="resetFirstLessonDateOverride()">↺ Reset to calculated date</button>
         <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
       </div>
     </div>
 
     <div class="card">
       <h2>Weekly schedule</h2>
-      <p class="subtitle">Each week is set up independently — a 3-week enquiry can span 4 real school weeks if it doesn't start on a Monday, and no two weeks have to look the same. Tick which slots have an enquiry lesson, and mark at most one day per week as that week's Vocabulary / Retrieval / Inference reading lesson (Reading feeds the Being a Reader pack generator directly — Claude runs it automatically once the enquiry is signed off; fluency focus/activity are chosen by Claude and varied across weeks).</p>
       <div id="weeklyScheduleContainer"></div>
       <div class="btn-row" style="margin-top:0;margin-bottom:0;">
         <button type="button" class="btn-sec" onclick="addWeek()">+ Add week</button>
@@ -1154,6 +1156,31 @@ const CLF_TOPICS = {
 const TERM_WEEKS = { '1':7, '2':7, '3':5, '4':6, '5':5, '6':7 };
 const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri'];
 
+// Real WFA academic-year calendar — the exact same source of truth
+// scripts/shared/term_calendar.py reads from config/term_dates.json
+// (Innes's own Google Sheet), copied here so "First lesson date" can be
+// COMPUTED instead of hand-typed. Real bug this fixes, 2026-08-19
+// (Innes: "I thought claude had the term dates etc to be able to
+// calculate that?"): the old manual date field could silently disagree
+// with the real Monday for the selected term/week — it did, in a test,
+// by 3 real days, with nothing catching it. DD/MM/YY strings, matching
+// the source file exactly, so a yearly refresh is a straight copy-paste
+// from config/term_dates.json, not a reformat.
+const TERM_WEEK_MONDAYS = {
+  T1W1: '07/09/26', T1W2: '14/09/26', T1W3: '21/09/26', T1W4: '28/09/26',
+  T1W5: '05/10/26', T1W6: '12/10/26', T1W7: '19/10/26',
+  T2W1: '02/11/26', T2W2: '09/11/26', T2W3: '16/11/26', T2W4: '23/11/26',
+  T2W5: '30/11/26', T2W6: '07/12/26', T2W7: '14/12/26',
+  T3W1: '04/01/27', T3W2: '11/01/27', T3W3: '18/01/27', T3W4: '25/01/27',
+  T3W5: '01/02/27', T3W6: '08/02/27',
+  T4W1: '22/02/27', T4W2: '01/03/27', T4W3: '08/03/27', T4W4: '15/03/27',
+  T4W5: '22/03/27',
+  T5W1: '12/04/27', T5W2: '19/04/27', T5W3: '26/04/27', T5W4: '03/05/27',
+  T5W5: '10/05/27', T5W6: '17/05/27', T5W7: '24/05/27',
+  T6W1: '07/06/27', T6W2: '14/06/27', T6W3: '21/06/27', T6W4: '28/06/27',
+  T6W5: '05/07/27', T6W6: '12/07/27', T6W7: '19/07/27',
+};
+
 const STEPS = [
   {n:1,lbl:'Basics'},{n:2,lbl:'About'},{n:3,lbl:'Outcomes'},
   {n:4,lbl:'Logistics'},{n:5,lbl:'Notes'},{n:6,lbl:'Export'}
@@ -1368,7 +1395,67 @@ function updateWeekLabels() {
   });
 }
 
+// Parses a TERM_WEEK_MONDAYS-style 'DD/MM/YY' string into a real Date.
+function parseDMY(s) {
+  const [d, m, y] = s.split('/').map(Number);
+  return new Date(2000 + y, m - 1, d);
+}
+
+function toISODate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+// The real computed first-lesson date: TxWy's real Monday (from the WFA
+// calendar above) + Week 1's own earliest ticked Enq. day. Returns null
+// when there isn't enough set yet to compute it (no term/week, no real
+// calendar entry for that TxWy, or Week 1 has no lesson ticked).
+function computeAutoFirstLessonDate() {
+  const t = fv('f_term'), w = fv('f_week');
+  if (!t || !w) return null;
+  const monday = TERM_WEEK_MONDAYS[`T${t}W${w}`];
+  if (!monday) return null;
+  const week1 = collectWeeklySchedule()['1'];
+  if (!week1 || !week1.slots.length) return null;
+  const earliestDay = DAYS_ORDER.find(day => week1.slots.some(s => s.day === day));
+  if (!earliestDay) return null;
+  const dayOffset = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4 };
+  const dt = parseDMY(monday);
+  dt.setDate(dt.getDate() + dayOffset[earliestDay]);
+  return toISODate(dt);
+}
+
+// Keeps #f_first_date filled with the real computed date UNLESS Innes
+// has hand-edited it (the `.manual` class, same escape-hatch pattern the
+// old reading-lesson dates used) — a genuine school-calendar exception
+// stays put across further schedule/term edits, never silently
+// overwritten.
+function updateAutoFirstLessonDate() {
+  const el = document.getElementById('f_first_date');
+  const hint = document.getElementById('firstDateAutoHint');
+  const resetBtn = document.getElementById('firstDateResetBtn');
+  const auto = computeAutoFirstLessonDate();
+  if (!el.classList.contains('manual') && auto) el.value = auto;
+  const isOverridden = el.classList.contains('manual') && auto && el.value !== auto;
+  if (resetBtn) resetBtn.style.display = isOverridden ? '' : 'none';
+  if (hint) {
+    if (!auto) {
+      hint.textContent = 'Set the term/week above and tick a lesson in Week 1 to calculate this automatically.';
+    } else if (isOverridden) {
+      hint.textContent = `Overridden — the real calendar date would be ${auto}.`;
+    } else {
+      hint.textContent = `Calculated from the real WFA calendar — Week 1's earliest ticked lesson.`;
+    }
+  }
+}
+
+function resetFirstLessonDateOverride() {
+  document.getElementById('f_first_date').classList.remove('manual');
+  updateAutoFirstLessonDate();
+  saveState();
+}
+
 function updateWeeklySchedulePreview() {
+  updateAutoFirstLessonDate();
   const weekly = collectWeeklySchedule();
   const weekKeys = Object.keys(weekly);
   const totalSlots = weekKeys.reduce((sum, wk) => sum + weekly[wk].slots.length, 0);
@@ -1463,6 +1550,7 @@ function updatePathPreview() {
   const w = document.getElementById('f_week').value;
   const box = document.getElementById('pathPreview');
   updateWeekLabels();
+  updateAutoFirstLessonDate();
   if (!t || !w) { box.innerHTML = '<strong>Delivery path</strong>Select a term and week above.'; return; }
   const path = deliveryPath(t, w);
   box.innerHTML = `<strong>Delivery path</strong><code style="font-size:0.75rem;word-break:break-all">${path}</code>`;
@@ -2559,6 +2647,7 @@ function saveState() {
       term: fv('f_term'),
       week: fv('f_week'),
       first_date: fv('f_first_date'),
+      first_date_manual: document.getElementById('f_first_date').classList.contains('manual'),
       vocab: fv('f_vocab'),
       images: fv('f_images'),
       notes: fv('f_notes'),
@@ -2648,6 +2737,13 @@ function applyRestoredState() {
     const el = document.getElementById(id);
     if (el && val != null) el.value = val;
   });
+
+  // Mark first-lesson-date as manually overridden BEFORE restoreWeeklySchedule()
+  // runs below (which triggers a recompute) — otherwise a genuine saved
+  // override would get silently clobbered back to the calculated date.
+  if (_savedState.first_date_manual) {
+    document.getElementById('f_first_date').classList.add('manual');
+  }
 
   // Term / week (select fields need special handling)
   if (_savedState.term) {
