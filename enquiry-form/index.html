@@ -68,17 +68,16 @@
     .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
 
-    /* Reading lessons */
-    .reading-week-block { padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: 0.75rem; }
-    .reading-week-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
-    .reading-week-block h3 { font-size: 0.85rem; font-weight: 700; color: var(--wfa-dark); margin: 0 0 0.5rem; }
-    .reading-days-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .reading-day-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: all 0.12s; user-select: none; background: white; }
-    .reading-day-pill:hover { border-color: var(--accent); background: #eff6ff; }
-    .reading-day-pill input { display: none; }
-    .reading-day-pill.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
-    .reading-lesson-row { display: grid; grid-template-columns: 110px 1fr; gap: 0.75rem; align-items: center; margin-bottom: 0.4rem; }
-    .reading-lesson-row .rl-label { font-size: 0.82rem; color: var(--muted); }
+    /* Weekly schedule — per-week blocks, 2026-08-19 (replaces the old single
+       shared weekly template + separate fixed-3-days reading picker) */
+    .week-block { border: 1.5px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .week-block:last-child { margin-bottom: 0; }
+    .week-block-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+    .week-title { font-weight: 700; color: var(--wfa-dark); font-size: 0.9rem; }
+    .week-calendar-label { font-size: 0.8rem; color: var(--muted); }
+    .week-remove-btn { margin-left: auto; font-size: 0.75rem; padding: 0.3rem 0.7rem; }
+    .reading-day-select { margin: 0 0.8rem; padding: 0.35rem 0.5rem; font-size: 0.8rem; border: 1.5px solid var(--border); border-radius: 6px; width: calc(100% - 1.6rem); }
+    #weeklySchedulePreview { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
 
     /* Error */
     .errmsg { font-size: 0.78rem; color: var(--danger); margin-top: 0.3rem; display: none; }
@@ -103,7 +102,7 @@
 
     /* Lesson schedule grid */
     .schedule-grid { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .schedule-row { display: grid; grid-template-columns: 60px 1fr 1fr; align-items: center; border-bottom: 1px solid var(--border); }
+    .schedule-row { display: grid; grid-template-columns: 60px 1fr 1fr 120px; align-items: center; border-bottom: 1px solid var(--border); }
     .schedule-row:last-child { border-bottom: none; }
     .schedule-row.header { background: var(--wfa-blue); font-size: 0.75rem; font-weight: 700; color: var(--wfa-dark); }
     .schedule-cell { padding: 0.55rem 0.8rem; font-size: 0.875rem; }
@@ -478,7 +477,7 @@
       <div class="g2">
         <div class="field">
           <label class="field-label" for="f_first_date">First lesson date</label>
-          <input type="date" id="f_first_date" oninput="recomputeReadingLessonDates()">
+          <input type="date" id="f_first_date">
           <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
         </div>
         <div class="field">
@@ -488,72 +487,17 @@
           <input type="number" id="f_num_lessons" min="1" max="30" placeholder="e.g. 14">
         </div>
       </div>
-
-      <div class="field">
-        <label class="field-label">Lesson schedule
-          <span class="hint">Tick which slots have an enquiry lesson each week. Each day can have up to two lessons.</span>
-        </label>
-        <div class="schedule-grid">
-          <div class="schedule-row header">
-            <div class="schedule-cell">Day</div>
-            <div class="schedule-cell">Lesson 1</div>
-            <div class="schedule-cell">Lesson 2</div>
-          </div>
-          <div class="schedule-row" id="row-Mon">
-            <div class="schedule-cell day-name">Mon</div>
-            <label class="schedule-check" data-day="Mon" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
-            <label class="schedule-check" data-day="Mon" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
-          </div>
-          <div class="schedule-row" id="row-Tue">
-            <div class="schedule-cell day-name">Tue</div>
-            <label class="schedule-check" data-day="Tue" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
-            <label class="schedule-check" data-day="Tue" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
-          </div>
-          <div class="schedule-row" id="row-Wed">
-            <div class="schedule-cell day-name">Wed</div>
-            <label class="schedule-check" data-day="Wed" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
-            <label class="schedule-check" data-day="Wed" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
-          </div>
-          <div class="schedule-row" id="row-Thu">
-            <div class="schedule-cell day-name">Thu</div>
-            <label class="schedule-check" data-day="Thu" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
-            <label class="schedule-check" data-day="Thu" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
-          </div>
-          <div class="schedule-row" id="row-Fri">
-            <div class="schedule-cell day-name">Fri</div>
-            <label class="schedule-check" data-day="Fri" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
-            <label class="schedule-check" data-day="Fri" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
-          </div>
-        </div>
-        <div class="errmsg" id="err_schedule">Please tick at least one lesson slot.</div>
-        <div id="schedulePreview" style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;"></div>
-      </div>
-
     </div>
 
     <div class="card">
-      <h2>Reading lessons</h2>
-      <p class="subtitle">Feeds the Being a Reader pack generator directly — Claude runs it automatically once the enquiry is signed off. Dates are computed from the days below; fluency focus/activity are chosen by Claude and varied across weeks unless you override a date here.</p>
-      <div class="field">
-        <label class="field-label" for="f_reading_weeks">Number of reading weeks <span class="optional">(optional)</span>
-          <span class="hint">Usually the content weeks only, not the writing week — 2 for a typical 12-lesson enquiry. Set to 0 if this enquiry doesn't need reading packs.</span>
-        </label>
-        <input type="number" id="f_reading_weeks" min="0" max="6" value="2" oninput="renderReadingWeeks()">
+      <h2>Weekly schedule</h2>
+      <p class="subtitle">Each week is set up independently — a 3-week enquiry can span 4 real school weeks if it doesn't start on a Monday, and no two weeks have to look the same. Tick which slots have an enquiry lesson, and mark at most one day per week as that week's Vocabulary / Retrieval / Inference reading lesson (Reading feeds the Being a Reader pack generator directly — Claude runs it automatically once the enquiry is signed off; fluency focus/activity are chosen by Claude and varied across weeks).</p>
+      <div id="weeklyScheduleContainer"></div>
+      <div class="btn-row" style="margin-top:0;margin-bottom:0;">
+        <button type="button" class="btn-sec" onclick="addWeek()">+ Add week</button>
       </div>
-      <div class="field">
-        <label class="field-label">Reading days
-          <span class="hint">Pick exactly 3 — in day order they map to Vocabulary → Retrieval → Inference. Same 3 days every reading week.</span>
-        </label>
-        <div class="reading-days-row" id="readingDaysRow">
-          <label class="reading-day-pill" data-day="Mon"><input type="checkbox">Mon</label>
-          <label class="reading-day-pill" data-day="Tue"><input type="checkbox">Tue</label>
-          <label class="reading-day-pill" data-day="Wed"><input type="checkbox">Wed</label>
-          <label class="reading-day-pill" data-day="Thu"><input type="checkbox">Thu</label>
-          <label class="reading-day-pill" data-day="Fri"><input type="checkbox">Fri</label>
-        </div>
-        <div class="errmsg" id="err_reading_days">Pick exactly 3 reading days.</div>
-      </div>
-      <div id="readingWeeksContainer"></div>
+      <div class="errmsg" id="err_schedule">Please tick at least one lesson slot somewhere in the schedule.</div>
+      <div id="weeklySchedulePreview"></div>
     </div>
 
     <div class="card">
@@ -1293,162 +1237,222 @@ document.querySelectorAll('.pill').forEach(p => {
 // Auto-select Y5 (always — year selector is hidden)
 document.querySelector('[data-g="year_group"][data-v="Y5"]').classList.add('on');
 
-// ── Schedule checkboxes ────────────────────────────────────────────────────
-document.querySelectorAll('.schedule-check').forEach(chk => {
-  chk.addEventListener('click', (e) => {
-    e.preventDefault();
-    chk.classList.toggle('on');
-    updateSchedulePreview();
-  });
-});
-
-function getSchedule() {
-  // Returns object: { Mon: [bool, bool], Tue: [bool, bool], ... }
-  const sched = {};
-  DAYS_ORDER.forEach(day => {
-    sched[day] = [false, false];
-  });
-  document.querySelectorAll('.schedule-check').forEach(chk => {
-    const day = chk.dataset.day;
-    const slot = parseInt(chk.dataset.slot);
-    if (chk.classList.contains('on')) sched[day][slot] = true;
-  });
-  return sched;
-}
-
-function scheduleToWeeklySlots() {
-  // Returns ordered list of {day, slot, position} — position is 1-based within the week
-  const sched = getSchedule();
-  const slots = [];
-  let pos = 1;
-  DAYS_ORDER.forEach(day => {
-    [0, 1].forEach(slot => {
-      if (sched[day][slot]) {
-        slots.push({ day, slot, position: pos++ });
-      }
-    });
-  });
-  return slots;
-}
-
-function updateSchedulePreview() {
-  const slots = scheduleToWeeklySlots();
-  const prev = document.getElementById('schedulePreview');
-  if (slots.length === 0) {
-    prev.textContent = '';
-    return;
-  }
-  const desc = slots.map(s => `${s.day} (pos ${s.position})`).join(', ');
-  prev.textContent = `${slots.length} lesson slot${slots.length > 1 ? 's' : ''} per week: ${desc}`;
-  document.getElementById('err_schedule').classList.remove('show');
-}
-
-// ── Reading lessons ──────────────────────────────────────────────────────
-// Streamlined 2026-08-11 (Innes): "tool could ask for lesson days and date
-// of 1st lesson... I'd even be happy to defer to you on the fluency focus
-// and activity." Dates are computed from a single "reading days" picker
-// (which 3 weekdays, mapped in day order to Vocabulary/Retrieval/
-// Inference) + the enquiry's own first lesson date — no per-lesson date
-// entry, no fluency picker at all. scripts/shared/generate_reading_pack.py
-// assigns fluency_focus/activity itself, rotated so it varies week to
-// week. A computed date is real (grounded in a day Innes actually picked),
-// so it's treated as real data immediately — editing one directly still
-// works and is preserved across recomputes via the `.manual` marker.
+// ── Weekly schedule — per-week blocks ───────────────────────────────────────
+// Rebuilt 2026-08-19 (Innes): "I want to review the lesson day / week
+// setting part of the brief to build a bit more flexibility" — real
+// mockup provided (~/Downloads/briefing tool lesson schedule.pptx),
+// confirmed directly: each week is set up independently (a 3-week
+// enquiry can span 4 real school weeks if it doesn't start on a Monday —
+// so week COUNT is never assumed from a formula, it's "+ Add week" on
+// demand), the Reading day marker sits inline per day-row rather than in
+// a separate fixed-3-days section, is independent of that day's Enq.
+// slots, and a week can have fewer than all 3 reading types set.
+// See docs/project/enquiry-builder-briefing-tool-lesson-scheduling-plan.md
+// for the full scoping.
 const READING_LESSON_TYPES = [
   { key: 'vocabulary', label: 'Vocabulary' },
   { key: 'retrieval',  label: 'Retrieval' },
   { key: 'inference',  label: 'Inference' },
 ];
 
-document.querySelectorAll('.reading-day-pill').forEach(pill => {
-  pill.addEventListener('click', (e) => {
-    e.preventDefault();
-    pill.classList.toggle('on');
-    validate(4);
-    recomputeReadingLessonDates();
-  });
-});
-
-function getReadingDays() {
-  return DAYS_ORDER.filter(day =>
-    document.querySelector(`.reading-day-pill[data-day="${day}"]`)?.classList.contains('on'));
+function weekBlockHTML(n) {
+  const readingOptions = '<option value="">—</option>' +
+    READING_LESSON_TYPES.map(lt => `<option value="${lt.key}">${lt.label}</option>`).join('');
+  const rows = DAYS_ORDER.map(day => `
+    <div class="schedule-row">
+      <div class="schedule-cell day-name">${day}</div>
+      <label class="schedule-check" data-day="${day}" data-slot="0"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 1</span></label>
+      <label class="schedule-check" data-day="${day}" data-slot="1"><input type="checkbox"><div class="custom-check"></div><span class="slot-label">Lesson 2</span></label>
+      <select class="reading-day-select" data-day="${day}">${readingOptions}</select>
+    </div>`).join('');
+  return `
+    <div class="week-block-header">
+      <span class="week-title">Week ${n}</span>
+      <span class="week-calendar-label"></span>
+      <button type="button" class="week-remove-btn btn-sec" onclick="removeWeek(this.closest('.week-block'))">Remove</button>
+    </div>
+    <div class="schedule-grid">
+      <div class="schedule-row header">
+        <div class="schedule-cell">Day</div><div class="schedule-cell">Lesson 1</div><div class="schedule-cell">Lesson 2</div><div class="schedule-cell">Reading</div>
+      </div>
+      ${rows}
+    </div>`;
 }
 
-function renderReadingWeeks() {
-  const n = Math.max(0, Math.min(6, parseInt(fv('f_reading_weeks')) || 0));
-  const container = document.getElementById('readingWeeksContainer');
-  container.innerHTML = '';
-  for (let w = 1; w <= n; w++) {
-    const wk = `w${w}`;
-    const block = document.createElement('div');
-    block.className = 'reading-week-block';
-    block.innerHTML = `<h3>Reading week ${w}</h3>` +
-      READING_LESSON_TYPES.map(lt => `
-        <div class="reading-lesson-row">
-          <span class="rl-label">${lt.label}</span>
-          <input type="date" id="rl_${wk}_${lt.key}_date">
-        </div>
-      `).join('');
-    container.appendChild(block);
-    READING_LESSON_TYPES.forEach(lt => {
-      const el = document.getElementById(`rl_${wk}_${lt.key}_date`);
-      el.addEventListener('input', () => el.classList.add('manual'));
+function wireWeekBlock(block) {
+  block.querySelectorAll('.schedule-check').forEach(chk => {
+    chk.addEventListener('click', (e) => {
+      e.preventDefault();
+      chk.classList.toggle('on');
+      validate(4);
+      updateWeeklySchedulePreview();
+      saveState();
     });
-  }
-  applyReadingLessonMinDate();
-  recomputeReadingLessonDates();
-}
-
-// A reading lesson can't happen before the enquiry's own first lesson —
-// the real bug this guards against (Rivers, 2026-08-11): a reading date
-// entered before first_lesson_date with nothing catching it until Claude
-// read the exported JSON by eye.
-function applyReadingLessonMinDate() {
-  const min = fv('f_first_date');
-  document.querySelectorAll('#readingWeeksContainer input[type="date"]').forEach(el => {
-    if (min) el.min = min; else el.removeAttribute('min');
+  });
+  block.querySelectorAll('.reading-day-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      // At most one day per week per reading type — mutual exclusivity
+      // enforced here rather than left as a state a person could create
+      // by accident (two days both marked Vocabulary the same week).
+      const val = sel.value;
+      if (val) {
+        block.querySelectorAll('.reading-day-select').forEach(other => {
+          if (other !== sel && other.value === val) other.value = '';
+        });
+      }
+      updateWeeklySchedulePreview();
+      saveState();
+    });
   });
 }
 
-// Fills every date field that hasn't been manually edited (no `.manual`
-// class) from first_lesson_date + reading days + a 7-day-per-week offset.
-// Never touches a field the person filling this in has actually set.
-function recomputeReadingLessonDates() {
-  applyReadingLessonMinDate();
+function addWeekBlock(n) {
+  const container = document.getElementById('weeklyScheduleContainer');
+  const block = document.createElement('div');
+  block.className = 'week-block';
+  block.dataset.week = n;
+  block.innerHTML = weekBlockHTML(n);
+  container.appendChild(block);
+  wireWeekBlock(block);
+  return block;
+}
+
+function addWeek() {
+  addWeekBlock(document.querySelectorAll('.week-block').length + 1);
+  renumberAndRefresh();
+  saveState();
+}
+
+function removeWeek(block) {
+  if (document.querySelectorAll('.week-block').length <= 1) return; // always keep at least 1 week
+  block.remove();
+  renumberAndRefresh();
+  saveState();
+}
+
+// Keeps week numbering contiguous (1..N) after an add/remove anywhere but
+// the end — values stay attached to their own DOM node, only the label
+// changes, so nothing already ticked is lost by a mid-list removal.
+function renumberAndRefresh() {
+  const blocks = document.querySelectorAll('.week-block');
+  blocks.forEach((block, i) => {
+    const n = i + 1;
+    block.dataset.week = n;
+    block.querySelector('.week-title').textContent = `Week ${n}`;
+  });
+  document.querySelectorAll('.week-remove-btn').forEach(btn => {
+    btn.style.display = blocks.length > 1 ? '' : 'none';
+  });
+  updateWeekLabels();
+  updateWeeklySchedulePreview();
+  validate(4);
+}
+
+function initWeeks() {
+  document.getElementById('weeklyScheduleContainer').innerHTML = '';
+  addWeekBlock(1);
+  renumberAndRefresh();
+}
+
+// The real calendar T{term}W{week} label for week block N, walking
+// forward from the Logistics start term/week the same way buildDelivery
+// already does (nextWeek()) — shown so "Week 3" reads as "Week 3 (T2W3)"
+// and a mid-week start's real spillover into an extra calendar week is
+// visible as it happens, not left to be inferred.
+function computeWeekLabel(n) {
+  const t = fv('f_term'), w = fv('f_week');
+  if (!t || !w) return '';
+  let cur = { t: parseInt(t), w: parseInt(w) };
+  for (let i = 1; i < n; i++) cur = nextWeek(cur.t, cur.w);
+  return `T${cur.t}W${cur.w}`;
+}
+
+function updateWeekLabels() {
+  document.querySelectorAll('.week-block').forEach(block => {
+    const n = parseInt(block.dataset.week);
+    const lbl = block.querySelector('.week-calendar-label');
+    const cal = computeWeekLabel(n);
+    if (lbl) lbl.textContent = cal ? `(${cal})` : '';
+  });
+}
+
+function updateWeeklySchedulePreview() {
+  const weekly = collectWeeklySchedule();
+  const weekKeys = Object.keys(weekly);
+  const totalSlots = weekKeys.reduce((sum, wk) => sum + weekly[wk].slots.length, 0);
+  const prev = document.getElementById('weeklySchedulePreview');
+  prev.textContent = weekKeys.length
+    ? `${weekKeys.length} week${weekKeys.length !== 1 ? 's' : ''} set up, ${totalSlots} enquiry lesson slot${totalSlots !== 1 ? 's' : ''} total`
+    : '';
+}
+
+// Reads the live DOM into {"1": {slots:[{day,slot,position}], reading_days:
+// {vocabulary, retrieval, inference}}, "2": {...}, ...} — position is
+// 1-based WITHIN its own week (output_naming.py's lesson_slots() already
+// re-ranks per week at build time regardless, so this only needs to sort
+// correctly within a week, not globally).
+function collectWeeklySchedule() {
+  const weekly = {};
+  document.querySelectorAll('.week-block').forEach(block => {
+    const n = block.dataset.week;
+    const slots = [];
+    let pos = 1;
+    const readingDays = { vocabulary: null, retrieval: null, inference: null };
+    DAYS_ORDER.forEach(day => {
+      [0, 1].forEach(slot => {
+        const chk = block.querySelector(`.schedule-check[data-day="${day}"][data-slot="${slot}"]`);
+        if (chk && chk.classList.contains('on')) slots.push({ day, slot, position: pos++ });
+      });
+      const sel = block.querySelector(`.reading-day-select[data-day="${day}"]`);
+      if (sel && sel.value) readingDays[sel.value] = day;
+    });
+    weekly[n] = { slots, reading_days: readingDays };
+  });
+  return weekly;
+}
+
+function totalScheduledSlots(weekly) {
+  return Object.values(weekly).reduce((sum, wk) => sum + wk.slots.length, 0);
+}
+
+// Turns each week's own reading-day choice into a real date — first_lesson_
+// date + (week index - 1) weeks + that day's weekday offset. Same
+// computation the old shared-3-days picker used, just per-week now, so a
+// week with no reading type set simply contributes nothing (real
+// flexibility, not a gap to fill in).
+function collectReadingLessons(weeklySchedule) {
+  const weekKeys = Object.keys(weeklySchedule);
+  const hasAny = weekKeys.some(wk => Object.values(weeklySchedule[wk].reading_days).some(Boolean));
+  if (!hasAny) return null;
+
   const first = fv('f_first_date');
-  const days = getReadingDays();
-  if (!first || days.length !== 3) return;
-  const [fy, fm, fd] = first.split('-').map(Number);
-  const firstDate = new Date(fy, fm - 1, fd);
-  const firstWeekMonday = new Date(firstDate);
-  firstWeekMonday.setDate(firstWeekMonday.getDate() - ((firstDate.getDay() + 6) % 7)); // Mon of that week
+  let firstWeekMonday = null;
+  if (first) {
+    const [fy, fm, fd] = first.split('-').map(Number);
+    const firstDate = new Date(fy, fm - 1, fd);
+    firstWeekMonday = new Date(firstDate);
+    firstWeekMonday.setDate(firstWeekMonday.getDate() - ((firstDate.getDay() + 6) % 7)); // Mon of that week
+  }
   const dayOffset = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4 };
 
-  document.querySelectorAll('#readingWeeksContainer .reading-week-block').forEach((block, wi) => {
-    const w = wi + 1;
-    READING_LESSON_TYPES.forEach((lt, i) => {
-      const el = document.getElementById(`rl_w${w}_${lt.key}_date`);
-      if (!el || el.classList.contains('manual')) return;
-      const dt = new Date(firstWeekMonday);
-      dt.setDate(dt.getDate() + 7 * (w - 1) + dayOffset[days[i]]);
-      el.value = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-    });
-  });
-}
-
-function collectReadingLessons() {
-  const n = Math.max(0, Math.min(6, parseInt(fv('f_reading_weeks')) || 0));
-  if (n === 0) return null;
   const out = {};
-  for (let w = 1; w <= n; w++) {
-    const wk = `w${w}`;
-    out[wk] = {};
+  weekKeys.sort((a, b) => parseInt(a) - parseInt(b)).forEach(wk => {
+    const rd = weeklySchedule[wk].reading_days;
+    const entry = {};
     READING_LESSON_TYPES.forEach(lt => {
-      const date = fv(`rl_${wk}_${lt.key}_date`);
-      if (date) out[wk][lt.key] = { date };
+      const day = rd[lt.key];
+      if (!day) return;
+      if (firstWeekMonday) {
+        const dt = new Date(firstWeekMonday);
+        dt.setDate(dt.getDate() + 7 * (parseInt(wk) - 1) + dayOffset[day]);
+        entry[lt.key] = { date: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` };
+      } else {
+        entry[lt.key] = { date: null };
+      }
     });
-  }
-  return out;
+    if (Object.keys(entry).length) out[wk] = entry;
+  });
+  return Object.keys(out).length ? out : null;
 }
 
 // ── Week / path ────────────────────────────────────────────────────────────
@@ -1466,6 +1470,7 @@ function updatePathPreview() {
   const t = document.getElementById('f_term').value;
   const w = document.getElementById('f_week').value;
   const box = document.getElementById('pathPreview');
+  updateWeekLabels();
   if (!t || !w) { box.innerHTML = '<strong>Delivery path</strong>Select a term and week above.'; return; }
   const path = deliveryPath(t, w);
   box.innerHTML = `<strong>Delivery path</strong><code style="font-size:0.75rem;word-break:break-all">${path}</code>`;
@@ -1484,11 +1489,10 @@ function nextWeek(t, w) {
   return { t: tNum + 1, w: 1 };
 }
 
-function buildDelivery(t, w, numLessons, lessonsPerWeek) {
+function buildDelivery(t, w, weeklySchedule) {
   if (!t || !w) return null;
-  const n = numLessons ? parseInt(numLessons) : 0;
-  const lpw = lessonsPerWeek && lessonsPerWeek > 0 ? lessonsPerWeek : 1;
-  const numWeeks = n > 0 ? Math.ceil(n / lpw) : 1;
+  const weekKeys = Object.keys(weeklySchedule || {}).sort((a, b) => parseInt(a) - parseInt(b));
+  const numWeeks = weekKeys.length || 1;
   const result = {};
   let cur = { t: parseInt(t), w: parseInt(w) };
   for (let i = 0; i < numWeeks; i++) {
@@ -1517,12 +1521,11 @@ function collect() {
   const txwy = t && w ? `T${t}W${w}` : null;
   const topic = fv('f_topic');
   const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-  const slots = scheduleToWeeklySlots();
-  const sched = getSchedule();
+  const weeklySchedule = collectWeeklySchedule();
   const concept = (subject === 'science' || subject === 'history') ? fv('f_concept') : null;
 
   return {
-    form_version: '1.3',
+    form_version: '1.4',
     created: new Date().toISOString().slice(0,10),
     subject,
     year_group: pill('year_group'),
@@ -1548,17 +1551,15 @@ function collect() {
     txwy,
     first_lesson_date: fv('f_first_date') || null,
     num_lessons: fv('f_num_lessons') ? parseInt(fv('f_num_lessons')) : null,
-    lesson_schedule: sched,
-    weekly_slots: slots,
-    lessons_per_week: slots.length,
-    reading_lessons: collectReadingLessons(),
+    weekly_schedule: weeklySchedule,
+    reading_lessons: collectReadingLessons(weeklySchedule),
     xccw_style: 'dotted',
     include_timeline: pill('timeline') !== 'no',
     timeline_notes: fv('f_timeline_notes') || null,
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
-    delivery: buildDelivery(t, w, fv('f_num_lessons'), slots.length),
+    delivery: buildDelivery(t, w, weeklySchedule),
     file_naming: buildNaming(slug, txwy),
   };
 }
@@ -1609,7 +1610,6 @@ const RULES = {
     {type:'field', id:'f_week'},
     {type:'field', id:'f_first_date'},
     {type:'schedule'},
-    {type:'readingDays'},
   ],
   5: [],
 };
@@ -1631,20 +1631,11 @@ function validate(step) {
         else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
       }
     } else if (r.type === 'schedule') {
-      if (scheduleToWeeklySlots().length === 0) {
+      if (totalScheduledSlots(collectWeeklySchedule()) === 0) {
         document.getElementById('err_schedule').classList.add('show');
         ok = false;
       } else {
         document.getElementById('err_schedule').classList.remove('show');
-      }
-    } else if (r.type === 'readingDays') {
-      const weeks = Math.max(0, parseInt(fv('f_reading_weeks')) || 0);
-      const e = document.getElementById('err_reading_days');
-      if (weeks > 0 && getReadingDays().length !== 3) {
-        if (e) e.classList.add('show');
-        ok = false;
-      } else {
-        if (e) e.classList.remove('show');
       }
     } else {
       const el = document.getElementById(r.id);
@@ -2163,30 +2154,20 @@ function rvWarn(msg) {
 const READING_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 function buildReadingLessonsReview(readingLessons) {
-  const days = getReadingDays();
-  if (!readingLessons) return rvRow('Reading packs', 'None — 0 reading weeks set');
-  const weekKeys = Object.keys(readingLessons).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
-  if (!weekKeys.length) return rvRow('Reading packs', 'None — 0 reading weeks set');
+  if (!readingLessons) return rvRow('Reading packs', 'None set for any week');
+  const weekKeys = Object.keys(readingLessons).sort((a,b) => parseInt(a) - parseInt(b));
+  if (!weekKeys.length) return rvRow('Reading packs', 'None set for any week');
 
   const firstLessonDate = fv('f_first_date');
   const labels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
-  let out = rvRow('Reading days', days.length === 3 ? days.join(', ') + ' — fluency focus/activity chosen by Claude, varied across weeks' : '⚠ pick exactly 3 reading days');
+  let out = '';
   let prevDate = null;
 
   weekKeys.forEach(wk => {
     const lessons = readingLessons[wk] || {};
-    const lessonKeys = Object.keys(lessons);
-    const weekNum = wk.slice(1);
-    if (!lessonKeys.length) {
-      out += rvWarn(`Reading week ${weekNum}: nothing entered`);
-      return;
-    }
     ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
       const v = lessons[ltKey];
-      if (!v || !v.date) {
-        out += rvWarn(`Reading week ${weekNum} — ${labels[ltKey]}: no date set`);
-        return;
-      }
+      if (!v || !v.date) return; // a week can have fewer than all 3 types — not a gap to flag
       let dayName = '';
       try {
         const [y, m, d] = v.date.split('-').map(Number);
@@ -2196,18 +2177,37 @@ function buildReadingLessonsReview(readingLessons) {
       if (firstLessonDate && v.date < firstLessonDate) flag = ' ⚠ before the enquiry\'s first lesson';
       if (prevDate && v.date < prevDate) flag += ' ⚠ earlier than a previous reading lesson';
       prevDate = v.date;
-      const row = `Reading week ${weekNum} — ${labels[ltKey]}: ${dayName} ${v.date}${flag}`;
+      const row = `Reading week ${wk} — ${labels[ltKey]}: ${dayName} ${v.date}${flag}`;
       out += flag ? rvWarn(row) : rvRow('', row);
     });
   });
-  return out;
+  return out || rvRow('Reading packs', 'None set for any week');
+}
+
+// Real weekly-schedule summary for the Review page — one row per week,
+// showing that week's own Enq. slots and reading-day markers inline
+// (the same shape the mockup showed), rather than a single "lessons/week"
+// number that no longer means anything under a per-week model.
+function weeklyScheduleReviewHTML(weeklySchedule) {
+  const weekKeys = Object.keys(weeklySchedule || {}).sort((a,b) => parseInt(a) - parseInt(b));
+  if (!weekKeys.length) return rvWarn('No weeks set up');
+  return weekKeys.map(wk => {
+    const wkData = weeklySchedule[wk];
+    const label = computeWeekLabel(parseInt(wk));
+    const slotDesc = wkData.slots.length
+      ? wkData.slots.map(s => `${s.day}${s.slot === 1 ? ' (L2)' : ''}`).join(', ')
+      : 'no enquiry lessons';
+    const rd = wkData.reading_days;
+    const readingBits = READING_LESSON_TYPES.filter(lt => rd[lt.key]).map(lt => `${lt.label}: ${rd[lt.key]}`);
+    const val = slotDesc + (readingBits.length ? ' — Reading: ' + readingBits.join(', ') : '');
+    return rvRow(`Week ${wk}${label ? ' (' + label + ')' : ''}`, val);
+  }).join('');
 }
 
 function buildReview() {
   const d = collect();
   const nc = d.file_naming;
   const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
-  const slotDesc = d.weekly_slots.map(s => `${s.day} (pos ${s.position})`).join(', ');
 
   document.getElementById('reviewContent').innerHTML = `
     <div class="rv-section">
@@ -2257,7 +2257,10 @@ function buildReview() {
       ${rvRow('Slot', d.txwy)}
       ${rvRow('First lesson', d.first_lesson_date)}
       ${rvRow('Lessons', d.num_lessons ? String(d.num_lessons) : 'Claude to decide')}
-      ${rvRow('Weekly schedule', `${d.lessons_per_week} lesson${d.lessons_per_week !== 1 ? 's' : ''}/week — ${slotDesc}`)}
+    </div>
+    <div class="rv-section">
+      <h3>Weekly schedule</h3>
+      ${weeklyScheduleReviewHTML(d.weekly_schedule)}
     </div>
     <div class="rv-section">
       <h3>Reading lessons</h3>
@@ -2292,7 +2295,6 @@ function buildReview() {
 function buildPrompt(d) {
   const nc = d.file_naming;
   const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
-  const slotDesc = d.weekly_slots.map(s => `pos ${s.position}: ${s.day}`).join(', ');
   const L = [];
   L.push('NEW ENQUIRY BRIEF');
   L.push('=================');
@@ -2402,18 +2404,30 @@ function buildPrompt(d) {
   L.push(`Slot:           ${d.txwy || 'not set'}`);
   L.push(`First lesson:   ${d.first_lesson_date || 'not set'}`);
   L.push(`Lessons:        ${d.num_lessons ? d.num_lessons + ' lessons' : 'Claude to decide from CLF curriculum'}`);
-  L.push(`Lessons/week:   ${d.lessons_per_week}`);
-  const numWeeks = (d.num_lessons && d.lessons_per_week) ? Math.ceil(d.num_lessons / d.lessons_per_week) : null;
-  L.push(`Num weeks:      ${numWeeks ? numWeeks + ' (lessons ÷ lessons/week, rounded up — may change due to school events or bank holidays)' : 'not calculated — num_lessons not set'}`);
-  L.push(`Weekly slots:   ${slotDesc}`);
   L.push('');
-  L.push('Weekly schedule (used to derive file name position prefix):');
-  DAYS_ORDER.forEach(day => {
-    const s = d.lesson_schedule[day];
-    if (s[0] || s[1]) {
-      L.push(`  ${day}: ${[s[0] ? 'Lesson 1' : null, s[1] ? 'Lesson 2' : null].filter(Boolean).join(' + ')}`);
+  L.push('Weekly schedule — set up per week, not one shared template (a real');
+  L.push('school week can be added/removed on its own; used to derive each');
+  L.push('lesson\'s file name position prefix):');
+  const scheduleWeekKeys = Object.keys(d.weekly_schedule).sort((a,b) => parseInt(a) - parseInt(b));
+  scheduleWeekKeys.forEach(wk => {
+    const wkData = d.weekly_schedule[wk];
+    const label = computeWeekLabel(parseInt(wk));
+    L.push(`  Week ${wk}${label ? ' (' + label + ')' : ''}:`);
+    if (!wkData.slots.length) {
+      L.push('    (no enquiry lessons this week)');
+    } else {
+      DAYS_ORDER.forEach(day => {
+        const daySlots = wkData.slots.filter(s => s.day === day);
+        if (daySlots.length) {
+          L.push(`    ${day}: ${daySlots.map(s => s.slot === 0 ? 'Lesson 1' : 'Lesson 2').join(' + ')} (pos ${daySlots.map(s => s.position).join('/')})`);
+        }
+      });
     }
+    const rd = wkData.reading_days;
+    const readingBits = READING_LESSON_TYPES.filter(lt => rd[lt.key]).map(lt => `${lt.label} on ${rd[lt.key]}`);
+    if (readingBits.length) L.push(`    Reading: ${readingBits.join(', ')}`);
   });
+  L.push('');
   L.push(`Timeline:       ${d.include_timeline ? 'Yes — include a timeline resource in Resources/' : 'No — omit timeline resource'}${d.timeline_notes ? ' (' + d.timeline_notes + ')' : ''}`);
   if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
   if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
@@ -2422,26 +2436,26 @@ function buildPrompt(d) {
   L.push('─── READING LESSONS ────────────────────────────────────────');
   L.push('Real scheduling for the Being a Reader packs — generate via');
   L.push('scripts/shared/generate_reading_pack.py. Dates below are real');
-  L.push('(Innes\'s own reading days), never invent or move them. Fluency');
-  L.push('focus/activity are NOT set here — generate_reading_pack.py assigns');
+  L.push('(Innes\'s own per-week day choices, see Weekly schedule above),');
+  L.push('never invent or move them. A week can have fewer than all 3');
+  L.push('types — that is real, not a gap to fill in. Fluency focus/');
+  L.push('activity are NOT set here — generate_reading_pack.py assigns');
   L.push('them automatically, rotated so they vary week to week.');
   L.push('');
   if (!d.reading_lessons || !Object.keys(d.reading_lessons).length) {
-    L.push('None — 0 reading weeks set for this enquiry.');
+    L.push('None — no reading days set for any week of this enquiry.');
   } else {
     const rlLabels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
-    Object.keys(d.reading_lessons).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).forEach(wk => {
+    Object.keys(d.reading_lessons).sort((a,b) => parseInt(a) - parseInt(b)).forEach(wk => {
       const lessons = d.reading_lessons[wk] || {};
-      L.push(`Reading week ${wk.slice(1)}:`);
-      if (!Object.keys(lessons).length) {
-        L.push('  NOTHING ENTERED — do not generate this week until Innes fills it in.');
-      } else {
-        ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
-          const v = lessons[ltKey];
-          if (!v || !v.date) { L.push(`  ${rlLabels[ltKey]}: NOT SET`); return; }
-          L.push(`  ${rlLabels[ltKey]}: ${v.date}`);
-        });
-      }
+      const lessonKeys = Object.keys(lessons);
+      if (!lessonKeys.length) return;
+      L.push(`Reading week ${wk}:`);
+      ['vocabulary', 'retrieval', 'inference'].forEach(ltKey => {
+        const v = lessons[ltKey];
+        if (!v || !v.date) return; // not set this week — real, not a gap
+        L.push(`  ${rlLabels[ltKey]}: ${v.date}`);
+      });
       L.push('');
     });
   }
@@ -2567,16 +2581,7 @@ function saveState() {
       teachingFocusOn: getWritingSkillsTeachingFocus(),
       equivState: equivState,
       noveltyState: noveltyState,
-      schedule: (() => {
-        const s = {};
-        document.querySelectorAll('.schedule-check').forEach(c => {
-          s[c.dataset.day + '_' + c.dataset.slot] = c.classList.contains('on');
-        });
-        return s;
-      })(),
-      reading_weeks: fv('f_reading_weeks'),
-      reading_days: getReadingDays(),
-      reading_lessons: collectReadingLessons(),
+      weekly_schedule: collectWeeklySchedule(),
     };
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
     const ind = document.getElementById('save-indicator');
@@ -2698,39 +2703,41 @@ function applyRestoredState() {
     if (tn) tn.value = _savedState.timeline_notes;
   }
 
-  // Schedule checkboxes
-  if (_savedState.schedule) {
-    document.querySelectorAll('.schedule-check').forEach(chk => {
-      const key = chk.dataset.day + '_' + chk.dataset.slot;
-      if (_savedState.schedule[key]) chk.classList.add('on'); else chk.classList.remove('on');
-    });
-    updateSchedulePreview();
-  }
+  // Weekly schedule — rebuild one week block per saved week, each with its
+  // own Enq. slots and reading-day markers. Renumbered contiguously on
+  // restore in case any historical gap existed (defensive, shouldn't
+  // happen from normal add/remove use).
+  restoreWeeklySchedule(_savedState.weekly_schedule && Object.keys(_savedState.weekly_schedule).length
+    ? _savedState.weekly_schedule : null);
+}
 
-  // Reading lessons — days + week count first, then render (which
-  // computes default dates), then apply any saved dates as manual
-  // overrides so a recompute never clobbers them again.
-  if (_savedState.reading_days) {
-    document.querySelectorAll('.reading-day-pill').forEach(pill => {
-      pill.classList.toggle('on', _savedState.reading_days.includes(pill.dataset.day));
+function restoreWeeklySchedule(saved) {
+  const container = document.getElementById('weeklyScheduleContainer');
+  container.innerHTML = '';
+  if (!saved) {
+    addWeekBlock(1);
+    renumberAndRefresh();
+    return;
+  }
+  const weekKeys = Object.keys(saved).sort((a, b) => parseInt(a) - parseInt(b));
+  weekKeys.forEach((_, i) => addWeekBlock(i + 1));
+  renumberAndRefresh();
+  weekKeys.forEach((wk, i) => {
+    const block = document.querySelector(`.week-block[data-week="${i + 1}"]`);
+    if (!block) return;
+    const wkData = saved[wk];
+    (wkData.slots || []).forEach(s => {
+      const chk = block.querySelector(`.schedule-check[data-day="${s.day}"][data-slot="${s.slot}"]`);
+      if (chk) chk.classList.add('on');
     });
-  }
-  if (_savedState.reading_weeks) {
-    const rw = document.getElementById('f_reading_weeks');
-    if (rw) rw.value = _savedState.reading_weeks;
-  }
-  renderReadingWeeks();
-  if (_savedState.reading_lessons) {
-    Object.entries(_savedState.reading_lessons).forEach(([wk, lessons]) => {
-      Object.entries(lessons).forEach(([ltKey, vals]) => {
-        if (!vals || !vals.date) return;
-        const dateEl = document.getElementById(`rl_${wk}_${ltKey}_date`);
-        if (!dateEl) return;
-        dateEl.value = vals.date;
-        dateEl.classList.add('manual');
-      });
+    const rd = wkData.reading_days || {};
+    Object.entries(rd).forEach(([type, day]) => {
+      if (!day) return;
+      const sel = block.querySelector(`.reading-day-select[data-day="${day}"]`);
+      if (sel) sel.value = type;
     });
-  }
+  });
+  updateWeeklySchedulePreview();
 }
 
 function checkForSavedDraft() {
@@ -2750,7 +2757,6 @@ function resumeDraft() {
   document.getElementById('draftBanner').classList.remove('show');
   applyRestoredState();
   applyTimelineVisibility();
-  updateSchedulePreview();
 }
 
 function discardDraft() {
@@ -2770,7 +2776,7 @@ applyTimelineVisibility();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderBar();
-renderReadingWeeks();
+initWeeks();
 </script>
 </body>
 </html>
