@@ -474,18 +474,10 @@
         </div>
       </div>
 
-      <div class="g2">
-        <div class="field">
-          <label class="field-label" for="f_first_date">First lesson date</label>
-          <input type="date" id="f_first_date">
-          <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
-        </div>
-        <div class="field">
-          <label class="field-label" for="f_num_lessons">Number of lessons <span class="optional">(optional)</span>
-            <span class="hint">Enter the number of lessons you have planned for this enquiry</span>
-          </label>
-          <input type="number" id="f_num_lessons" min="1" max="30" placeholder="e.g. 14">
-        </div>
+      <div class="field">
+        <label class="field-label" for="f_first_date">First lesson date</label>
+        <input type="date" id="f_first_date">
+        <div class="errmsg" id="err_f_first_date">First lesson date is required.</div>
       </div>
     </div>
 
@@ -1550,7 +1542,6 @@ function collect() {
     start_week: w ? parseInt(w) : null,
     txwy,
     first_lesson_date: fv('f_first_date') || null,
-    num_lessons: fv('f_num_lessons') ? parseInt(fv('f_num_lessons')) : null,
     weekly_schedule: weeklySchedule,
     reading_lessons: collectReadingLessons(weeklySchedule),
     xccw_style: 'dotted',
@@ -2256,7 +2247,6 @@ function buildReview() {
       <h3>Logistics</h3>
       ${rvRow('Slot', d.txwy)}
       ${rvRow('First lesson', d.first_lesson_date)}
-      ${rvRow('Lessons', d.num_lessons ? String(d.num_lessons) : 'Claude to decide')}
     </div>
     <div class="rv-section">
       <h3>Weekly schedule</h3>
@@ -2403,7 +2393,6 @@ function buildPrompt(d) {
   L.push('─── LOGISTICS ──────────────────────────────────────────────');
   L.push(`Slot:           ${d.txwy || 'not set'}`);
   L.push(`First lesson:   ${d.first_lesson_date || 'not set'}`);
-  L.push(`Lessons:        ${d.num_lessons ? d.num_lessons + ' lessons' : 'Claude to decide from CLF curriculum'}`);
   L.push('');
   L.push('Weekly schedule — set up per week, not one shared template (a real');
   L.push('school week can be added/removed on its own; used to derive each');
@@ -2570,7 +2559,6 @@ function saveState() {
       term: fv('f_term'),
       week: fv('f_week'),
       first_date: fv('f_first_date'),
-      num_lessons: fv('f_num_lessons'),
       vocab: fv('f_vocab'),
       images: fv('f_images'),
       notes: fv('f_notes'),
@@ -2653,7 +2641,7 @@ function applyRestoredState() {
     f_end_goal: _savedState.end_goal, f_writing_outcome: _savedState.writing_outcome,
     f_writing_model_subject: _savedState.writing_model_subject,
     f_writing_audience: _savedState.writing_audience,
-    f_first_date: _savedState.first_date, f_num_lessons: _savedState.num_lessons,
+    f_first_date: _savedState.first_date,
     f_vocab: _savedState.vocab, f_images: _savedState.images, f_notes: _savedState.notes,
   };
   Object.entries(restore).forEach(([id, val]) => {
