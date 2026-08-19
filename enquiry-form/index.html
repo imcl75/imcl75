@@ -346,11 +346,11 @@
            the model write/passages are authored by Claude, not typed here. -->
       <div id="pilotTextField" style="display:none">
         <div class="field">
-          <label class="field-label" for="f_pilot_title">Pilot text title
+          <label class="field-label" for="f_pilot_title">Book
             <span class="hint">The real book this Writing enquiry is grounded in — e.g. "Fantastic Mr Fox"</span>
           </label>
           <input type="text" id="f_pilot_title" placeholder="e.g. Fantastic Mr Fox">
-          <div class="errmsg" id="err_f_pilot_title">Pilot text title is required for a Writing enquiry.</div>
+          <div class="errmsg" id="err_f_pilot_title">Book title is required for a Writing enquiry.</div>
         </div>
         <div class="g2">
           <div class="field">
@@ -364,20 +364,22 @@
         </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="f_about">What is this enquiry about?
-          <span class="hint">Auto-built from your selections above. Edit freely.</span>
-        </label>
-        <textarea id="f_about" rows="6"></textarea>
-        <div class="errmsg" id="err_f_about">Please describe the enquiry.</div>
-      </div>
+      <div id="genericAboutFields">
+        <div class="field">
+          <label class="field-label" for="f_about">What is this enquiry about?
+            <span class="hint">Auto-built from your selections above. Edit freely.</span>
+          </label>
+          <textarea id="f_about" rows="6"></textarea>
+          <div class="errmsg" id="err_f_about">Please describe the enquiry.</div>
+        </div>
 
-      <div class="field">
-        <label class="field-label" for="f_end_goal">What should children know and understand by the end?
-          <span class="hint">Auto-built from your selections above. Edit freely.</span>
-        </label>
-        <textarea id="f_end_goal" rows="4"></textarea>
-        <div class="errmsg" id="err_f_end_goal">End goal is required.</div>
+        <div class="field">
+          <label class="field-label" for="f_end_goal">What should children know and understand by the end?
+            <span class="hint">Auto-built from your selections above. Edit freely.</span>
+          </label>
+          <textarea id="f_end_goal" rows="4"></textarea>
+          <div class="errmsg" id="err_f_end_goal">End goal is required.</div>
+        </div>
       </div>
     </div>
     <div class="nav">
@@ -568,16 +570,18 @@
         <textarea id="f_images" rows="3" placeholder="e.g.&#10;solar_system_diagram.png"></textarea>
       </div>
 
-      <div class="field">
-        <label class="field-label">Include a timeline resource? <span class="hint">A visual timeline of the enquiry period (events, people, dates etc.).</span></label>
-        <div class="pill-group">
-          <label class="pill on" data-g="timeline" data-v="yes" onclick="checkTimeline()">Yes</label>
-          <label class="pill" data-g="timeline" data-v="no" onclick="checkTimeline()">No</label>
+      <div id="timelineField">
+        <div class="field">
+          <label class="field-label">Include a timeline resource? <span class="hint">A visual timeline of the enquiry period (events, people, dates etc.).</span></label>
+          <div class="pill-group">
+            <label class="pill on" data-g="timeline" data-v="yes" onclick="checkTimeline()">Yes</label>
+            <label class="pill" data-g="timeline" data-v="no" onclick="checkTimeline()">No</label>
+          </div>
         </div>
-      </div>
-      <div class="field" id="timelineNotesField">
-        <label class="field-label" for="f_timeline_notes">What should the timeline cover? <span class="optional">(optional)</span></label>
-        <textarea id="f_timeline_notes" rows="2" placeholder="e.g. Key events in the history of space exploration, from 1957 to present"></textarea>
+        <div class="field" id="timelineNotesField">
+          <label class="field-label" for="f_timeline_notes">What should the timeline cover? <span class="optional">(optional)</span></label>
+          <textarea id="f_timeline_notes" rows="2" placeholder="e.g. Key events in the history of space exploration, from 1957 to present"></textarea>
+        </div>
       </div>
 
       <div class="field">
@@ -1313,18 +1317,45 @@ function updateConceptField(subject) {
 function updateAboutStepForSubject(subject) {
   const clf = document.getElementById('clfTopicField');
   const pilot = document.getElementById('pilotTextField');
+  const generic = document.getElementById('genericAboutFields');
   const heading = document.getElementById('s2Heading');
   const subtitle = document.getElementById('s2Subtitle');
   if (subject === 'writing') {
     clf.style.display = 'none';
     pilot.style.display = 'block';
+    // "What is this enquiry about?" / "End goal" are CLF-topic-chip auto-
+    // build fields with no Writing equivalent — Innes, 2026-08-19, reviewing
+    // the real form: "not sure this is relevant for writing?" Book/Key
+    // question/Challenge/Final outcome/Success criteria already cover the
+    // same ground for a Writing enquiry, so these are hidden and not
+    // required (see RULES) rather than left as redundant free text.
+    generic.style.display = 'none';
     heading.textContent = 'About this Writing enquiry';
-    subtitle.textContent = 'The pilot text this unit is grounded in. The model write and passages are authored later — this is just the real book.';
+    subtitle.textContent = 'The real book this unit is grounded in. The model write and passages are authored later.';
   } else {
     clf.style.display = 'block';
     pilot.style.display = 'none';
+    generic.style.display = 'block';
     heading.textContent = 'About this enquiry';
     subtitle.textContent = 'Select what children will study from the CLF curriculum. The descriptions build automatically — edit freely if needed.';
+  }
+}
+
+// Step 5 ("Notes") — timeline resource isn't a real Writing deliverable
+// (Innes, 2026-08-19: "timeline isn't relevant to writing enquiries").
+// Forced to 'no' rather than just hidden, so include_timeline in the
+// output JSON is genuinely false, not whatever the pill happened to be
+// left on before the subject was switched.
+function updateNotesStepForSubject(subject) {
+  const field = document.getElementById('timelineField');
+  if (!field) return;
+  if (subject === 'writing') {
+    field.style.display = 'none';
+    document.querySelectorAll('[data-g="timeline"]').forEach(p => p.classList.remove('on'));
+    document.querySelector('[data-g="timeline"][data-v="no"]').classList.add('on');
+    applyTimelineVisibility();
+  } else {
+    field.style.display = 'block';
   }
 }
 
@@ -1336,7 +1367,7 @@ document.querySelectorAll('.pill').forEach(p => {
     p.classList.add('on');
     const e = document.getElementById('err_' + g);
     if (e) e.classList.remove('show');
-    if (g === 'subject') { updateConceptField(p.dataset.v); updateAboutStepForSubject(p.dataset.v); updateOutcomesStepForSubject(p.dataset.v); }
+    if (g === 'subject') { updateConceptField(p.dataset.v); updateAboutStepForSubject(p.dataset.v); updateOutcomesStepForSubject(p.dataset.v); updateNotesStepForSubject(p.dataset.v); }
   });
 });
 
@@ -1586,19 +1617,32 @@ function totalScheduledSlots(weekly) {
 // computation the old shared-3-days picker used, just per-week now, so a
 // week with no reading type set simply contributes nothing (real
 // flexibility, not a gap to fill in).
+// Monday of the week containing f_first_date — shared by collectReadingLessons
+// (the real date computation) and buildReadingLessonsReview (the "before the
+// enquiry's first lesson" warning). Using this instead of the raw f_first_date
+// value matters: a Monday reading lesson in Week 1 is completely valid even
+// when the enquiry's own first taught lesson isn't until Tuesday or later
+// that same week — comparing against the exact first_lesson_date wrongly
+// flagged that real, intentional case as an error (Innes, 2026-08-19: "is
+// this a warning - it may be that we have a reading lesson before the first
+// writing / enquiry lesson").
+function firstWeekMondayOf(dateStr) {
+  if (!dateStr) return null;
+  const [fy, fm, fd] = dateStr.split('-').map(Number);
+  const d = new Date(fy, fm - 1, fd);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function collectReadingLessons(weeklySchedule) {
   const weekKeys = Object.keys(weeklySchedule);
   const hasAny = weekKeys.some(wk => Object.values(weeklySchedule[wk].reading_days).some(Boolean));
   if (!hasAny) return null;
 
-  const first = fv('f_first_date');
-  let firstWeekMonday = null;
-  if (first) {
-    const [fy, fm, fd] = first.split('-').map(Number);
-    const firstDate = new Date(fy, fm - 1, fd);
-    firstWeekMonday = new Date(firstDate);
-    firstWeekMonday.setDate(firstWeekMonday.getDate() - ((firstDate.getDay() + 6) % 7)); // Mon of that week
-  }
+  const firstWeekMonday = firstWeekMondayOf(fv('f_first_date'));
   const dayOffset = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4 };
 
   const out = {};
@@ -1786,7 +1830,7 @@ const RULES = {
     {type:'field', id:'f_key_question'},
     {type:'field', id:'f_challenge'},
   ],
-  2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'},{type:'pilot_title'}],
+  2: [{type:'field_unless_writing',id:'f_about'},{type:'field_unless_writing',id:'f_end_goal'},{type:'pilot_title'}],
   3: [
     {type:'field',id:'f_writing_outcome'},
     {type:'field',id:'f_writing_num_paragraphs'},
@@ -1814,6 +1858,13 @@ function validate(step) {
         const el = document.getElementById('f_concept');
         const e = document.getElementById('err_f_concept');
         if (!el.value) { el.classList.add('err'); if(e) e.classList.add('show'); ok = false; }
+        else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
+      }
+    } else if (r.type === 'field_unless_writing') {
+      if (pill('subject') !== 'writing') {
+        const el = document.getElementById(r.id);
+        const e = document.getElementById('err_' + r.id);
+        if (!el.value.trim()) { el.classList.add('err'); if(e) e.classList.add('show'); ok = false; }
         else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
       }
     } else if (r.type === 'pilot_title') {
@@ -1851,11 +1902,28 @@ function validate(step) {
 // ── Purpose chips ─────────────────────────────────────────────────────────
 document.querySelectorAll('.purpose-chip').forEach(c =>
   c.addEventListener('click', () => {
+    // Locked for a Writing enquiry — Innes, 2026-08-19: "writing enquiries'
+    // purpose is always entertain." Matches Phase G's own real design
+    // (genre is always Narrative) — see applyWritingPurposeLock().
+    if (pill('subject') === 'writing') return;
     const already = c.classList.contains('on');
     document.querySelectorAll('.purpose-chip').forEach(o => o.classList.remove('on'));
     if (!already) c.classList.add('on');
   })
 );
+function applyWritingPurposeLock(isWriting) {
+  const chips = document.querySelectorAll('.purpose-chip');
+  if (isWriting) {
+    chips.forEach(c => {
+      const isEntertain = c.dataset.purpose === 'Entertain';
+      c.classList.toggle('on', isEntertain);
+      c.style.opacity = isEntertain ? '1' : '0.4';
+      c.style.cursor = isEntertain ? 'default' : 'not-allowed';
+    });
+  } else {
+    chips.forEach(c => { c.style.opacity = ''; c.style.cursor = ''; });
+  }
+}
 function getSelectedPurposes() {
   const el = document.querySelector('.purpose-chip.on');
   return el ? el.dataset.purpose : '';
@@ -1876,9 +1944,10 @@ function updateOutcomesStepForSubject(subject) {
   const scHelp = document.getElementById('scHelp');
   if (label) label.textContent = isWriting ? 'Number of plot points' : 'Number of paragraphs';
   if (hint) hint.textContent = isWriting
-    ? 'Enter a number — plot point blocks will appear below.'
+    ? 'Enter a number — one line each for what happens, e.g. "The two characters come together."'
     : 'Enter a number — paragraph blocks will appear below.';
   if (scHelp) scHelp.style.display = isWriting ? 'block' : 'none';
+  applyWritingPurposeLock(isWriting);
   renderParagraphBlocks(fv('f_writing_num_paragraphs'));
 }
 
@@ -2303,14 +2372,15 @@ function renderParagraphBlocks(n, initialData) {
       // no title, no child-chosen toggle, those are non-fiction-outcome-only
       // concepts. Same .para-block/.para-purpose classes so getParagraphData()
       // keeps working unmodified.
+      // No per-block hint — Innes, 2026-08-19: "these are the same on every
+      // plot point" (repeated identical hint text) "and let's remove Beat
+      // here too." One real explanation lives once, in numParaHint above
+      // (see updateOutcomesStepForSubject) instead of on every block.
       block.innerHTML =
         '<div class="para-block-header">' +
           '<span class="para-block-num">Plot point ' + (i + 1) + '</span>' +
         '</div>' +
         '<div class="field">' +
-          '<label class="field-label" style="font-size:0.78rem">What happens' +
-            '<span class="hint">One line — the real story beat, e.g. "The antagonist looks like he will get Mr Fox"</span>' +
-          '</label>' +
           '<input type="text" class="para-purpose" placeholder="e.g. The two characters come together" value="' + escHtml(prev.purpose || '') + '">' +
         '</div>';
     } else {
@@ -2387,6 +2457,7 @@ function show(n) {
   window.scrollTo({top:0,behavior:'smooth'});
   if (n === 2) { updateAboutStepForSubject(pill('subject')); renderTopicChips(); }
   if (n === 3) { updateOutcomesStepForSubject(pill('subject')); renderWritingSkillChips(); }
+  if (n === 5) updateNotesStepForSubject(pill('subject'));
 }
 
 // ── Review ─────────────────────────────────────────────────────────────────
@@ -2412,7 +2483,11 @@ function buildReadingLessonsReview(readingLessons) {
   const weekKeys = Object.keys(readingLessons).sort((a,b) => parseInt(a) - parseInt(b));
   if (!weekKeys.length) return rvRow('Reading packs', 'None set for any week');
 
-  const firstLessonDate = fv('f_first_date');
+  // Compare against the Monday of Week 1, not the exact first_lesson_date —
+  // a reading lesson on Week 1's Monday is real and valid even when the
+  // enquiry's own first taught lesson isn't until later that same week.
+  const firstWeekMonday = firstWeekMondayOf(fv('f_first_date'));
+  const firstWeekMondayIso = firstWeekMonday ? isoDate(firstWeekMonday) : null;
   const labels = { vocabulary: 'Vocabulary', retrieval: 'Retrieval', inference: 'Inference' };
   let out = '';
   let prevDate = null;
@@ -2428,7 +2503,7 @@ function buildReadingLessonsReview(readingLessons) {
         dayName = READING_DAY_NAMES[new Date(y, m - 1, d).getDay()];
       } catch (e) {}
       let flag = '';
-      if (firstLessonDate && v.date < firstLessonDate) flag = ' ⚠ before the enquiry\'s first lesson';
+      if (firstWeekMondayIso && v.date < firstWeekMondayIso) flag = ' ⚠ before the enquiry\'s first week even starts';
       if (prevDate && v.date < prevDate) flag += ' ⚠ earlier than a previous reading lesson';
       prevDate = v.date;
       const row = `Reading week ${wk} — ${labels[ltKey]}: ${dayName} ${v.date}${flag}`;
@@ -2475,7 +2550,7 @@ function buildReview() {
     </div>
     <div class="rv-section">
       <h3>About</h3>
-      ${d.text ? rvRow('Pilot text', [d.text.title, d.text.author ? `by ${d.text.author}` : ''].filter(Boolean).join(' ')) : ''}
+      ${d.text ? rvRow('Book', [d.text.title, d.text.author ? `by ${d.text.author}` : ''].filter(Boolean).join(' ')) : ''}
       ${rvRow('About', d.about)}
       ${rvRow('End goal', d.end_goal)}
     </div>
@@ -2526,7 +2601,18 @@ function buildReview() {
     </div>
     <div class="rv-section">
       <h3>Delivery</h3>
-      ${rvRow('Root (enquiry-level)', d.delivery.root?.replace(ONEDRIVE_BASE,'…/1-Planning') || 'not set')}
+      ${(() => {
+        // Real bug fix, 2026-08-19 (Innes: "delivery Root not set - how do
+        // I set it? or is it automatic"): it IS fully automatic — computed
+        // from Term/Week (Step 4) — but d.delivery is keyed per real
+        // TxWy slot (one entry per week the enquiry spans), not a single
+        // flat object, so `d.delivery.root` was always undefined
+        // regardless of whether Term/Week were filled in. Show the
+        // earliest week's root — enquiry-level docs go there.
+        const keys = d.delivery ? Object.keys(d.delivery).sort() : [];
+        const root = keys.length ? d.delivery[keys[0]].root?.replace(ONEDRIVE_BASE,'…/1-Planning') : null;
+        return rvRow('Root (enquiry-level)', root || 'not set — fill in Term/Week in Step 4 to compute this automatically');
+      })()}
       ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
       ${rvRow('LP/', 'Learning papers')}
       ${rvRow('Resources/', 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
@@ -2580,19 +2666,13 @@ function buildPrompt(d) {
     L.push('  7. Reading lessons are a separate real step, once the main unit is confirmed —');
     L.push('     see the Reading lessons section below.');
     L.push('');
-    L.push('─── PILOT TEXT ─────────────────────────────────────────────');
+    L.push('─── BOOK ───────────────────────────────────────────────────');
     L.push(`Title:          ${d.text?.title || 'not set'}`);
     if (d.text?.author) L.push(`Author:         ${d.text.author}`);
     if (d.text?.illustrator) L.push(`Illustrator:    ${d.text.illustrator}`);
     L.push(`Year group:     ${d.year_group}`);
     L.push(`Enquiry question: ${d.key_question}`);
     L.push(`Challenge:      ${d.challenge}`);
-    L.push('');
-    L.push('─── ABOUT ──────────────────────────────────────────────────');
-    L.push(d.about);
-    L.push('');
-    L.push('─── END GOAL ───────────────────────────────────────────────');
-    L.push(d.end_goal);
     L.push('');
     L.push('─── FINAL OUTCOME ──────────────────────────────────────────');
     if (d.final_outcome?.description) L.push(d.final_outcome.description);
@@ -2990,7 +3070,7 @@ function applyRestoredState() {
   if (_savedState.subject) {
     document.querySelectorAll('[data-g="subject"]').forEach(p => p.classList.remove('on'));
     const sp = document.querySelector('[data-g="subject"][data-v="' + _savedState.subject + '"]');
-    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); updateAboutStepForSubject(_savedState.subject); }
+    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); updateAboutStepForSubject(_savedState.subject); updateNotesStepForSubject(_savedState.subject); }
   }
 
   // Concept
