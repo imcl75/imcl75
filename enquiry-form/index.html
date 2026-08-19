@@ -1805,16 +1805,16 @@ function collect() {
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
     delivery: buildDelivery(t, w, weeklySchedule, subject),
-    file_naming: buildNaming(slug, txwy),
+    file_naming: buildNaming(slug, txwy, subject),
   };
 }
 
-function buildNaming(slug, txwy) {
+function buildNaming(slug, txwy, subject) {
   const t = txwy || 'TxWy';
   const S = slug || 'topic';
-  return {
+  const isWriting = subject === 'writing';
+  const naming = {
     // Enquiry-level — go in root
-    knowledge_organiser: `KO_${S}_${t}.pdf`,
     vocab_display: `Vocab_${S}_${t}.pdf`,
     // Teaching/ folder
     mtp_readable: `MTP_${S}_${t}.md`,
@@ -1824,16 +1824,28 @@ function buildNaming(slug, txwy) {
     // LP/ folder
     learning_paper: `{txwy}-{pos:02d}-{Day}-{nn:02d}-LP-{Class}.pptx`,
     // Resources/ folder
-    sort_cards: `SortCards_${S}_${t}.pdf`,
     word_cards: `WordCards_${S}_${t}.pdf`,
-    statement_sort: `StatementSort_${S}_${t}.pdf`,
-    timeline: `Timeline_${S}_${t}.pdf`,
-    hunt_texts: `HuntTexts_${S}_${t}.pdf`,
     writing_toolkit: `WritingToolkit_${S}_${t}.pdf`,
     handwriting: `Handwriting_${S}_${t}.pdf`,
     // Resources/Learning-Labels/ folder
     label_sheet: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Labels.docx`,
   };
+  if (!isWriting) {
+    // General-subject-only deliverables — Innes, 2026-08-19, reviewing a
+    // real exported Writing brief: "from that list, only Vocab_...pdf is
+    // expected for writing." Knowledge Organiser and the sort/statement/
+    // hunt-text/timeline resources belong to the general 12-deliverable
+    // subject-enquiry pipeline; Writing has its own real deliverable set
+    // (decks, activity-type LPs, Model Write, planning doc, SC poster/
+    // tracking sheet — enquiry-builder-writing-schema.md) and doesn't
+    // produce these.
+    naming.knowledge_organiser = `KO_${S}_${t}.pdf`;
+    naming.sort_cards = `SortCards_${S}_${t}.pdf`;
+    naming.statement_sort = `StatementSort_${S}_${t}.pdf`;
+    naming.timeline = `Timeline_${S}_${t}.pdf`;
+    naming.hunt_texts = `HuntTexts_${S}_${t}.pdf`;
+  }
+  return naming;
 }
 
 // ── Validation ─────────────────────────────────────────────────────────────
@@ -2637,7 +2649,7 @@ function buildReview() {
     </div>
     <div class="rv-section">
       <h3>File naming</h3>
-      ${rvMono('Enquiry-level', nc.knowledge_organiser + ' · ' + nc.vocab_display)}
+      ${rvMono(d.subject === 'writing' ? 'Writing-level' : 'Enquiry-level', d.subject === 'writing' ? nc.vocab_display : (nc.knowledge_organiser + ' · ' + nc.vocab_display))}
       ${rvMono('Lesson Teaching', nc.lesson_deck)}
       ${rvMono('Learning paper', nc.learning_paper)}
       ${rvMono('Label sheet', nc.label_sheet)}
@@ -2908,17 +2920,32 @@ function buildPrompt(d) {
   }
   L.push('');
   L.push('─── DELIVERY PATH ──────────────────────────────────────────');
-  const root = d.delivery.root || 'NOT SET';
-  L.push(`Root (enquiry-level files): ${root}`);
+  // d.delivery is keyed per real TxWy slot (one entry per week the
+  // enquiry spans), not a single flat object — d.delivery.root was
+  // always undefined here, same real bug already fixed in buildReview().
+  const deliveryKeys = d.delivery ? Object.keys(d.delivery).sort() : [];
+  const root = deliveryKeys.length ? d.delivery[deliveryKeys[0]].root : 'NOT SET';
+  const rootLabel = d.subject === 'writing' ? 'Writing-level files' : 'enquiry-level files';
+  L.push(`Root (${rootLabel}): ${root}`);
   L.push(`Teaching/:                  ${root}/Teaching`);
   L.push(`LP/:                        ${root}/LP`);
   L.push(`Resources/:                 ${root}/Resources`);
   L.push(`Resources/Learning-Labels/: ${root}/Resources/Learning-Labels`);
+  if (deliveryKeys.length && d.delivery[deliveryKeys[0]].reading_folder) {
+    L.push(`Reading/ (sibling, not nested under ${rootLabel === 'Writing-level files' ? 'Writing' : 'Enquiry'}): ${d.delivery[deliveryKeys[0]].reading_folder}`);
+  }
   L.push('');
   L.push('─── FILE NAMING CONVENTION ─────────────────────────────────');
-  L.push('Enquiry-level (copy to root):');
-  L.push(`  ${nc.knowledge_organiser}`);
-  L.push(`  ${nc.vocab_display}`);
+  if (d.subject === 'writing') {
+    L.push('Root (copy to root) — only Vocab, no Knowledge Organiser/sort-');
+    L.push('cards/statement-sort/timeline/hunt-texts (those are general-');
+    L.push('subject-pipeline deliverables Writing doesn\'t produce):');
+    L.push(`  ${nc.vocab_display}`);
+  } else {
+    L.push('Enquiry-level (copy to root):');
+    L.push(`  ${nc.knowledge_organiser}`);
+    L.push(`  ${nc.vocab_display}`);
+  }
   L.push('');
   L.push('Teaching/ folder:');
   L.push(`  ${nc.mtp_readable}`);
@@ -2929,11 +2956,15 @@ function buildPrompt(d) {
   L.push(`  ${nc.learning_paper}   ← {Class} = class key (IM, LS)`);
   L.push('');
   L.push('Resources/ folder:');
-  L.push(`  ${nc.sort_cards}`);
+  if (d.subject !== 'writing') {
+    L.push(`  ${nc.sort_cards}`);
+  }
   L.push(`  ${nc.word_cards}`);
-  L.push(`  ${nc.statement_sort}`);
-  L.push(`  ${nc.timeline}`);
-  L.push(`  ${nc.hunt_texts}`);
+  if (d.subject !== 'writing') {
+    L.push(`  ${nc.statement_sort}`);
+    L.push(`  ${nc.timeline}`);
+    L.push(`  ${nc.hunt_texts}`);
+  }
   L.push(`  ${nc.writing_toolkit}`);
   L.push(`  ${nc.handwriting}`);
   L.push('');
