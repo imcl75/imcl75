@@ -1372,7 +1372,7 @@ function updateDeliveryHelpForSubject(subject) {
   const rootLabel = subject === 'writing' ? 'Writing-level' : 'Root';
   const rootContent = subject === 'writing' ? 'Vocabulary Display PDF' : 'Knowledge Organiser PDF · Vocabulary Display PDF';
   const resourcesContent = subject === 'writing'
-    ? 'word cards · writing toolkit · handwriting'
+    ? 'writing toolkit · handwriting'
     : 'sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting';
   el.innerHTML =
     `<strong>${rootLabel}:</strong> ${rootContent}<br>` +
@@ -1848,7 +1848,6 @@ function buildNaming(slug, txwy, subject) {
     // LP/ folder
     learning_paper: `{txwy}-{pos:02d}-{Day}-{nn:02d}-LP-{Class}.pptx`,
     // Resources/ folder
-    word_cards: `WordCards_${S}_${t}.pdf`,
     writing_toolkit: `WritingToolkit_${S}_${t}.pdf`,
     handwriting: `Handwriting_${S}_${t}.pdf`,
     // Resources/Learning-Labels/ folder
@@ -1857,14 +1856,17 @@ function buildNaming(slug, txwy, subject) {
   if (!isWriting) {
     // General-subject-only deliverables — Innes, 2026-08-19, reviewing a
     // real exported Writing brief: "from that list, only Vocab_...pdf is
-    // expected for writing." Knowledge Organiser and the sort/statement/
-    // hunt-text/timeline resources belong to the general 12-deliverable
-    // subject-enquiry pipeline; Writing has its own real deliverable set
-    // (decks, activity-type LPs, Model Write, planning doc, SC poster/
-    // tracking sheet — enquiry-builder-writing-schema.md) and doesn't
-    // produce these.
+    // expected for writing" (KO/sort-cards/statement-sort/timeline/hunt-
+    // texts), then "dont need word cards for writing" either. Confirmed
+    // directly against build_all_writing.py's real imports — it never
+    // calls build_resources.py's word/sort/statement-card renderers at
+    // all; this whole naming scheme is still a placeholder copied from
+    // the general pipeline, not yet grounded in Writing's own real
+    // output set (see the full deliverable list under review with Innes,
+    // 2026-08-19 — pending confirmation before rebuilding this properly).
     naming.knowledge_organiser = `KO_${S}_${t}.pdf`;
     naming.sort_cards = `SortCards_${S}_${t}.pdf`;
+    naming.word_cards = `WordCards_${S}_${t}.pdf`;
     naming.statement_sort = `StatementSort_${S}_${t}.pdf`;
     naming.timeline = `Timeline_${S}_${t}.pdf`;
     naming.hunt_texts = `HuntTexts_${S}_${t}.pdf`;
@@ -2669,7 +2671,7 @@ function buildReview() {
       })()}
       ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
       ${rvRow('LP/', 'Learning papers')}
-      ${rvRow('Resources/', d.subject === 'writing' ? 'Word cards · writing toolkit · handwriting' : 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
+      ${rvRow('Resources/', d.subject === 'writing' ? 'Writing toolkit · handwriting' : 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
       ${rvRow('Resources/Learning-Labels/', 'Label sheets')}
     </div>
     <div class="rv-section">
@@ -2983,9 +2985,7 @@ function buildPrompt(d) {
   L.push('Resources/ folder:');
   if (d.subject !== 'writing') {
     L.push(`  ${nc.sort_cards}`);
-  }
-  L.push(`  ${nc.word_cards}`);
-  if (d.subject !== 'writing') {
+    L.push(`  ${nc.word_cards}`);
     L.push(`  ${nc.statement_sort}`);
     L.push(`  ${nc.timeline}`);
     L.push(`  ${nc.hunt_texts}`);
