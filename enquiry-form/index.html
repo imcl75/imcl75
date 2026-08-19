@@ -265,6 +265,7 @@
           <label class="pill" data-g="subject" data-v="science"><input type="radio" name="subject" value="science">Scientist</label>
           <label class="pill" data-g="subject" data-v="geography"><input type="radio" name="subject" value="geography">Geographer</label>
           <label class="pill" data-g="subject" data-v="history"><input type="radio" name="subject" value="history">Historian</label>
+          <label class="pill" data-g="subject" data-v="writing"><input type="radio" name="subject" value="writing">Writer</label>
         </div>
         <div class="errmsg" id="err_subject">Please select a State of Being.</div>
       </div>
@@ -321,19 +322,46 @@
   <!-- ── Step 2: About ──────────────────────────────────────────────────── -->
   <section id="s2">
     <div class="card">
-      <h2>About this enquiry</h2>
-      <p class="subtitle">Select what children will study from the CLF curriculum. The descriptions build automatically — edit freely if needed.</p>
+      <h2 id="s2Heading">About this enquiry</h2>
+      <p class="subtitle" id="s2Subtitle">Select what children will study from the CLF curriculum. The descriptions build automatically — edit freely if needed.</p>
 
-      <div class="field">
-        <label class="field-label">CLF curriculum topics
-          <span class="hint" id="topicChipsHint"></span>
-        </label>
-        <div class="chip-actions">
-          <button class="btn-sec" type="button" onclick="setAllChips(true)">Select all</button>
-          <button class="btn-sec" type="button" onclick="setAllChips(false)">Clear all</button>
+      <div id="clfTopicField">
+        <div class="field">
+          <label class="field-label">CLF curriculum topics
+            <span class="hint" id="topicChipsHint"></span>
+          </label>
+          <div class="chip-actions">
+            <button class="btn-sec" type="button" onclick="setAllChips(true)">Select all</button>
+            <button class="btn-sec" type="button" onclick="setAllChips(false)">Clear all</button>
+          </div>
+          <div class="chip-grid" id="topicChips"></div>
+          <div id="noTopicsMsg" style="display:none;font-size:0.82rem;color:var(--muted)">No CLF topics found for this combination. Fill in the fields below manually.</div>
         </div>
-        <div class="chip-grid" id="topicChips"></div>
-        <div id="noTopicsMsg" style="display:none;font-size:0.82rem;color:var(--muted)">No CLF topics found for this combination. Fill in the fields below manually.</div>
+      </div>
+
+      <!-- Pilot text — Writing enquiries only. Real fields the native
+           reading-lesson / Writing MTP schema actually needs (text.title/
+           author/illustrator, enquiry-builder-writing-schema.md's top-level
+           `text` object) — never a book extract, just bibliographic info;
+           the model write/passages are authored by Claude, not typed here. -->
+      <div id="pilotTextField" style="display:none">
+        <div class="field">
+          <label class="field-label" for="f_pilot_title">Pilot text title
+            <span class="hint">The real book this Writing enquiry is grounded in — e.g. "Fantastic Mr Fox"</span>
+          </label>
+          <input type="text" id="f_pilot_title" placeholder="e.g. Fantastic Mr Fox">
+          <div class="errmsg" id="err_f_pilot_title">Pilot text title is required for a Writing enquiry.</div>
+        </div>
+        <div class="g2">
+          <div class="field">
+            <label class="field-label" for="f_pilot_author">Author</label>
+            <input type="text" id="f_pilot_author" placeholder="e.g. Roald Dahl">
+          </div>
+          <div class="field">
+            <label class="field-label" for="f_pilot_illustrator">Illustrator <span class="optional">(optional)</span></label>
+            <input type="text" id="f_pilot_illustrator" placeholder="e.g. Quentin Blake">
+          </div>
+        </div>
       </div>
 
       <div class="field">
@@ -384,6 +412,7 @@
           <span class="hint">What is the writing trying to do?</span>
         </label>
         <div class="chip-grid" id="purposeChips">
+          <span class="purpose-chip" data-purpose="Entertain">Entertain</span>
           <span class="purpose-chip" data-purpose="Inform">Inform</span>
           <span class="purpose-chip" data-purpose="Explain">Explain</span>
           <span class="purpose-chip" data-purpose="Persuade">Persuade</span>
@@ -393,8 +422,8 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="f_writing_num_paragraphs">Number of paragraphs
-          <span class="hint">Enter a number — paragraph blocks will appear below.</span>
+        <label class="field-label" for="f_writing_num_paragraphs" id="numParaLabel"><span id="numParaLabelText">Number of paragraphs</span>
+          <span class="hint" id="numParaHint">Enter a number — paragraph blocks will appear below.</span>
         </label>
         <input type="number" id="f_writing_num_paragraphs" min="1" max="12" placeholder="e.g. 4" oninput="renderParagraphBlocks(this.value)">
         <div class="errmsg" id="err_f_writing_num_paragraphs">Number of paragraphs is required.</div>
@@ -406,6 +435,10 @@
           <span class="hint">What does the teacher write about in child-chosen paragraphs? e.g. Saturn</span>
         </label>
         <input type="text" id="f_writing_model_subject" placeholder="e.g. Saturn">
+      </div>
+
+      <div class="field" id="scHelp" style="display:none;">
+        <div class="info-box">This step defines the unit's <strong>Success Criteria</strong> — pick the narrative techniques below, mark the real Teaching Focus, and they become the numbered SC list children work towards. The plot points above are the model write's own real story beats, not the final SC.</div>
       </div>
 
       <div class="field">
@@ -702,6 +735,39 @@ const WRITING_SKILLS_NF = {
       ]
     },
   ]
+};
+
+// Narrative-craft equivalent of WRITING_SKILLS_NF, for a real Writing-type
+// enquiry (a pilot text, not a subject topic). Every other area (Sentence
+// Structure, Tense & Verb Form, Cohesion, Punctuation, Editing & Revising,
+// Spelling, Handwriting, Non-Negotiable) applies to fiction writing exactly
+// as it does to non-fiction, so this reuses WRITING_SKILLS_NF's own areas
+// unchanged and only swaps the 'Composition' group — the NF form's own
+// comment already names these exact rows as "genuinely out of scope" for
+// non-fiction, real content: enquiry-builder-writing-progression.md's
+// master Y5 Composition rows (similes, alliteration, hyperbole,
+// personification, metaphor, allusion, idiom, dialogue, reported speech,
+// repetition for effect, power of three, settings/characters via
+// behaviour/thoughts/reactions).
+const WRITING_SKILLS_NARRATIVE = {
+  Y5: WRITING_SKILLS_NF.Y5.map(group => group.area !== 'Composition' ? group : {
+    area: 'Composition',
+    skills: [
+      { id: 'ncomp1', label: 'Power of three', export: 'Use power of three linked to sentence work' },
+      { id: 'ncomp2', label: 'Describe settings', export: 'Describe settings via behaviour, thoughts and reactions', preselect: true },
+      { id: 'ncomp3', label: 'Describe characters', export: 'Describe characters via behaviour, thoughts and reactions', preselect: true },
+      { id: 'ncomp4', label: 'Similes', export: 'Develop use of similes' },
+      { id: 'ncomp5', label: 'Alliteration', export: 'Develop use of alliteration' },
+      { id: 'ncomp6', label: 'Hyperbole', export: 'Develop use of hyperbole' },
+      { id: 'ncomp7', label: 'Personification', export: 'Use personification' },
+      { id: 'ncomp8', label: 'Metaphor', export: 'Use metaphor' },
+      { id: 'ncomp9', label: 'Allusion', export: 'Use allusion' },
+      { id: 'ncomp10', label: 'Idiom', export: 'Use idiom' },
+      { id: 'ncomp11', label: 'Dialogue', export: 'Use dialogue to show relationship and move action on' },
+      { id: 'ncomp12', label: 'Reported speech', export: 'Use reported speech' },
+      { id: 'ncomp13', label: 'Repetition for effect', export: 'Use repetition for effect' },
+    ],
+  }),
 };
 
 // ── Year-group equivalents (Y1-Y4) ──────────────────────────────────────────
@@ -1241,6 +1307,27 @@ function updateConceptField(subject) {
   }
 }
 
+// Step 2 ("About") swaps entirely for a Writing enquiry — a pilot text
+// (title/author/illustrator) instead of CLF curriculum topic chips, since
+// a Writing enquiry has no curriculum topic to pick, it has a book.
+function updateAboutStepForSubject(subject) {
+  const clf = document.getElementById('clfTopicField');
+  const pilot = document.getElementById('pilotTextField');
+  const heading = document.getElementById('s2Heading');
+  const subtitle = document.getElementById('s2Subtitle');
+  if (subject === 'writing') {
+    clf.style.display = 'none';
+    pilot.style.display = 'block';
+    heading.textContent = 'About this Writing enquiry';
+    subtitle.textContent = 'The pilot text this unit is grounded in. The model write and passages are authored later — this is just the real book.';
+  } else {
+    clf.style.display = 'block';
+    pilot.style.display = 'none';
+    heading.textContent = 'About this enquiry';
+    subtitle.textContent = 'Select what children will study from the CLF curriculum. The descriptions build automatically — edit freely if needed.';
+  }
+}
+
 // ── Pills ──────────────────────────────────────────────────────────────────
 document.querySelectorAll('.pill').forEach(p => {
   p.addEventListener('click', () => {
@@ -1249,7 +1336,7 @@ document.querySelectorAll('.pill').forEach(p => {
     p.classList.add('on');
     const e = document.getElementById('err_' + g);
     if (e) e.classList.remove('show');
-    if (g === 'subject') updateConceptField(p.dataset.v);
+    if (g === 'subject') { updateConceptField(p.dataset.v); updateAboutStepForSubject(p.dataset.v); updateOutcomesStepForSubject(p.dataset.v); }
   });
 });
 
@@ -1626,6 +1713,26 @@ function collect() {
     writing_skills_teaching_focus: getWritingSkillsTeachingFocus(),
     writing_skill_equivalents: getWritingSkillEquivalents(),
     writing_skill_novelty: getWritingSkillNovelty(),
+    // Writing-type enquiry only (subject === 'writing') — real fields
+    // enquiry-builder-writing-schema.md's top-level writing_unit object
+    // needs (text/final_outcome/success_criteria/plot_points), null for
+    // every other subject. Additive to the writing_* fields above, not a
+    // replacement — those still carry the full chip/equivalents/novelty
+    // detail a future gen_writing_<enquiry>.py generator script needs.
+    text: subject === 'writing' ? {
+      title: fv('f_pilot_title') || null,
+      author: fv('f_pilot_author') || null,
+      illustrator: fv('f_pilot_illustrator') || null,
+    } : null,
+    final_outcome: subject === 'writing' ? {
+      description: fv('f_writing_outcome') || null,
+      purpose: getSelectedPurposes() || null,
+      audience: fv('f_writing_audience') || null,
+    } : null,
+    success_criteria: subject === 'writing' ? getSuccessCriteria() : null,
+    plot_points: subject === 'writing' && getParagraphData().length
+      ? getParagraphData().map((p, i) => ({ number: i + 1, description: p.purpose || '' }))
+      : null,
     start_term: t ? parseInt(t) : null,
     start_week: w ? parseInt(w) : null,
     txwy,
@@ -1679,7 +1786,7 @@ const RULES = {
     {type:'field', id:'f_key_question'},
     {type:'field', id:'f_challenge'},
   ],
-  2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'}],
+  2: [{type:'field',id:'f_about'},{type:'field',id:'f_end_goal'},{type:'pilot_title'}],
   3: [
     {type:'field',id:'f_writing_outcome'},
     {type:'field',id:'f_writing_num_paragraphs'},
@@ -1707,6 +1814,13 @@ function validate(step) {
         const el = document.getElementById('f_concept');
         const e = document.getElementById('err_f_concept');
         if (!el.value) { el.classList.add('err'); if(e) e.classList.add('show'); ok = false; }
+        else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
+      }
+    } else if (r.type === 'pilot_title') {
+      if (pill('subject') === 'writing') {
+        const el = document.getElementById('f_pilot_title');
+        const e = document.getElementById('err_f_pilot_title');
+        if (!el.value.trim()) { el.classList.add('err'); if(e) e.classList.add('show'); ok = false; }
         else { el.classList.remove('err'); if(e) e.classList.remove('show'); }
       }
     } else if (r.type === 'schedule') {
@@ -1748,12 +1862,38 @@ function getSelectedPurposes() {
 }
 
 // ── Writing skill chips ────────────────────────────────────────────────────
+// Step 3 relabels "paragraphs" -> "plot points" and shows the SC framing
+// note for a Writing enquiry. The skill-chip/teaching-focus/novelty/
+// equivalents machinery underneath is untouched — Innes's own framing
+// (2026-08-19): "I set those there to define the success criteria, not
+// the other way around" — Step 3 already IS how success criteria get
+// defined, for any subject; this only swaps which skill list feeds it
+// (see WRITING_SKILLS_NARRATIVE) and relabels the surrounding UI.
+function updateOutcomesStepForSubject(subject) {
+  const isWriting = subject === 'writing';
+  const label = document.getElementById('numParaLabelText');
+  const hint = document.getElementById('numParaHint');
+  const scHelp = document.getElementById('scHelp');
+  if (label) label.textContent = isWriting ? 'Number of plot points' : 'Number of paragraphs';
+  if (hint) hint.textContent = isWriting
+    ? 'Enter a number — plot point blocks will appear below.'
+    : 'Enter a number — paragraph blocks will appear below.';
+  if (scHelp) scHelp.style.display = isWriting ? 'block' : 'none';
+  renderParagraphBlocks(fv('f_writing_num_paragraphs'));
+}
+
 function renderWritingSkillChips() {
   const year = pill('year_group');
+  const subject = pill('subject');
   const container = document.getElementById('writingSkillsArea');
   const noMsg = document.getElementById('noWritingSkillsMsg');
+  const hint = document.getElementById('writingSkillsHint');
+  if (hint) hint.textContent = subject === 'writing'
+    ? 'Select the Y5 narrative-writing techniques this unit will teach — this becomes the enquiry\'s success criteria list.'
+    : 'Select the Y5 non-fiction writing skills this enquiry will develop.';
   container.innerHTML = '';
-  const data = WRITING_SKILLS_NF[year] || null;
+  const table = subject === 'writing' ? WRITING_SKILLS_NARRATIVE : WRITING_SKILLS_NF;
+  const data = table[year] || null;
   if (!data) {
     noMsg.style.display = 'block';
     noMsg.textContent = year
@@ -2048,6 +2188,22 @@ function getWritingSkillEquivalents() {
   return out;
 }
 
+// success_criteria[] for a Writing enquiry — enquiry-builder-writing-schema.md's
+// real shape ({number, skill, example}). The Teaching Focus chips ARE the real
+// SC list (Innes, 2026-08-19: Step 3 already defines success criteria, not the
+// other way round) — `example` is deliberately left blank, same "don't invent
+// placeholder content" rule as everywhere else in this project; Claude fills
+// it from the real model write once one exists.
+function getSuccessCriteria() {
+  const focusExports = getWritingSkillsTeachingFocus();
+  if (!focusExports.length) return null;
+  const allChips = Array.from(document.querySelectorAll('.skill-chip'));
+  return focusExports.map((exp, i) => {
+    const chip = allChips.find(c => c.dataset.export === exp);
+    return { number: i + 1, skill: chip ? chip.textContent : exp, example: '' };
+  });
+}
+
 function setAllSkillChips(selected) {
   document.querySelectorAll('.skill-chip').forEach(c => {
     if (selected) { c.classList.add('on'); }
@@ -2132,6 +2288,7 @@ function rebuildAboutTexts() {
 // ── Paragraph blocks ──────────────────────────────────────────────────────
 function renderParagraphBlocks(n, initialData) {
   n = parseInt(n) || 0;
+  const isWriting = pill('subject') === 'writing';
   const container = document.getElementById('paraBlocks');
   const existing = initialData !== undefined ? initialData : getParagraphData();
   container.innerHTML = '';
@@ -2140,31 +2297,49 @@ function renderParagraphBlocks(n, initialData) {
     const block = document.createElement('div');
     block.className = 'para-block';
     block.dataset.para = i;
-    block.innerHTML =
-      '<div class="para-block-header">' +
-        '<span class="para-block-num">Paragraph ' + (i + 1) + '</span>' +
-        '<span class="para-child-chosen' + (prev.child_chosen ? ' on' : '') + '">' +
-          '<div class="custom-check"></div>Child-chosen' +
-        '</span>' +
-      '</div>' +
-      '<div class="field">' +
-        '<label class="field-label" style="font-size:0.78rem">Title <span class="optional">(optional)</span>' +
-          '<span class="hint">e.g. What is Saturn?  Leave blank for Claude to decide.</span>' +
-        '</label>' +
-        '<input type="text" class="para-title" placeholder="e.g. What is Saturn?" value="' + escHtml(prev.title || '') + '">' +
-      '</div>' +
-      '<div class="field">' +
-        '<label class="field-label" style="font-size:0.78rem">Purpose' +
-          '<span class="hint">One line describing what this paragraph does</span>' +
-        '</label>' +
-        '<input type="text" class="para-purpose" placeholder="e.g. Introduces the planet and its place in the solar system" value="' + escHtml(prev.purpose || '') + '">' +
-      '</div>';
-    const ccLabel = block.querySelector('.para-child-chosen');
-    ccLabel.addEventListener('click', function() {
-      ccLabel.classList.toggle('on');
-      checkModelSubject();
-      saveState();
-    });
+    if (isWriting) {
+      // Plot points — real story beats (model_write.plot_points[].description,
+      // enquiry-builder-writing-schema.md), not "child-chosen paragraphs":
+      // no title, no child-chosen toggle, those are non-fiction-outcome-only
+      // concepts. Same .para-block/.para-purpose classes so getParagraphData()
+      // keeps working unmodified.
+      block.innerHTML =
+        '<div class="para-block-header">' +
+          '<span class="para-block-num">Plot point ' + (i + 1) + '</span>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label class="field-label" style="font-size:0.78rem">What happens' +
+            '<span class="hint">One line — the real story beat, e.g. "The antagonist looks like he will get Mr Fox"</span>' +
+          '</label>' +
+          '<input type="text" class="para-purpose" placeholder="e.g. The two characters come together" value="' + escHtml(prev.purpose || '') + '">' +
+        '</div>';
+    } else {
+      block.innerHTML =
+        '<div class="para-block-header">' +
+          '<span class="para-block-num">Paragraph ' + (i + 1) + '</span>' +
+          '<span class="para-child-chosen' + (prev.child_chosen ? ' on' : '') + '">' +
+            '<div class="custom-check"></div>Child-chosen' +
+          '</span>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label class="field-label" style="font-size:0.78rem">Title <span class="optional">(optional)</span>' +
+            '<span class="hint">e.g. What is Saturn?  Leave blank for Claude to decide.</span>' +
+          '</label>' +
+          '<input type="text" class="para-title" placeholder="e.g. What is Saturn?" value="' + escHtml(prev.title || '') + '">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label class="field-label" style="font-size:0.78rem">Purpose' +
+            '<span class="hint">One line describing what this paragraph does</span>' +
+          '</label>' +
+          '<input type="text" class="para-purpose" placeholder="e.g. Introduces the planet and its place in the solar system" value="' + escHtml(prev.purpose || '') + '">' +
+        '</div>';
+      const ccLabel = block.querySelector('.para-child-chosen');
+      ccLabel.addEventListener('click', function() {
+        ccLabel.classList.toggle('on');
+        checkModelSubject();
+        saveState();
+      });
+    }
     container.appendChild(block);
   }
   checkModelSubject();
@@ -2210,8 +2385,8 @@ function show(n) {
   document.getElementById('s' + n).classList.add('active');
   current = n; renderBar();
   window.scrollTo({top:0,behavior:'smooth'});
-  if (n === 2) renderTopicChips();
-  if (n === 3) renderWritingSkillChips();
+  if (n === 2) { updateAboutStepForSubject(pill('subject')); renderTopicChips(); }
+  if (n === 3) { updateOutcomesStepForSubject(pill('subject')); renderWritingSkillChips(); }
 }
 
 // ── Review ─────────────────────────────────────────────────────────────────
@@ -2286,7 +2461,7 @@ function weeklyScheduleReviewHTML(weeklySchedule) {
 function buildReview() {
   const d = collect();
   const nc = d.file_naming;
-  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
+  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : d.subject === 'writing' ? 'Writer' : 'Historian';
 
   document.getElementById('reviewContent').innerHTML = `
     <div class="rv-section">
@@ -2300,13 +2475,18 @@ function buildReview() {
     </div>
     <div class="rv-section">
       <h3>About</h3>
+      ${d.text ? rvRow('Pilot text', [d.text.title, d.text.author ? `by ${d.text.author}` : ''].filter(Boolean).join(' ')) : ''}
       ${rvRow('About', d.about)}
       ${rvRow('End goal', d.end_goal)}
     </div>
     <div class="rv-section">
       <h3>Outcomes</h3>
       ${rvRow('Writing', d.writing_outcome)}
-      ${d.writing_paragraphs && d.writing_paragraphs.length ? rvRow('Paragraphs', d.writing_paragraphs.map((p,i) => `${i+1}. ${p.title || '(untitled)'}${p.child_chosen ? ' [child-chosen]' : ''}`).join(' · ')) : ''}
+      ${d.subject === 'writing' && d.plot_points && d.plot_points.length
+        ? rvRow('Plot points', d.plot_points.map(p => `${p.number}. ${p.description || '(blank)'}`).join(' · '))
+        : (d.writing_paragraphs && d.writing_paragraphs.length ? rvRow('Paragraphs', d.writing_paragraphs.map((p,i) => `${i+1}. ${p.title || '(untitled)'}${p.child_chosen ? ' [child-chosen]' : ''}`).join(' · ')) : '')}
+      ${d.subject === 'writing' && d.success_criteria && d.success_criteria.length
+        ? rvRow('Success criteria', d.success_criteria.map(s => `${s.number}. ${s.skill}`).join(' · ')) : ''}
       ${d.writing_model_subject ? rvRow('Model subject', d.writing_model_subject) : ''}
       ${d.writing_audience ? rvRow('Audience', d.writing_audience) : ''}
       ${d.writing_purpose ? rvRow('Purpose', d.writing_purpose) : ''}
@@ -2372,8 +2552,100 @@ function buildReview() {
 // ── Claude prompt ──────────────────────────────────────────────────────────
 function buildPrompt(d) {
   const nc = d.file_naming;
-  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : 'Historian';
+  const stateLabel = d.subject === 'science' ? 'Scientist' : d.subject === 'geography' ? 'Geographer' : d.subject === 'writing' ? 'Writer' : 'Historian';
   const L = [];
+  if (d.subject === 'writing') {
+    L.push('NEW WRITING ENQUIRY BRIEF');
+    L.push('=========================');
+    L.push('');
+    L.push('This is a Writing-type enquiry (a pilot text, not a curriculum topic).');
+    L.push('Read this brief in full. Then read, in the enquiry-builder repo:');
+    L.push('  - CLAUDE.md (Writing is one more enquiry subject, not a separate pipeline)');
+    L.push('  - docs/project/enquiry-builder-writing-roadmap.md (current state, Phase E schema)');
+    L.push('  - docs/project/enquiry-builder-writing-schema.md (the real writing_unit JSON shape)');
+    L.push('  - mtp/generators/gen_writing_mr_fox.py (the real, working reference generator —');
+    L.push('    follow this pattern for a new pilot text, do not invent a new one)');
+    L.push('Do NOT start generating content until you have read all of them.');
+    L.push('');
+    L.push('WORKFLOW — follow in order, do not skip ahead:');
+    L.push('  1. Generate a human-readable MTP Summary (markdown, lesson by lesson: skill, WAL,');
+    L.push('     LF, I can, vocabulary, activity). Share it. Stop.');
+    L.push('  2. I review and give feedback. Revise until confirmed. Stop.');
+    L.push('  3. Author the real writing_unit MTP JSON via a new');
+    L.push('     mtp/generators/gen_writing_<slug>.py generator script, using');
+    L.push('     writing_mtp_skeleton.py the way gen_writing_mr_fox.py already does.');
+    L.push('  4. Run check_writing_mtp_completeness.py — must pass clean before building.');
+    L.push('  5. Run build_all_writing.py to produce all deliverables.');
+    L.push('  6. Copy deliverables to the delivery path using the file naming convention below.');
+    L.push('  7. Reading lessons are a separate real step, once the main unit is confirmed —');
+    L.push('     see the Reading lessons section below.');
+    L.push('');
+    L.push('─── PILOT TEXT ─────────────────────────────────────────────');
+    L.push(`Title:          ${d.text?.title || 'not set'}`);
+    if (d.text?.author) L.push(`Author:         ${d.text.author}`);
+    if (d.text?.illustrator) L.push(`Illustrator:    ${d.text.illustrator}`);
+    L.push(`Year group:     ${d.year_group}`);
+    L.push(`Enquiry question: ${d.key_question}`);
+    L.push(`Challenge:      ${d.challenge}`);
+    L.push('');
+    L.push('─── ABOUT ──────────────────────────────────────────────────');
+    L.push(d.about);
+    L.push('');
+    L.push('─── END GOAL ───────────────────────────────────────────────');
+    L.push(d.end_goal);
+    L.push('');
+    L.push('─── FINAL OUTCOME ──────────────────────────────────────────');
+    if (d.final_outcome?.description) L.push(d.final_outcome.description);
+    if (d.final_outcome?.purpose) L.push(`Purpose:  ${d.final_outcome.purpose}`);
+    if (d.final_outcome?.audience) L.push(`Audience: ${d.final_outcome.audience}`);
+    L.push('');
+    if (d.plot_points && d.plot_points.length) {
+      L.push('─── PLOT POINTS (model_write.plot_points[]) ─────────────────');
+      L.push('Real story beats — number here is the ONLY place a plot point\'s number');
+      L.push('is defined; every other reference to it elsewhere in the schema must use');
+      L.push('this same number, never an arbitrary integer.');
+      d.plot_points.forEach(p => L.push(`  ${p.number}. ${p.description || '(blank — ask Innes)'}`));
+      L.push('');
+      L.push('The model write TEXT itself is NOT provided here — author it once the MTP');
+      L.push('Summary is confirmed, grounded in these plot points, following');
+      L.push('enquiry-builder-writing-schema.md\'s model_write authoring principle (a good');
+      L.push('but not outstanding Y5-pupil voice, real multiple examples of each SC below,');
+      L.push('never crowbarred in).');
+      L.push('');
+    }
+    if (d.success_criteria && d.success_criteria.length) {
+      L.push('─── SUCCESS CRITERIA (success_criteria[]) ───────────────────');
+      L.push('Real, fixed, 1-indexed order — never reorder once lessons reference it by');
+      L.push('number. This is the enquiry\'s own real teaching-focus list, not a subject');
+      L.push('curriculum list.');
+      d.success_criteria.forEach(s => L.push(`  S${s.number}. ${s.skill}`));
+      L.push('  · `example` is deliberately blank — fill it from the real model write once');
+      L.push('    one exists, never invent a placeholder.');
+      L.push('');
+    }
+    const nv = d.writing_skill_novelty || [];
+    if (nv.length) {
+      L.push('IS THIS NEW TO THE CLASS? (drives lesson.technique_focus_mode):');
+      nv.forEach(n => L.push(`  "${n.focus}": ${n.new ? 'new — first time being taught' : 'already taught — a revisit'}`));
+      L.push('  · Once you assign a lesson\'s writing_skill_focus, set that lesson\'s');
+      L.push('    technique_focus_mode to "new" or "revisit" from this list — never guess or');
+      L.push('    infer from enquiry order.');
+      L.push('');
+    }
+    const eq = d.writing_skill_equivalents || [];
+    if (eq.length) {
+      L.push('YEAR-GROUP EQUIVALENTS (for Levelled/below-year-group children\'s technique_practice):');
+      const byFocus = {};
+      eq.forEach(e => { (byFocus[e.focus] = byFocus[e.focus] || []).push(e); });
+      Object.entries(byFocus).forEach(([focus, rows]) => {
+        L.push(`  "${focus}":`);
+        rows.forEach(r => L.push(`    ${r.year} equivalent: ${r.equivalent}`));
+      });
+      L.push('  · A focus skill with no equivalent listed here means no Levelled technique_practice');
+      L.push('    band should be authored for it — do not invent one.');
+      L.push('');
+    }
+  } else {
   L.push('NEW ENQUIRY BRIEF');
   L.push('=================');
   L.push('');
@@ -2477,6 +2749,7 @@ function buildPrompt(d) {
       L.push('    band should be authored for it — do not invent one.');
       L.push('');
     }
+  }
   }
   L.push('─── LOGISTICS ──────────────────────────────────────────────');
   L.push(`Slot:           ${d.txwy || 'not set'}`);
@@ -2638,6 +2911,9 @@ function saveState() {
       challenge: fv('f_challenge'),
       about: fv('f_about'),
       end_goal: fv('f_end_goal'),
+      pilot_title: fv('f_pilot_title'),
+      pilot_author: fv('f_pilot_author'),
+      pilot_illustrator: fv('f_pilot_illustrator'),
       writing_outcome: fv('f_writing_outcome'),
       writing_num_paragraphs: fv('f_writing_num_paragraphs'),
       writing_paragraphs: getParagraphData(),
@@ -2714,7 +2990,7 @@ function applyRestoredState() {
   if (_savedState.subject) {
     document.querySelectorAll('[data-g="subject"]').forEach(p => p.classList.remove('on'));
     const sp = document.querySelector('[data-g="subject"][data-v="' + _savedState.subject + '"]');
-    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); }
+    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); updateAboutStepForSubject(_savedState.subject); }
   }
 
   // Concept
@@ -2727,7 +3003,10 @@ function applyRestoredState() {
   const restore = {
     f_topic: _savedState.topic, f_key_question: _savedState.key_question,
     f_challenge: _savedState.challenge, f_about: _savedState.about,
-    f_end_goal: _savedState.end_goal, f_writing_outcome: _savedState.writing_outcome,
+    f_end_goal: _savedState.end_goal,
+    f_pilot_title: _savedState.pilot_title, f_pilot_author: _savedState.pilot_author,
+    f_pilot_illustrator: _savedState.pilot_illustrator,
+    f_writing_outcome: _savedState.writing_outcome,
     f_writing_model_subject: _savedState.writing_model_subject,
     f_writing_audience: _savedState.writing_audience,
     f_first_date: _savedState.first_date,
