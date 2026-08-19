@@ -1683,13 +1683,22 @@ function updatePathPreview() {
   updateWeekLabels();
   updateAutoFirstLessonDate();
   if (!t || !w) { box.innerHTML = '<strong>Delivery path</strong>Select a term and week above.'; return; }
-  const path = deliveryPath(t, w);
+  const path = deliveryPath(t, w, pill('subject'));
   box.innerHTML = `<strong>Delivery path</strong><code style="font-size:0.75rem;word-break:break-all">${path}</code>`;
 }
 
-function deliveryPath(t, w) {
+function deliveryPath(t, w, subject) {
   if (!t || !w) return null;
-  return `${ONEDRIVE_BASE}/Term ${t}/T${t}W${w}/Enquiry`;
+  // Real sibling folders under each TxWy: Enquiry/Handwriting/Maths/
+  // Reading/Spelling/Writing — Innes, 2026-08-19, reviewing a real
+  // exported brief: "wrong root - should be Writing not Enquiry -
+  // Enquiry folder is correct for all other enquiries." Matches
+  // enquiry-builder's own already-agreed T{N}W{M}/Writing/... delivery
+  // convention for Writing units (roadmap Phase I) — this was never a
+  // Writing-specific branch before because Writing enquiries didn't
+  // exist in this tool until this session.
+  const folder = subject === 'writing' ? 'Writing' : 'Enquiry';
+  return `${ONEDRIVE_BASE}/Term ${t}/T${t}W${w}/${folder}`;
 }
 
 function nextWeek(t, w) {
@@ -1700,7 +1709,7 @@ function nextWeek(t, w) {
   return { t: tNum + 1, w: 1 };
 }
 
-function buildDelivery(t, w, weeklySchedule) {
+function buildDelivery(t, w, weeklySchedule, subject) {
   if (!t || !w) return null;
   const weekKeys = Object.keys(weeklySchedule || {}).sort((a, b) => parseInt(a) - parseInt(b));
   const numWeeks = weekKeys.length || 1;
@@ -1708,13 +1717,19 @@ function buildDelivery(t, w, weeklySchedule) {
   let cur = { t: parseInt(t), w: parseInt(w) };
   for (let i = 0; i < numWeeks; i++) {
     const key = `T${cur.t}W${cur.w}`;
-    const base = deliveryPath(cur.t, cur.w);
+    const base = deliveryPath(cur.t, cur.w, subject);
     result[key] = {
       root: base,
       lp_folder: base + '/LP',
       teaching_folder: base + '/Teaching',
       resources_folder: base + '/Resources',
       labels_folder: base + '/Resources/Learning-Labels',
+      // Reading lessons deliver to a real SIBLING folder, never nested
+      // under Enquiry/Writing — Innes, 2026-08-19: "NB reading delivery
+      // should be in the Reading folder." Matches
+      // reading_lesson_output_dir()'s real <out_root>/<TxWy>/Reading/
+      // {Teaching,Texts,LP}/ convention on the enquiry-builder side.
+      reading_folder: `${ONEDRIVE_BASE}/Term ${cur.t}/${key}/Reading`,
     };
     cur = nextWeek(cur.t, cur.w);
   }
@@ -1789,7 +1804,7 @@ function collect() {
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
-    delivery: buildDelivery(t, w, weeklySchedule),
+    delivery: buildDelivery(t, w, weeklySchedule, subject),
     file_naming: buildNaming(slug, txwy),
   };
 }
@@ -2611,7 +2626,9 @@ function buildReview() {
         // earliest week's root — enquiry-level docs go there.
         const keys = d.delivery ? Object.keys(d.delivery).sort() : [];
         const root = keys.length ? d.delivery[keys[0]].root?.replace(ONEDRIVE_BASE,'…/1-Planning') : null;
-        return rvRow('Root (enquiry-level)', root || 'not set — fill in Term/Week in Step 4 to compute this automatically');
+        const readingRoot = keys.length ? d.delivery[keys[0]].reading_folder?.replace(ONEDRIVE_BASE,'…/1-Planning') : null;
+        return rvRow('Root (' + (d.subject === 'writing' ? 'Writing' : 'enquiry') + '-level)', root || 'not set — fill in Term/Week in Step 4 to compute this automatically')
+          + (readingRoot ? rvRow('Reading/ (sibling folder)', readingRoot) : '');
       })()}
       ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
       ${rvRow('LP/', 'Learning papers')}
