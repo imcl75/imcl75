@@ -535,12 +535,13 @@
       <div class="info-box" id="pathPreview">
         <strong>Delivery path</strong>Select a term and week above.
       </div>
-      <p style="font-size:0.82rem;color:var(--muted)">
+      <p style="font-size:0.82rem;color:var(--muted)" id="deliveryHelpText">
         <strong>Root:</strong> Knowledge Organiser PDF · Vocabulary Display PDF<br>
         <strong>Teaching/</strong>: lesson decks · MTP documents<br>
         <strong>LP/</strong>: learning papers<br>
         <strong>Resources/</strong>: sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting<br>
-        <strong>Resources/Learning-Labels/</strong>: label sheets
+        <strong>Resources/Learning-Labels/</strong>: label sheets<br>
+        <strong>Reading/</strong> (sibling folder): Being a Reader packs
       </p>
     </div>
 
@@ -1359,6 +1360,29 @@ function updateNotesStepForSubject(subject) {
   }
 }
 
+// Step 4's static "what goes where" help text was plain hardcoded HTML,
+// never subject-aware — Innes, 2026-08-19, reviewing the real Step 4/
+// Step 6 screens after the file_naming fix: "still mentions those
+// unneeded deliverables...?" The real collect()/buildNaming() output
+// was already correct; this static paragraph (and the two other
+// hardcoded copies below) just never read subject at all.
+function updateDeliveryHelpForSubject(subject) {
+  const el = document.getElementById('deliveryHelpText');
+  if (!el) return;
+  const rootLabel = subject === 'writing' ? 'Writing-level' : 'Root';
+  const rootContent = subject === 'writing' ? 'Vocabulary Display PDF' : 'Knowledge Organiser PDF · Vocabulary Display PDF';
+  const resourcesContent = subject === 'writing'
+    ? 'word cards · writing toolkit · handwriting'
+    : 'sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting';
+  el.innerHTML =
+    `<strong>${rootLabel}:</strong> ${rootContent}<br>` +
+    `<strong>Teaching/</strong>: lesson decks · MTP documents<br>` +
+    `<strong>LP/</strong>: learning papers<br>` +
+    `<strong>Resources/</strong>: ${resourcesContent}<br>` +
+    `<strong>Resources/Learning-Labels/</strong>: label sheets<br>` +
+    `<strong>Reading/</strong> (sibling folder): Being a Reader packs`;
+}
+
 // ── Pills ──────────────────────────────────────────────────────────────────
 document.querySelectorAll('.pill').forEach(p => {
   p.addEventListener('click', () => {
@@ -1367,7 +1391,7 @@ document.querySelectorAll('.pill').forEach(p => {
     p.classList.add('on');
     const e = document.getElementById('err_' + g);
     if (e) e.classList.remove('show');
-    if (g === 'subject') { updateConceptField(p.dataset.v); updateAboutStepForSubject(p.dataset.v); updateOutcomesStepForSubject(p.dataset.v); updateNotesStepForSubject(p.dataset.v); }
+    if (g === 'subject') { updateConceptField(p.dataset.v); updateAboutStepForSubject(p.dataset.v); updateOutcomesStepForSubject(p.dataset.v); updateNotesStepForSubject(p.dataset.v); updateDeliveryHelpForSubject(p.dataset.v); }
   });
 });
 
@@ -2484,6 +2508,7 @@ function show(n) {
   window.scrollTo({top:0,behavior:'smooth'});
   if (n === 2) { updateAboutStepForSubject(pill('subject')); renderTopicChips(); }
   if (n === 3) { updateOutcomesStepForSubject(pill('subject')); renderWritingSkillChips(); }
+  if (n === 4) updateDeliveryHelpForSubject(pill('subject'));
   if (n === 5) updateNotesStepForSubject(pill('subject'));
 }
 
@@ -2644,7 +2669,7 @@ function buildReview() {
       })()}
       ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
       ${rvRow('LP/', 'Learning papers')}
-      ${rvRow('Resources/', 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
+      ${rvRow('Resources/', d.subject === 'writing' ? 'Word cards · writing toolkit · handwriting' : 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
       ${rvRow('Resources/Learning-Labels/', 'Label sheets')}
     </div>
     <div class="rv-section">
@@ -3118,7 +3143,7 @@ function applyRestoredState() {
   if (_savedState.subject) {
     document.querySelectorAll('[data-g="subject"]').forEach(p => p.classList.remove('on'));
     const sp = document.querySelector('[data-g="subject"][data-v="' + _savedState.subject + '"]');
-    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); updateAboutStepForSubject(_savedState.subject); updateNotesStepForSubject(_savedState.subject); }
+    if (sp) { sp.classList.add('on'); updateConceptField(_savedState.subject); updateAboutStepForSubject(_savedState.subject); updateNotesStepForSubject(_savedState.subject); updateDeliveryHelpForSubject(_savedState.subject); }
   }
 
   // Concept
