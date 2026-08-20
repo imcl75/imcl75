@@ -536,10 +536,10 @@
         <strong>Delivery path</strong>Select a term and week above.
       </div>
       <p style="font-size:0.82rem;color:var(--muted)" id="deliveryHelpText">
-        <strong>Root:</strong> Knowledge Organiser PDF · Vocabulary Display PDF<br>
-        <strong>Teaching/</strong>: lesson decks · MTP documents<br>
+        <strong>Root:</strong> Knowledge Organiser · Vocabulary poster · Overview/LOE · SC Display poster · SC Tracking sheet · Model Write · Writers' Toolkit<br>
+        <strong>Teaching/</strong>: lesson decks<br>
         <strong>LP/</strong>: learning papers<br>
-        <strong>Resources/</strong>: sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting<br>
+        <strong>Resources/</strong>: sort cards · word cards · statement sort · timeline · hunt texts · handwriting · planning doc (blank + model)<br>
         <strong>Resources/Learning-Labels/</strong>: label sheets<br>
         <strong>Reading/</strong> (sibling folder): Being a Reader packs
       </p>
@@ -1369,23 +1369,34 @@ function updateNotesStepForSubject(subject) {
 // Step 4's static "what goes where" help text was plain hardcoded HTML,
 // never subject-aware — Innes, 2026-08-19, reviewing the real Step 4/
 // Step 6 screens after the file_naming fix: "still mentions those
-// unneeded deliverables...?" The real collect()/buildNaming() output
-// was already correct; this static paragraph (and the two other
-// hardcoded copies below) just never read subject at all.
+// unneeded deliverables...?" That earlier fix made this subject-aware but
+// still described the OLD, invented naming scheme's short list. Rebuilt
+// 2026-08-20 against the real deliverable set (output_naming.py +
+// build_all_writing.py / build_all.py, cross-checked against real files
+// on disk) — a real, bigger list than either version before it.
 function updateDeliveryHelpForSubject(subject) {
   const el = document.getElementById('deliveryHelpText');
   if (!el) return;
-  const rootLabel = subject === 'writing' ? 'Writing-level' : 'Root';
-  const rootContent = subject === 'writing' ? 'Vocabulary Display PDF' : 'Knowledge Organiser PDF · Vocabulary Display PDF';
-  const resourcesContent = subject === 'writing'
-    ? 'writing toolkit · handwriting'
-    : 'sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting';
+  const isWriting = subject === 'writing';
+  const rootLabel = isWriting ? 'Writing-level' : 'Root';
+  const rootItems = (isWriting ? [] : ['Knowledge Organiser'])
+    .concat(['Vocabulary poster', 'Overview/LOE', 'SC Display poster', 'SC Tracking sheet',
+             'Model Write', "Writers' Toolkit"])
+    .concat(isWriting ? ['Label Summary Index'] : []);
+  const resourcesItems = (isWriting ? [] : ['sort cards', 'word cards', 'statement sort', 'timeline', 'hunt texts'])
+    .concat(['handwriting'])
+    .concat(isWriting ? [] : ['planning doc (blank + model)']);
+  const lpItems = isWriting ? 'learning papers · support-resource sheets' : 'learning papers';
+  const labelsItems = isWriting
+    ? 'fallback label sheets · one final-write label sheet per unit'
+    : 'label sheets';
   el.innerHTML =
-    `<strong>${rootLabel}:</strong> ${rootContent}<br>` +
-    `<strong>Teaching/</strong>: lesson decks · MTP documents<br>` +
-    `<strong>LP/</strong>: learning papers<br>` +
-    `<strong>Resources/</strong>: ${resourcesContent}<br>` +
-    `<strong>Resources/Learning-Labels/</strong>: label sheets<br>` +
+    `<strong>${rootLabel}:</strong> ${rootItems.join(' · ')}` +
+    (isWriting ? '<br><strong>Planning doc</strong> (blank + model, filed under the planning lesson\'s own week): lives in that week\'s Resources/, not root — see the file naming section below' : '') + '<br>' +
+    `<strong>Teaching/</strong>: lesson decks<br>` +
+    `<strong>LP/</strong>: ${lpItems}<br>` +
+    `<strong>Resources/</strong>: ${resourcesItems.join(' · ')}<br>` +
+    `<strong>Resources/Learning-Labels/</strong>: ${labelsItems}<br>` +
     `<strong>Reading/</strong> (sibling folder): Being a Reader packs`;
 }
 
@@ -1835,47 +1846,108 @@ function collect() {
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
     delivery: buildDelivery(t, w, weeklySchedule, subject),
-    file_naming: buildNaming(slug, txwy, subject),
+    file_naming: buildNaming(topic, slug, txwy, subject, subject === 'writing' ? { title: fv('f_pilot_title') || null } : null),
   };
 }
 
-function buildNaming(slug, txwy, subject) {
+// Role word per subject — output_naming.py's ROLE_BY_SUBJECT, the real
+// enquiry-level filename convention's Role segment.
+const ROLE_BY_SUBJECT = { science: 'Scientist', geography: 'Geographer', history: 'Historian', writing: 'Writer' };
+
+// Rebuilt 2026-08-20 against the real, confirmed patterns — read directly
+// from output_naming.py, build_all_writing.py, build_all.py/
+// build_resources.py, and the real files already on disk under
+// output/writing/ and output/ancient_egypt/ (not the Writing Build
+// Manifest artifact's own worked example, which got the Model-sheet
+// Support-resource extension wrong — .pptx on disk, not .pdf — and wrote
+// its illustrative filename as "FantasticMrFox" when the real files use
+// the raw title with spaces, "Fantastic Mr Fox"). Supersedes the old
+// scheme entirely, which was still a placeholder copied from the general
+// pipeline for every key (Innes, 2026-08-19: "from that list, only
+// Vocab_...pdf is expected for writing" — true of the OLD, wrong pattern;
+// the real one is a much bigger real list, see below).
+function buildNaming(topic, slug, txwy, subject, text) {
   const t = txwy || 'TxWy';
-  const S = slug || 'topic';
+  const role = ROLE_BY_SUBJECT[subject] || 'Role';
   const isWriting = subject === 'writing';
+  // Writing's real filenames are built from the BOOK title (`text.title`,
+  // the "Book" field on Step 2), NOT the general "Topic name" field —
+  // genuinely two separate real fields Innes fills in for a Writing
+  // enquiry. output_naming.py's `enquiry_topic()` reads `mtp['topic']`
+  // first and only falls back to `text.title` when it's unset — true for
+  // every real writing_unit MTP (confirmed against writing_unit_mr_fox.json:
+  // `topic` is null, `text.title` is "Fantastic Mr Fox", and that's what's
+  // in every real filename on disk).
+  const bookTitle = (text && text.title) || 'Book Title';
+  const bookSlug = bookTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const name = isWriting ? bookTitle : (topic || 'Topic');
+
   const naming = {
-    // Enquiry-level — go in root
-    vocab_display: `Vocab_${S}_${t}.pdf`,
-    // Teaching/ folder
-    mtp_readable: `MTP_${S}_${t}.md`,
-    mtp_json: `mtp_${S}_${t}.json`,
+    // Root — whole-enquiry reference material, delivered to the
+    // enquiry's START week regardless of subject. Pattern for every key
+    // in this group: `{RES}_{TxWy}_{Role}_{Name}.ext`.
+    vocab_display: `VOC10_${t}_${role}_${name}.pdf`,
+    overview_loe: `LOE_${t}_${role}_${name}.pptx`,
+    sc_display: `SC-DISP_${t}_${role}_${name}.pdf`,
+    sc_tracking: `SC-TRACK_${t}_${role}_${name}.pdf`,
+    model_write: `MW_${t}_${role}_${name}.pdf`,
+    writers_toolkit: `WRI-TOOL_${t}_${role}_${name}.pdf`,
+    // Teaching/ folder — one per lesson, same pattern every subject.
     lesson_deck: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Teaching.pptx`,
-    teaching_pattern: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Teaching.pptx`,
-    // LP/ folder
+    // LP/ folder — one per lesson per class/tier, same pattern every subject.
     learning_paper: `{txwy}-{pos:02d}-{Day}-{nn:02d}-LP-{Class}.pptx`,
-    // Resources/ folder
-    writing_toolkit: `WritingToolkit_${S}_${t}.pdf`,
-    handwriting: `Handwriting_${S}_${t}.pdf`,
-    // Resources/Learning-Labels/ folder
-    label_sheet: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Labels.docx`,
+    // Resources/ folder — two handwriting sheets per enquiry WEEK, so
+    // {txwy} here is that week, not necessarily the enquiry's start week
+    // (a multi-week enquiry gets one HWR pair per week it spans).
+    handwriting: `{txwy}_{NN:02d}_HWR_${name}.pdf`,
   };
-  if (!isWriting) {
-    // General-subject-only deliverables — Innes, 2026-08-19, reviewing a
-    // real exported Writing brief: "from that list, only Vocab_...pdf is
-    // expected for writing" (KO/sort-cards/statement-sort/timeline/hunt-
-    // texts), then "dont need word cards for writing" either. Confirmed
-    // directly against build_all_writing.py's real imports — it never
-    // calls build_resources.py's word/sort/statement-card renderers at
-    // all; this whole naming scheme is still a placeholder copied from
-    // the general pipeline, not yet grounded in Writing's own real
-    // output set (see the full deliverable list under review with Innes,
-    // 2026-08-19 — pending confirmation before rebuilding this properly).
-    naming.knowledge_organiser = `KO_${S}_${t}.pdf`;
-    naming.sort_cards = `SortCards_${S}_${t}.pdf`;
-    naming.word_cards = `WordCards_${S}_${t}.pdf`;
-    naming.statement_sort = `StatementSort_${S}_${t}.pdf`;
-    naming.timeline = `Timeline_${S}_${t}.pdf`;
-    naming.hunt_texts = `HuntTexts_${S}_${t}.pdf`;
+
+  if (isWriting) {
+    // Writing-only deliverables (build_all_writing.py). Label Summary
+    // Index has no general-pipeline equivalent — confirmed nothing outside
+    // scripts/writing/ ever imports build_label_summary_index.py.
+    naming.label_index = `LL-INDEX_${t}_Writer_${bookTitle}.pdf`;
+    // Real, deliberate divergence from the RES_TxWy_Role_Name convention
+    // above — build_writing_plan_doc.py (the standalone Writing unit's
+    // OWN plan-doc builder, distinct from the general pipeline's
+    // build_planning_doc.py below) writes this inline, with no TxWy or
+    // role at all. Confirmed on disk: output/writing/PLAN-BLANK_fantastic_mr_fox.pptx.
+    // A real, known inconsistency in the codebase, not something to
+    // paper over here — see enquiry-builder-brain-core.md's open item 5.
+    naming.plan_blank = `PLAN-BLANK_${bookSlug}.pptx`;
+    naming.plan_model = `PLAN-MODEL_${bookSlug}.pptx`;
+    // LP/ folder, alongside the LP itself — a word/phrase-bank sheet for
+    // a lesson whose output_mode calls for support rather than a full LP.
+    naming.support_resource = `{txwy}-{pos:02d}-{Day}-{nn:02d}-SUPPORT.pptx`;
+    // Resources/Learning-Labels/ folder — Writing's own fallback label
+    // (a lesson with no LP content still needs a Learning Label) and the
+    // ONE label sheet covering the whole final-write block (typically
+    // L10-L13), filed against the first final-write lesson's own slot.
+    // Real PDF via build_etiw_label_sheet(), NOT the general pipeline's
+    // build_label_sheets.py (that one's DOCX — see the else branch).
+    naming.ll_fallback = `{txwy}-{pos:02d}-{Day}-{nn:02d}-LL.pdf`;
+    naming.final_write_label = `{txwy}-{pos:02d}-{Day}-{nn:02d}-LL-FinalWrite.pdf`;
+  } else {
+    // General-subject-only deliverables — real abbreviations from
+    // output_naming.py's RES_BY_RESOURCE_TYPE/ROLE_BY_SUBJECT, confirmed
+    // via build_resources.py/build_ko.py (all `enquiry_filename_for`, all PDF).
+    naming.knowledge_organiser = `KO_${t}_${role}_${name}.pdf`;
+    naming.sort_cards = `SORTW_${t}_${role}_${name}.pdf`;
+    naming.word_cards = `DEFN_${t}_${role}_${name}.pdf`;
+    naming.statement_sort = `STATEM_${t}_${role}_${name}.pdf`;
+    naming.timeline = `TIMEL_${t}_${role}_${name}.pdf`;
+    naming.hunt_texts = `HUNT_${t}_${role}_${name}.pdf`;
+    // The general pipeline's OWN planning doc (build_planning_doc.py) —
+    // unlike Writing's standalone one above, this one DOES follow the
+    // real convention (confirmed: enquiry_filename_for(mtp, RES_PLAN_BLANK/
+    // RES_PLAN_MODEL, 'pptx') in build_planning_doc.py).
+    naming.plan_blank = `PLAN-BLANK_${t}_${role}_${name}.pptx`;
+    naming.plan_model = `PLAN-MODEL_${t}_${role}_${name}.pptx`;
+    // Resources/Learning-Labels/ folder — general pipeline's own label
+    // sheet (build_label_sheets.py): resource segment is "LL", not
+    // "Labels", but DOCX (not PDF) is real here, confirmed against
+    // `lesson_filename(mtp, lesson, RES_LL, ext='docx')`.
+    naming.label_sheet = `{txwy}-{pos:02d}-{Day}-{nn:02d}-LL.docx`;
   }
   return naming;
 }
@@ -2675,17 +2747,41 @@ function buildReview() {
         return rvRow('Root (' + (d.subject === 'writing' ? 'Writing' : 'enquiry') + '-level)', root || 'not set — fill in Term/Week in Step 4 to compute this automatically')
           + (readingRoot ? rvRow('Reading/ (sibling folder)', readingRoot) : '');
       })()}
-      ${rvRow('Teaching/', 'Lesson decks · MTP documents')}
-      ${rvRow('LP/', 'Learning papers')}
-      ${rvRow('Resources/', d.subject === 'writing' ? 'Writing toolkit · handwriting' : 'Sort cards · word cards · timeline · hunt texts · writing toolkit · handwriting')}
-      ${rvRow('Resources/Learning-Labels/', 'Label sheets')}
+      ${rvRow('Teaching/', 'Lesson decks')}
+      ${rvRow('LP/', d.subject === 'writing' ? 'Learning papers · support-resource sheets' : 'Learning papers')}
+      ${rvRow('Resources/', (d.subject === 'writing' ? [] : ['Sort cards', 'word cards', 'statement sort', 'timeline', 'hunt texts'])
+        .concat(['handwriting'])
+        .concat(d.subject === 'writing' ? [] : ['planning doc (blank + model)'])
+        .join(' · '))}
+      ${d.subject === 'writing' ? rvRow('T‹planning lesson›/Resources/', "Writers' Toolkit · planning doc (blank + model) — filed under the PLANNING lesson's own week, not root") : ''}
+      ${rvRow('Resources/Learning-Labels/', d.subject === 'writing' ? 'Fallback label sheets · one final-write label sheet per unit' : 'Label sheets')}
     </div>
     <div class="rv-section">
       <h3>File naming</h3>
-      ${rvMono(d.subject === 'writing' ? 'Writing-level' : 'Enquiry-level', d.subject === 'writing' ? nc.vocab_display : (nc.knowledge_organiser + ' · ' + nc.vocab_display))}
-      ${rvMono('Lesson Teaching', nc.lesson_deck)}
+      ${(d.subject === 'writing' ? [] : [['Knowledge Organiser', nc.knowledge_organiser]])
+        .concat([
+          ['Vocabulary poster', nc.vocab_display],
+          ['Overview / LOE', nc.overview_loe],
+          ['SC Display poster', nc.sc_display],
+          ['SC Tracking sheet', nc.sc_tracking],
+          ['Model Write', nc.model_write],
+          ["Writers' Toolkit", nc.writers_toolkit],
+        ])
+        .concat(d.subject === 'writing' ? [['Label Summary Index', nc.label_index]] : [])
+        .map(([label, pattern]) => rvMono(label, pattern)).join('')}
+      ${rvMono('Teaching deck', nc.lesson_deck)}
       ${rvMono('Learning paper', nc.learning_paper)}
-      ${rvMono('Label sheet', nc.label_sheet)}
+      ${d.subject === 'writing' ? rvMono('Support resource', nc.support_resource) : ''}
+      ${(d.subject === 'writing' ? [] : [
+          ['Sort cards', nc.sort_cards], ['Word cards', nc.word_cards], ['Statement sort', nc.statement_sort],
+          ['Timeline', nc.timeline], ['Hunt texts', nc.hunt_texts],
+        ]).map(([label, pattern]) => rvMono(label, pattern)).join('')}
+      ${rvMono('Handwriting', nc.handwriting)}
+      ${rvMono('Planning doc (blank)', nc.plan_blank)}
+      ${rvMono('Planning doc (model)', nc.plan_model)}
+      ${d.subject === 'writing'
+        ? rvMono('Label sheet', nc.ll_fallback) + rvMono('Final-write label', nc.final_write_label)
+        : rvMono('Label sheet', nc.label_sheet)}
     </div>
     ${d.specific_vocab || d.other_notes ? `
     <div class="rv-section">
@@ -2969,24 +3065,49 @@ function buildPrompt(d) {
   }
   L.push('');
   L.push('─── FILE NAMING CONVENTION ─────────────────────────────────');
-  if (d.subject === 'writing') {
-    L.push('Root (copy to root) — only Vocab, no Knowledge Organiser/sort-');
-    L.push('cards/statement-sort/timeline/hunt-texts (those are general-');
-    L.push('subject-pipeline deliverables Writing doesn\'t produce):');
-    L.push(`  ${nc.vocab_display}`);
-  } else {
-    L.push('Enquiry-level (copy to root):');
-    L.push(`  ${nc.knowledge_organiser}`);
-    L.push(`  ${nc.vocab_display}`);
+  L.push('Rebuilt 2026-08-20 against the real code (output_naming.py,');
+  L.push('build_all_writing.py / build_all.py) and real files already on');
+  L.push('disk — supersedes every earlier version of this section.');
+  L.push('');
+  L.push(d.subject === 'writing' ? 'Root (copy to root):' : 'Enquiry-level (copy to root):');
+  if (d.subject !== 'writing') L.push(`  ${nc.knowledge_organiser}`);
+  L.push(`  ${nc.vocab_display}`);
+  L.push(`  ${nc.overview_loe}`);
+  L.push(`  ${nc.sc_display}`);
+  L.push(`  ${nc.sc_tracking}`);
+  L.push(`  ${nc.model_write}`);
+  L.push(`  ${nc.writers_toolkit}`);
+  if (d.subject === 'writing') L.push(`  ${nc.label_index}`);
+  if (d.subject !== 'writing') {
+    L.push(`  ${nc.plan_blank}`);
+    L.push(`  ${nc.plan_model}`);
   }
   L.push('');
+  if (d.subject === 'writing') {
+    L.push('Real, deliberate exception — the Writers\' Toolkit and the planning');
+    L.push('doc (blank + model) below are NOT delivered to root for Writing;');
+    L.push('they go in the PLANNING lesson\'s own week folder\'s Resources/');
+    L.push('(e.g. T3W3/Resources/ when the enquiry starts T3W2 but planning');
+    L.push('is L9, in week 2) — same real fix as the delivery-routing bug');
+    L.push('already caught for the Toolkit. The Toolkit\'s filename above');
+    L.push('still carries the enquiry\'s START week (T3W2), not the week it');
+    L.push('actually lives in — a known, NOT yet resolved mismatch, flag it');
+    L.push('rather than silently "fixing" the filename here.');
+    L.push('The planning doc has NO real TxWy/Role in its filename at all —');
+    L.push(`  ${nc.plan_blank}`);
+    L.push(`  ${nc.plan_model}`);
+    L.push('(a genuine inconsistency in build_writing_plan_doc.py itself,');
+    L.push('not something invented for this preview).');
+    L.push('');
+  }
   L.push('Teaching/ folder:');
-  L.push(`  ${nc.mtp_readable}`);
-  L.push(`  ${nc.mtp_json}`);
   L.push(`  ${nc.lesson_deck}   ← {pos} = 2-digit lesson position within the week (01, 02…); {Day} = Mon/Tue/etc; {nn} = lesson number in enquiry`);
   L.push('');
   L.push('LP/ folder:');
   L.push(`  ${nc.learning_paper}   ← {Class} = class key (IM, LS)`);
+  if (d.subject === 'writing') {
+    L.push(`  ${nc.support_resource}   ← for a lesson whose output_mode is a support sheet rather than a full LP`);
+  }
   L.push('');
   L.push('Resources/ folder:');
   if (d.subject !== 'writing') {
@@ -2996,11 +3117,15 @@ function buildPrompt(d) {
     L.push(`  ${nc.timeline}`);
     L.push(`  ${nc.hunt_texts}`);
   }
-  L.push(`  ${nc.writing_toolkit}`);
-  L.push(`  ${nc.handwriting}`);
+  L.push(`  ${nc.handwriting}   ← 2 sheets per enquiry week; {txwy} is THAT week, not necessarily the start week`);
   L.push('');
   L.push('Resources/Learning-Labels/ folder:');
-  L.push(`  ${nc.label_sheet}   ← same {pos}/{Day}/{nn} logic as Teaching files`);
+  if (d.subject === 'writing') {
+    L.push(`  ${nc.ll_fallback}   ← fallback label, a lesson with no LP content`);
+    L.push(`  ${nc.final_write_label}   ← ONE sheet for the whole final-write block, filed at its first lesson's slot`);
+  } else {
+    L.push(`  ${nc.label_sheet}   ← same {pos}/{Day}/{nn} logic as Teaching files`);
+  }
   L.push('');
   L.push('─── CLF FRAMEWORK ──────────────────────────────────────────');
   L.push('Use these lists when assigning substantive_concept and skill_focus to each lesson.');
