@@ -1891,7 +1891,17 @@ function buildNaming(topic, slug, txwy, subject, text) {
     sc_display: `SC-DISP_${t}_${role}_${name}.pdf`,
     sc_tracking: `SC-TRACK_${t}_${role}_${name}.pdf`,
     model_write: `MW_${t}_${role}_${name}.pdf`,
-    writers_toolkit: `WRI-TOOL_${t}_${role}_${name}.pdf`,
+    // Writers' Toolkit — real fix, 2026-08-20 (Innes: "the toolkit
+    // filename say the delivered week (i.e. when it will be used)"):
+    // enquiry_filename_for() now takes an explicit txwy override for
+    // this one file, so its filename matches the week it's actually
+    // filed under rather than always the enquiry's start week. For
+    // Writing that's the planning lesson's own week — not knowable at
+    // brief-writing time (lessons aren't authored yet), so shown as the
+    // {txwy} placeholder like the other per-lesson patterns. General
+    // subjects still deliver the Toolkit to enquiry root/start week, so
+    // their filename stays resolved.
+    writers_toolkit: isWriting ? `WRI-TOOL_{txwy}_${role}_${name}.pdf` : `WRI-TOOL_${t}_${role}_${name}.pdf`,
     // Teaching/ folder — one per lesson, same pattern every subject.
     lesson_deck: `{txwy}-{pos:02d}-{Day}-{nn:02d}-Teaching.pptx`,
     // LP/ folder — one per lesson per class/tier, same pattern every subject.
@@ -3076,9 +3086,9 @@ function buildPrompt(d) {
   L.push(`  ${nc.sc_display}`);
   L.push(`  ${nc.sc_tracking}`);
   L.push(`  ${nc.model_write}`);
-  L.push(`  ${nc.writers_toolkit}`);
   if (d.subject === 'writing') L.push(`  ${nc.label_index}`);
   if (d.subject !== 'writing') {
+    L.push(`  ${nc.writers_toolkit}`);
     L.push(`  ${nc.plan_blank}`);
     L.push(`  ${nc.plan_model}`);
   }
@@ -3088,16 +3098,17 @@ function buildPrompt(d) {
     L.push('doc (blank + model) below are NOT delivered to root for Writing;');
     L.push('they go in the PLANNING lesson\'s own week folder\'s Resources/');
     L.push('(e.g. T3W3/Resources/ when the enquiry starts T3W2 but planning');
-    L.push('is L9, in week 2) — same real fix as the delivery-routing bug');
-    L.push('already caught for the Toolkit. The Toolkit\'s filename above');
-    L.push('still carries the enquiry\'s START week (T3W2), not the week it');
-    L.push('actually lives in — a known, NOT yet resolved mismatch, flag it');
-    L.push('rather than silently "fixing" the filename here.');
-    L.push('The planning doc has NO real TxWy/Role in its filename at all —');
+    L.push('is L9, in week 2). Fixed 2026-08-20 (Innes: "the toolkit filename');
+    L.push('say the delivered week"): the Toolkit\'s filename now carries THAT');
+    L.push('week, not the enquiry\'s start week — {txwy} below resolves to the');
+    L.push('planning lesson\'s own week once the real unit is authored, not');
+    L.push('knowable at brief-writing time:');
+    L.push(`  ${nc.writers_toolkit}`);
+    L.push('The planning doc still has NO real TxWy/Role in its filename at');
+    L.push('all — a separate, genuine inconsistency in build_writing_plan_doc.py');
+    L.push('itself (general subjects\' own planning docs don\'t have this gap):');
     L.push(`  ${nc.plan_blank}`);
     L.push(`  ${nc.plan_model}`);
-    L.push('(a genuine inconsistency in build_writing_plan_doc.py itself,');
-    L.push('not something invented for this preview).');
     L.push('');
   }
   L.push('Teaching/ folder:');
