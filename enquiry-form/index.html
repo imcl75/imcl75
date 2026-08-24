@@ -743,89 +743,139 @@ const WRITING_SKILLS_NF = {
 };
 
 // Narrative-craft equivalent of WRITING_SKILLS_NF, for a real Writing-type
-// enquiry (a pilot text, not a subject topic). Tense & Verb Form,
-// Punctuation, Editing & Revising, Spelling, Handwriting, Non-Negotiable
-// apply to fiction writing exactly as it does to non-fiction, so this
-// reuses WRITING_SKILLS_NF's own areas for those unchanged. Composition,
-// Sentence Structure and Cohesion are narrative-specific overrides — the
-// NF form's own comment already names the Composition rows as "genuinely
-// out of scope" for non-fiction, real content: enquiry-builder-writing-
+// enquiry (a pilot text, not a subject topic). Non-Negotiable, Editing &
+// Revising, Spelling, Handwriting apply to fiction writing exactly as it
+// does to non-fiction, so this reuses WRITING_SKILLS_NF's own groups for
+// those unchanged. Composition, Figurative Language, Tense & Verb Form,
+// Punctuation, Sentence Structure and Cohesion are all narrative-specific
+// overrides, spelled out fully below rather than derived — the NF form's
+// own comment already names the Composition rows as "genuinely out of
+// scope" for non-fiction, real content: enquiry-builder-writing-
 // progression.md's master Y5 Composition rows (similes, alliteration,
 // hyperbole, personification, metaphor, allusion, idiom, dialogue,
 // reported speech, repetition for effect, power of three, settings/
 // characters via behaviour/thoughts/reactions).
 //
 // Real reorganization, 2026-08-24 (Innes, from a real annotated
-// screenshot of this exact picker): (1) split figurative-language
+// screenshot of this exact picker), first pass: split figurative-language
 // techniques (similes, personification, metaphor, hyperbole, allusion,
 // idiom — NOT alliteration, which stays a Composition technique, not a
 // figure of speech) into their own 'Figurative Language' area, so
 // getSuccessCriteria() below can combine multiple selected ones into one
-// SC line instead of one bullet each; (2) "Adverbials of time and place"
+// SC line instead of one bullet each; "Adverbials of time and place"
 // renamed "Fronted adverbials (time, place, manner)" and moved Cohesion
-// -> Sentence Structure; (3) Modal verbs / Adverbs of possibility moved
-// Sentence Structure -> Cohesion. Deliberately scoped to Narrative only
-// (WRITING_SKILLS_NF, the non-fiction picker, is untouched) — the real
-// mockup was specifically of the Writing-enquiry picker.
+// -> Sentence Structure; Modal verbs / Adverbs of possibility moved
+// Sentence Structure -> Cohesion.
+//
+// Second pass, same day: a full section-by-section layout/order spec
+// (Innes) superseding parts of the first pass — (1) explicit section
+// order: Composition, Tense & Verb Form, Punctuation, Sentence
+// Structure, Figurative Language, Cohesion (Non-Negotiable first,
+// Editing & Revising/Spelling/Handwriting trailing, both unchanged from
+// NF); (2) Modal verbs' real final home is Tense & Verb Form, not
+// Cohesion — moved again; (3) the three separate Simple present/past/
+// future tense chips merge into one 'Simple form' chip (it always
+// covers all three together, so — per Innes — no per-tense Y1-Y4
+// equivalent split is needed for it, one equivalent or none is fine,
+// see EQUIVALENT_LOOKUP below); (4) Progressive/Perfect renamed "form"
+// not "tense", matching the area's own name; (5) Punctuation reordered;
+// (6) Dashes narrowed to "Dashes (afterthought)" — a real content
+// narrowing, not just a label trim: Y5 teaches dashes specifically for
+// an afterthought, parenthetical dashes are Y6. Every chip below keeps
+// its real Y5 meaning; only Fronted adverbials' own export deliberately
+// stays the fuller "(time, place, manner)" wording (Innes: only the
+// chip's short display label may trim, not the real text) — every
+// other chip's label and export both carry the real, current wording.
+// Deliberately scoped to Narrative only (WRITING_SKILLS_NF, the non-
+// fiction picker, is untouched) — the real mockups were specifically of
+// the Writing-enquiry picker.
 const WRITING_SKILLS_NARRATIVE = {
-  Y5: WRITING_SKILLS_NF.Y5.flatMap(group => {
-    if (group.area === 'Composition') {
-      return [
-        {
-          area: 'Composition',
-          skills: [
-            { id: 'ncomp1', label: 'Power of three', export: 'Use power of three linked to sentence work' },
-            { id: 'ncomp2', label: 'Describe settings', export: 'Describe settings via behaviour, thoughts and reactions', preselect: true },
-            { id: 'ncomp3', label: 'Describe characters', export: 'Describe characters via behaviour, thoughts and reactions', preselect: true },
-            { id: 'ncomp5', label: 'Alliteration', export: 'Develop use of alliteration' },
-            { id: 'ncomp11', label: 'Dialogue', export: 'Use dialogue to show relationship and move action on' },
-            { id: 'ncomp12', label: 'Reported speech', export: 'Use reported speech' },
-            { id: 'ncomp13', label: 'Repetition for effect', export: 'Use repetition for effect' },
-            // Added 2026-08-20 — Innes: "add 'show not tell' to the writing
-            // skills... it's not listed in there - not a mistake but an
-            // omission in our writing framework." Real, already-live
-            // technique (Mr Fox's own success_criteria already names it,
-            // SC4) that had simply never been added to this picker.
-            { id: 'ncomp14', label: 'Show not tell', export: 'Show not tell' },
-          ],
-        },
-        {
-          // New area, 2026-08-24 — see comment above. getSuccessCriteria()
-          // detects this area by name and combines every selected chip
-          // here into one SC line instead of one per technique.
-          area: 'Figurative Language',
-          skills: [
-            { id: 'ncomp4', label: 'Similes', export: 'Develop use of similes' },
-            { id: 'ncomp7', label: 'Personification', export: 'Use personification' },
-            { id: 'ncomp8', label: 'Metaphor', export: 'Use metaphor' },
-            { id: 'ncomp6', label: 'Hyperbole', export: 'Develop use of hyperbole' },
-            { id: 'ncomp9', label: 'Allusion', export: 'Use allusion' },
-            { id: 'ncomp10', label: 'Idiom', export: 'Use idiom' },
-          ],
-        },
-      ];
-    }
-    if (group.area === 'Sentence Structure') {
-      return [{
+  Y5: (() => {
+    const nf = Object.fromEntries(WRITING_SKILLS_NF.Y5.map(g => [g.area, g]));
+    return [
+      nf['Non-Negotiable'],
+      {
+        area: 'Composition',
+        skills: [
+          { id: 'ncomp3', label: 'Describe characters', export: 'Describe characters via behaviour, thoughts and reactions', preselect: true },
+          { id: 'ncomp2', label: 'Describe settings', export: 'Describe settings via behaviour, thoughts and reactions', preselect: true },
+          // Added 2026-08-20 — Innes: "add 'show not tell' to the writing
+          // skills... it's not listed in there - not a mistake but an
+          // omission in our writing framework." Real, already-live
+          // technique (Mr Fox's own success_criteria already names it,
+          // SC4) that had simply never been added to this picker.
+          { id: 'ncomp14', label: 'Show not tell', export: 'Show not tell' },
+          { id: 'ncomp1', label: 'Power of three', export: 'Use power of three linked to sentence work' },
+          { id: 'ncomp5', label: 'Alliteration', export: 'Develop use of alliteration' },
+          { id: 'ncomp13', label: 'Repetition for effect', export: 'Use repetition for effect' },
+          { id: 'ncomp11', label: 'Dialogue', export: 'Use dialogue to show relationship and move action on' },
+          { id: 'ncomp12', label: 'Reported speech', export: 'Use reported speech' },
+        ],
+      },
+      {
+        area: 'Tense & Verb Form',
+        skills: [
+          // Merges the old separate Simple present/past/future tense
+          // chips (tvf1a/1b/1c) into one — it always covers all three
+          // together, see comment above.
+          { id: 'ntvf1', label: 'Simple form', export: 'Simple tense (present, past and future)' },
+          { id: 'tvf2', label: 'Progressive form', export: 'Progressive form (ongoing actions)' },
+          { id: 'tvf3', label: 'Perfect form', export: 'Perfect form (completed actions)' },
+          { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
+        ],
+      },
+      {
+        area: 'Punctuation',
+        skills: [
+          ...nf['Punctuation'].skills.filter(s => ['punc1', 'punc2', 'punc3'].includes(s.id)),
+          { id: 'punc8', label: 'Apostrophes (contraction)', export: 'Apostrophes for contraction' },
+          { id: 'punc9a', label: 'Apostrophes (singular possession)', export: 'Apostrophes for singular possession' },
+          { id: 'punc9b', label: 'Apostrophes (plural possession)', export: 'Apostrophes for plural possession' },
+          { id: 'punc7', label: 'Commas (clauses)', export: 'Commas to mark subordinate and relative clauses' },
+          { id: 'punc4', label: 'Brackets', export: 'Brackets' },
+          { id: 'punc5', label: 'Hyphens', export: 'Hyphens' },
+          // Real narrowing, not a label trim — see comment above.
+          { id: 'punc6', label: 'Dashes (afterthought)', export: 'Dashes for afterthought' },
+        ],
+      },
+      {
         area: 'Sentence Structure',
         skills: [
-          ...group.skills.filter(s => s.id !== 'ss7' && s.id !== 'ss8'),
+          { id: 'ss1', label: 'Simple sentences', export: 'Simple sentences' },
+          { id: 'ss2', label: 'Compound sentences', export: 'Compound sentences' },
           { id: 'coh3', label: 'Fronted adverbials', export: 'Fronted adverbials (time, place, manner)' },
+          { id: 'ss3', label: 'Subordination — beginning', export: 'Subordination at the start of a sentence' },
+          { id: 'ss5', label: 'Subordination — end', export: 'Subordination at the end of a sentence' },
+          { id: 'ss4', label: 'Subordination — middle', export: 'Subordination in the middle of a sentence' },
+          { id: 'ss6', label: 'Relative clauses', export: 'Relative clauses' },
         ],
-      }];
-    }
-    if (group.area === 'Cohesion') {
-      return [{
+      },
+      {
+        // getSuccessCriteria() below detects this area by name and
+        // combines every selected chip here into one SC line instead of
+        // one per technique.
+        area: 'Figurative Language',
+        skills: [
+          { id: 'ncomp4', label: 'Similes', export: 'Develop use of similes' },
+          { id: 'ncomp7', label: 'Personification', export: 'Use personification' },
+          { id: 'ncomp8', label: 'Metaphor', export: 'Use metaphor' },
+          { id: 'ncomp6', label: 'Hyperbole', export: 'Develop use of hyperbole' },
+          { id: 'ncomp10', label: 'Idiom', export: 'Use idiom' },
+          { id: 'ncomp9', label: 'Allusion', export: 'Use allusion' },
+        ],
+      },
+      {
         area: 'Cohesion',
         skills: [
-          ...group.skills.filter(s => s.id !== 'coh3'),
-          { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
+          ...nf['Cohesion'].skills.filter(s => s.id !== 'coh3'),
           { id: 'ss8', label: 'Adverbs of possibility', export: 'Adverbs of possibility' },
         ],
-      }];
-    }
-    return [group];
-  }),
+      },
+      nf['Editing & Revising'],
+      nf['Spelling'],
+      nf['Handwriting'],
+    ];
+  })(),
 };
 
 // ── Year-group equivalents (Y1-Y4) ──────────────────────────────────────────
@@ -1119,6 +1169,27 @@ const EQUIVALENT_LOOKUP = {
     Y3: 'Use present perfect form correctly',
     Y4: 'Use present perfect form for completed actions and consequences',
   },
+  // Narrative picker's own renamed "form" (not "tense") chips, 2026-08-24
+  // — same real content as the two NF entries directly above, just
+  // duplicated under the export string WRITING_SKILLS_NARRATIVE now
+  // actually carries, since this lookup matches on the exact export
+  // text. 'Simple tense (present, past and future)' (the merged chip)
+  // deliberately has NO entry here — Innes: it always covers all three
+  // tenses together, so one blended equivalent isn't meaningfully more
+  // correct than none; no entry means autoFillEquivalents() just does
+  // nothing for it, same as every other unmapped chip.
+  'Progressive form (ongoing actions)': {
+    Y1: 'Use present or past tense with some accuracy (ongoing actions)',
+    Y2: 'Use present/past continuous form mostly correctly and consistently',
+    Y3: 'Use progressive form correctly and consistently',
+    Y4: 'Use progressive tense (ongoing actions) consistently and accurately',
+  },
+  'Perfect form (completed actions)': {
+    Y1: 'Use present tense with some accuracy',
+    Y2: 'Use present tense correctly',
+    Y3: 'Use present perfect form correctly',
+    Y4: 'Use present perfect form for completed actions and consequences',
+  },
   // Cohesion
   'Organisational and presentational devices (bullet points, diagrams, font)': {
     Y1: 'Write linked sentences after discussion with teacher',
@@ -1182,6 +1253,16 @@ const EQUIVALENT_LOOKUP = {
     Y4: 'Comma after fronted adverbial — expected',
   },
   'Dashes': {
+    Y1: 'Use full stops to end sentences — mostly accurate',
+    Y2: 'Begin using commas in lists',
+    Y3: 'Use commas in lists',
+    Y4: 'Comma after fronted adverbial — expected',
+  },
+  // Narrative picker's own narrowed "Dashes (afterthought)" chip,
+  // 2026-08-24 — same real equivalent content as 'Dashes' above,
+  // duplicated under the export string WRITING_SKILLS_NARRATIVE now
+  // carries (this lookup matches on exact export text).
+  'Dashes for afterthought': {
     Y1: 'Use full stops to end sentences — mostly accurate',
     Y2: 'Begin using commas in lists',
     Y3: 'Use commas in lists',
