@@ -743,41 +743,88 @@ const WRITING_SKILLS_NF = {
 };
 
 // Narrative-craft equivalent of WRITING_SKILLS_NF, for a real Writing-type
-// enquiry (a pilot text, not a subject topic). Every other area (Sentence
-// Structure, Tense & Verb Form, Cohesion, Punctuation, Editing & Revising,
-// Spelling, Handwriting, Non-Negotiable) applies to fiction writing exactly
-// as it does to non-fiction, so this reuses WRITING_SKILLS_NF's own areas
-// unchanged and only swaps the 'Composition' group — the NF form's own
-// comment already names these exact rows as "genuinely out of scope" for
-// non-fiction, real content: enquiry-builder-writing-progression.md's
-// master Y5 Composition rows (similes, alliteration, hyperbole,
-// personification, metaphor, allusion, idiom, dialogue, reported speech,
-// repetition for effect, power of three, settings/characters via
-// behaviour/thoughts/reactions).
+// enquiry (a pilot text, not a subject topic). Tense & Verb Form,
+// Punctuation, Editing & Revising, Spelling, Handwriting, Non-Negotiable
+// apply to fiction writing exactly as it does to non-fiction, so this
+// reuses WRITING_SKILLS_NF's own areas for those unchanged. Composition,
+// Sentence Structure and Cohesion are narrative-specific overrides — the
+// NF form's own comment already names the Composition rows as "genuinely
+// out of scope" for non-fiction, real content: enquiry-builder-writing-
+// progression.md's master Y5 Composition rows (similes, alliteration,
+// hyperbole, personification, metaphor, allusion, idiom, dialogue,
+// reported speech, repetition for effect, power of three, settings/
+// characters via behaviour/thoughts/reactions).
+//
+// Real reorganization, 2026-08-24 (Innes, from a real annotated
+// screenshot of this exact picker): (1) split figurative-language
+// techniques (similes, personification, metaphor, hyperbole, allusion,
+// idiom — NOT alliteration, which stays a Composition technique, not a
+// figure of speech) into their own 'Figurative Language' area, so
+// getSuccessCriteria() below can combine multiple selected ones into one
+// SC line instead of one bullet each; (2) "Adverbials of time and place"
+// renamed "Fronted adverbials (time, place, manner)" and moved Cohesion
+// -> Sentence Structure; (3) Modal verbs / Adverbs of possibility moved
+// Sentence Structure -> Cohesion. Deliberately scoped to Narrative only
+// (WRITING_SKILLS_NF, the non-fiction picker, is untouched) — the real
+// mockup was specifically of the Writing-enquiry picker.
 const WRITING_SKILLS_NARRATIVE = {
-  Y5: WRITING_SKILLS_NF.Y5.map(group => group.area !== 'Composition' ? group : {
-    area: 'Composition',
-    skills: [
-      { id: 'ncomp1', label: 'Power of three', export: 'Use power of three linked to sentence work' },
-      { id: 'ncomp2', label: 'Describe settings', export: 'Describe settings via behaviour, thoughts and reactions', preselect: true },
-      { id: 'ncomp3', label: 'Describe characters', export: 'Describe characters via behaviour, thoughts and reactions', preselect: true },
-      { id: 'ncomp4', label: 'Similes', export: 'Develop use of similes' },
-      { id: 'ncomp5', label: 'Alliteration', export: 'Develop use of alliteration' },
-      { id: 'ncomp6', label: 'Hyperbole', export: 'Develop use of hyperbole' },
-      { id: 'ncomp7', label: 'Personification', export: 'Use personification' },
-      { id: 'ncomp8', label: 'Metaphor', export: 'Use metaphor' },
-      { id: 'ncomp9', label: 'Allusion', export: 'Use allusion' },
-      { id: 'ncomp10', label: 'Idiom', export: 'Use idiom' },
-      { id: 'ncomp11', label: 'Dialogue', export: 'Use dialogue to show relationship and move action on' },
-      { id: 'ncomp12', label: 'Reported speech', export: 'Use reported speech' },
-      { id: 'ncomp13', label: 'Repetition for effect', export: 'Use repetition for effect' },
-      // Added 2026-08-20 — Innes: "add 'show not tell' to the writing
-      // skills... it's not listed in there - not a mistake but an
-      // omission in our writing framework." Real, already-live technique
-      // (Mr Fox's own success_criteria already names it, SC4) that had
-      // simply never been added to this picker.
-      { id: 'ncomp14', label: 'Show not tell', export: 'Show not tell' },
-    ],
+  Y5: WRITING_SKILLS_NF.Y5.flatMap(group => {
+    if (group.area === 'Composition') {
+      return [
+        {
+          area: 'Composition',
+          skills: [
+            { id: 'ncomp1', label: 'Power of three', export: 'Use power of three linked to sentence work' },
+            { id: 'ncomp2', label: 'Describe settings', export: 'Describe settings via behaviour, thoughts and reactions', preselect: true },
+            { id: 'ncomp3', label: 'Describe characters', export: 'Describe characters via behaviour, thoughts and reactions', preselect: true },
+            { id: 'ncomp5', label: 'Alliteration', export: 'Develop use of alliteration' },
+            { id: 'ncomp11', label: 'Dialogue', export: 'Use dialogue to show relationship and move action on' },
+            { id: 'ncomp12', label: 'Reported speech', export: 'Use reported speech' },
+            { id: 'ncomp13', label: 'Repetition for effect', export: 'Use repetition for effect' },
+            // Added 2026-08-20 — Innes: "add 'show not tell' to the writing
+            // skills... it's not listed in there - not a mistake but an
+            // omission in our writing framework." Real, already-live
+            // technique (Mr Fox's own success_criteria already names it,
+            // SC4) that had simply never been added to this picker.
+            { id: 'ncomp14', label: 'Show not tell', export: 'Show not tell' },
+          ],
+        },
+        {
+          // New area, 2026-08-24 — see comment above. getSuccessCriteria()
+          // detects this area by name and combines every selected chip
+          // here into one SC line instead of one per technique.
+          area: 'Figurative Language',
+          skills: [
+            { id: 'ncomp4', label: 'Similes', export: 'Develop use of similes' },
+            { id: 'ncomp7', label: 'Personification', export: 'Use personification' },
+            { id: 'ncomp8', label: 'Metaphor', export: 'Use metaphor' },
+            { id: 'ncomp6', label: 'Hyperbole', export: 'Develop use of hyperbole' },
+            { id: 'ncomp9', label: 'Allusion', export: 'Use allusion' },
+            { id: 'ncomp10', label: 'Idiom', export: 'Use idiom' },
+          ],
+        },
+      ];
+    }
+    if (group.area === 'Sentence Structure') {
+      return [{
+        area: 'Sentence Structure',
+        skills: [
+          ...group.skills.filter(s => s.id !== 'ss7' && s.id !== 'ss8'),
+          { id: 'coh3', label: 'Fronted adverbials', export: 'Fronted adverbials (time, place, manner)' },
+        ],
+      }];
+    }
+    if (group.area === 'Cohesion') {
+      return [{
+        area: 'Cohesion',
+        skills: [
+          ...group.skills.filter(s => s.id !== 'coh3'),
+          { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
+          { id: 'ss8', label: 'Adverbs of possibility', export: 'Adverbs of possibility' },
+        ],
+      }];
+    }
+    return [group];
   }),
 };
 
@@ -2404,14 +2451,35 @@ function getWritingSkillEquivalents() {
 // other way round) — `example` is deliberately left blank, same "don't invent
 // placeholder content" rule as everywhere else in this project; Claude fills
 // it from the real model write once one exists.
+//
+// Real change, 2026-08-24 (Innes, from the same annotated screenshot as
+// WRITING_SKILLS_NARRATIVE's own 'Figurative Language' area above): when
+// more than one figurative-language technique is a teaching focus, they
+// combine into ONE SC line ("Figurative Language – Simile, personification,
+// xyz") rather than one bullet per technique — a single figurative
+// technique still gets its own line like any other skill, unchanged.
 function getSuccessCriteria() {
   const focusExports = getWritingSkillsTeachingFocus();
   if (!focusExports.length) return null;
   const allChips = Array.from(document.querySelectorAll('.skill-chip'));
-  return focusExports.map((exp, i) => {
+  const figLabels = [];
+  const entries = [];
+  focusExports.forEach(exp => {
     const chip = allChips.find(c => c.dataset.export === exp);
-    return { number: i + 1, skill: chip ? chip.textContent : exp, example: '' };
+    if (chip && chip.dataset.area === 'Figurative Language') {
+      if (!figLabels.length) entries.push({ fig: true });
+      figLabels.push(chip.textContent);
+    } else {
+      entries.push({ skill: chip ? chip.textContent : exp });
+    }
   });
+  if (figLabels.length > 1) {
+    const combined = figLabels.map((l, i) => i === 0 ? l : l.toLowerCase()).join(', ');
+    entries.find(e => e.fig).skill = `Figurative Language – ${combined}`;
+  } else if (figLabels.length === 1) {
+    entries.find(e => e.fig).skill = figLabels[0];
+  }
+  return entries.map((e, i) => ({ number: i + 1, skill: e.skill, example: '' }));
 }
 
 function setAllSkillChips(selected) {
