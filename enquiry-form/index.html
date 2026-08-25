@@ -1209,6 +1209,23 @@ const EQUIVALENT_LOOKUP = {
     Y3: 'Use conjunctions, prepositions and adverbs to express time and place',
     Y4: 'Use fronted adverbials of time and place with a comma',
   },
+  // Real gap found 2026-08-25: this chip was renamed from 'Adverbials of
+  // time and place' (still above, unchanged, still used by the NF
+  // picker's own coh3) and moved Cohesion -> Sentence Structure by the
+  // 2026-08-24 reorg (commit 4940753), but no lookup entry was ever
+  // added for the new export string, so autoFillEquivalents() silently
+  // did nothing for this chip. Same real content as the entry above,
+  // duplicated under the export string the narrative picker's own coh3
+  // now actually carries — same pattern as the Progressive/Perfect
+  // form duplication above. The new label also covers "manner", which
+  // this content doesn't explicitly address — flagged for Innes to
+  // review the Y3/Y4 wording, not silently expanded on his behalf.
+  'Fronted adverbials (time, place, manner)': {
+    Y1: 'Write linked sentences after discussion with teacher',
+    Y2: 'Write linked sentences independently',
+    Y3: 'Use conjunctions, prepositions and adverbs to express time and place',
+    Y4: 'Use fronted adverbials of time and place with a comma',
+  },
   'Synonyms for cohesion': {
     Y1: 'Write linked sentences after discussion with teacher',
     Y2: 'Write linked sentences independently',
