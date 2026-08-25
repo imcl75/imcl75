@@ -818,7 +818,7 @@ const WRITING_SKILLS_NARRATIVE = {
           // Merges the old separate Simple present/past/future tense
           // chips (tvf1a/1b/1c) into one — it always covers all three
           // together, see comment above.
-          { id: 'ntvf1', label: 'Simple form', export: 'Simple tense (present, past and future)' },
+          { id: 'ntvf1', label: 'Simple form', export: 'Simple form (present, past and future)' }, // real fix 2026-08-25 (Innes): export was still saying "tense" after the label was already corrected to "form" — simple/progressive/perfect are FORMS, present/past/future are TENSES, "Simple tense" conflated the two
           { id: 'tvf2', label: 'Progressive form', export: 'Progressive form (ongoing actions)' },
           { id: 'tvf3', label: 'Perfect form', export: 'Perfect form (completed actions)' },
           { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
@@ -1173,11 +1173,25 @@ const EQUIVALENT_LOOKUP = {
   // — same real content as the two NF entries directly above, just
   // duplicated under the export string WRITING_SKILLS_NARRATIVE now
   // actually carries, since this lookup matches on the exact export
-  // text. 'Simple tense (present, past and future)' (the merged chip)
-  // deliberately has NO entry here — Innes: it always covers all three
-  // tenses together, so one blended equivalent isn't meaningfully more
-  // correct than none; no entry means autoFillEquivalents() just does
-  // nothing for it, same as every other unmapped chip.
+  // text.
+  //
+  // Real fix, 2026-08-25 (Innes): 'Simple form (present, past and
+  // future)' (the merged chip) previously had NO entry here at all —
+  // reconfirmed it should be mapped, using the general "use the
+  // correct tense" framing rather than picking one of present/past/
+  // future arbitrarily, since the chip always covers all three
+  // together. Wording follows the same real confidence-progression
+  // pattern every other entry in this table already uses (Y1 "with
+  // some accuracy" -> Y2 "mostly correctly and consistently" -> Y3
+  // "correctly and consistently" -> Y4 "maintain... through an
+  // extended piece" — see 'Simple present tense'/'Simple past tense'
+  // above for the same real pattern on one specific tense each).
+  'Simple form (present, past and future)': {
+    Y1: 'Use the correct tense with some accuracy',
+    Y2: 'Use the correct tense mostly correctly and consistently',
+    Y3: 'Use the correct tense correctly and consistently',
+    Y4: 'Maintain the correct tense correctly and consistently through an extended piece',
+  },
   'Progressive form (ongoing actions)': {
     Y1: 'Use present or past tense with some accuracy (ongoing actions)',
     Y2: 'Use present/past continuous form mostly correctly and consistently',
@@ -1189,6 +1203,105 @@ const EQUIVALENT_LOOKUP = {
     Y2: 'Use present tense correctly',
     Y3: 'Use present perfect form correctly',
     Y4: 'Use present perfect form for completed actions and consequences',
+  },
+  // Composition + Figurative Language — real gap closed 2026-08-25
+  // (Innes: "Draft the 14 gaps"). Every entry below is transcribed
+  // directly from the master equivalents table
+  // (enquiry-builder-writing-progression.md's own "Composition" table,
+  // Y1-Y4 columns) — not invented wording. That table's own real rows
+  // don't share this picker's exact chip names in every case, so the
+  // real row each entry came from is named alongside it for anyone
+  // checking this against the master table later.
+  'Describe characters via behaviour, thoughts and reactions': { // master table row "Describe characters via show-not-tell and reactions"
+    Y1: 'Use simple narrative story language',
+    Y2: 'Describe characters via appearance and feelings',
+    Y3: 'Describe characters via appearance, feelings and dialogue',
+    Y4: 'Describe characters via behaviour, thoughts and reactions',
+  },
+  'Describe settings via behaviour, thoughts and reactions': { // master table row "Describe settings via show-not-tell and reactions"
+    Y1: 'Use simple narrative story language',
+    Y2: 'Describe simple settings',
+    Y3: 'Describe settings via appearance, feelings and dialogue',
+    Y4: 'Describe settings via behaviour, thoughts and reactions',
+  },
+  // 'Show not tell' has no exact row of its own in the master table —
+  // it's the shared TECHNIQUE behind both the characters and settings
+  // rows above, which are identical at Y1 and differ only by the
+  // "settings"/"characters" noun at Y2-Y4. Blended from both rather
+  // than picking one arbitrarily — real synthesis, not a master-table
+  // transcription like every other entry here, flagged for Innes to
+  // adjust if he'd rather point this at one specific row instead.
+  'Show not tell': {
+    Y1: 'Use simple narrative story language',
+    Y2: 'Describe simple settings and characters via appearance and feelings',
+    Y3: 'Describe settings and characters via appearance, feelings and dialogue',
+    Y4: 'Describe settings and characters via behaviour, thoughts and reactions',
+  },
+  'Use power of three linked to sentence work': { // master table row "Use power of three (extend and refine)"
+    Y1: 'Use power of three (simple narrative feature)',
+    Y2: 'Use power of three',
+    Y3: 'Consistently use narrative features (speech, power of three)',
+    Y4: 'Use power of three linked to sentence work',
+  },
+  'Develop use of alliteration': { // master table row "Use alliteration (embedded from Y3/4)"
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use alliteration',
+    Y4: 'Develop use of alliteration',
+  },
+  'Use repetition for effect': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Consistently use narrative features (speech, power of three)',
+    Y4: 'Use repetition for effect',
+  },
+  'Use dialogue to show relationship and move action on': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Consistently use narrative features (speech, power of three)',
+    Y4: 'Use direct speech',
+  },
+  'Use reported speech': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Consistently use narrative features (speech, power of three)',
+    Y4: 'Use direct speech',
+  },
+  'Develop use of similes': { // master table row "Use similes (extend and refine)"
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use similes',
+    Y4: 'Develop use of similes',
+  },
+  'Use personification': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use similes',
+    Y4: 'Develop use of similes',
+  },
+  'Use metaphor': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use similes',
+    Y4: 'Develop use of similes',
+  },
+  'Develop use of hyperbole': { // master table row "Use hyperbole (embedded from Y4)"
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use simple narrative story language',
+    Y4: 'Develop use of hyperbole',
+  },
+  'Use idiom': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use alliteration',
+    Y4: 'Develop use of alliteration',
+  },
+  'Use allusion': { // master table row of the same name
+    Y1: 'Use simple narrative story language',
+    Y2: 'Use simple narrative story language',
+    Y3: 'Use power of three',
+    Y4: 'Develop use of alliteration',
   },
   // Cohesion
   'Organisational and presentational devices (bullet points, diagrams, font)': {
