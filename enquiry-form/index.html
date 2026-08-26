@@ -662,42 +662,24 @@ const WRITING_SKILLS_NF = {
       ]
     },
     {
-      area: 'Sentence Structure',
-      skills: [
-        { id: 'ss1', label: 'Simple sentences', export: 'Simple sentences' },
-        { id: 'ss2', label: 'Compound sentences', export: 'Compound sentences' },
-        { id: 'ss3', label: 'Subordination — beginning', export: 'Subordination at the start of a sentence' },
-        { id: 'ss4', label: 'Subordination — middle', export: 'Subordination in the middle of a sentence' },
-        { id: 'ss5', label: 'Subordination — end', export: 'Subordination at the end of a sentence' },
-        { id: 'ss6', label: 'Relative clauses', export: 'Relative clauses' },
-        { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
-        { id: 'ss8', label: 'Adverbs of possibility', export: 'Adverbs of possibility' },
-      ]
-    },
-    {
-      // Split 2026-08-11 (Innes) — the master equivalents table
-      // (enquiry-builder-writing-progression.md) gives simple present/
-      // past/future genuinely different Y1 equivalents each ("present
-      // tense with some accuracy" vs "past tense with some accuracy" vs
-      // future tense's own row) — one blended "Simple tense" chip
-      // couldn't resolve to a single correct equivalent.
+      // Real reorganization, 2026-08-26 (Innes: "align as much as
+      // possible" with the narrative picker's own 2026-08-24 rework
+      // below) — Modal verbs' real final home is Tense & Verb Form (a
+      // verb-form skill, genre-independent), matching the narrative
+      // picker's own second-pass decision. Adverbs of possibility moved
+      // to Cohesion, same reason, same precedent.
       area: 'Tense & Verb Form',
       skills: [
-        { id: 'tvf1a', label: 'Simple present tense', export: 'Simple present tense' },
-        { id: 'tvf1b', label: 'Simple past tense', export: 'Simple past tense' },
-        { id: 'tvf1c', label: 'Simple future tense', export: 'Simple future tense' },
-        { id: 'tvf2', label: 'Progressive tense', export: 'Progressive tense (ongoing actions)' },
-        { id: 'tvf3', label: 'Perfect tense', export: 'Perfect tense (completed actions)' },
-      ]
-    },
-    {
-      area: 'Cohesion',
-      skills: [
-        { id: 'coh1', label: 'Presentational devices', export: 'Organisational and presentational devices (bullet points, diagrams, font)' },
-        { id: 'coh2', label: 'Conjunctions', export: 'Conjunctions for cohesion' },
-        { id: 'coh3', label: 'Adverbials (time & place)', export: 'Adverbials of time and place' },
-        { id: 'coh4', label: 'Synonyms', export: 'Synonyms for cohesion' },
-        { id: 'coh5', label: 'Relative pronouns', export: 'Relative pronouns (who, which, where, when, that, whose)' },
+        // Merges the old separate Simple present/past/future tense
+        // chips into one — Innes decided (2026-08-25, narrative picker)
+        // that no per-tense Y1-Y4 equivalent split is needed for it, one
+        // equivalent or none is fine; that reasoning is genre-
+        // independent, so ported here too rather than left split only
+        // on one side.
+        { id: 'tvf1', label: 'Simple form', export: 'Simple form (present, past and future)' },
+        { id: 'tvf2', label: 'Progressive form', export: 'Progressive form (ongoing actions)' },
+        { id: 'tvf3', label: 'Perfect form', export: 'Perfect form (completed actions)' },
+        { id: 'ss7', label: 'Modal verbs', export: 'Modal verbs (degrees of possibility)' },
       ]
     },
     {
@@ -706,10 +688,6 @@ const WRITING_SKILLS_NF = {
         { id: 'punc1', label: 'Capital letters', export: 'Capital letters', preselect: true },
         { id: 'punc2', label: 'Full stops', export: 'Full stops', preselect: true },
         { id: 'punc3', label: 'Question marks', export: 'Question marks' },
-        { id: 'punc4', label: 'Brackets', export: 'Brackets' },
-        { id: 'punc5', label: 'Hyphens', export: 'Hyphens' },
-        { id: 'punc6', label: 'Dashes', export: 'Dashes' },
-        { id: 'punc7', label: 'Commas (clauses)', export: 'Commas to mark subordinate and relative clauses' },
         { id: 'punc8', label: 'Apostrophes (contraction)', export: "Apostrophes for contraction" },
         // Split 2026-08-11 (Innes) — the master equivalents table gives
         // singular vs plural possession different Y4 equivalents ("use
@@ -718,6 +696,42 @@ const WRITING_SKILLS_NF = {
         // couldn't resolve to a single correct equivalent either.
         { id: 'punc9a', label: 'Apostrophes (singular possession)', export: "Apostrophes for singular possession" },
         { id: 'punc9b', label: 'Apostrophes (plural possession)', export: "Apostrophes for plural possession" },
+        { id: 'punc7', label: 'Commas (clauses)', export: 'Commas to mark subordinate and relative clauses' },
+        { id: 'punc4', label: 'Brackets', export: 'Brackets' },
+        { id: 'punc5', label: 'Hyphens', export: 'Hyphens' },
+        // Real narrowing, not a label trim, ported from the narrative
+        // picker 2026-08-26 (a genuine Y5 statutory curriculum fact,
+        // genre-independent): Y5 teaches dashes specifically for an
+        // afterthought — parenthetical dashes are Y6.
+        { id: 'punc6', label: 'Dashes (afterthought)', export: 'Dashes for afterthought' },
+      ]
+    },
+    {
+      area: 'Sentence Structure',
+      skills: [
+        { id: 'ss1', label: 'Simple sentences', export: 'Simple sentences' },
+        { id: 'ss2', label: 'Compound sentences', export: 'Compound sentences' },
+        // Renamed + moved here from Cohesion, 2026-08-26 — same real Y5
+        // grammar skill as the narrative picker's own 'Fronted
+        // adverbials (time, place, manner)', ported for consistency
+        // (Innes: "yes for fronted adverbials"). Same id (coh3) kept so
+        // an already-saved brief's selection isn't silently dropped by
+        // area/label alone — only the export text actually changes.
+        { id: 'coh3', label: 'Fronted adverbials', export: 'Fronted adverbials (time, place, manner)' },
+        { id: 'ss3', label: 'Subordination — beginning', export: 'Subordination at the start of a sentence' },
+        { id: 'ss5', label: 'Subordination — end', export: 'Subordination at the end of a sentence' },
+        { id: 'ss4', label: 'Subordination — middle', export: 'Subordination in the middle of a sentence' },
+        { id: 'ss6', label: 'Relative clauses', export: 'Relative clauses' },
+      ]
+    },
+    {
+      area: 'Cohesion',
+      skills: [
+        { id: 'coh1', label: 'Presentational devices', export: 'Organisational and presentational devices (bullet points, diagrams, font)' },
+        { id: 'coh2', label: 'Conjunctions', export: 'Conjunctions for cohesion' },
+        { id: 'coh4', label: 'Synonyms', export: 'Synonyms for cohesion' },
+        { id: 'coh5', label: 'Relative pronouns', export: 'Relative pronouns (who, which, where, when, that, whose)' },
+        { id: 'ss8', label: 'Adverbs of possibility', export: 'Adverbs of possibility' },
       ]
     },
     {
