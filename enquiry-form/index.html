@@ -536,7 +536,7 @@
         <strong>Delivery path</strong>Select a term and week above.
       </div>
       <p style="font-size:0.82rem;color:var(--muted)" id="deliveryHelpText">
-        <strong>Root:</strong> Knowledge Organiser · Vocabulary poster · Overview/LOE · SC Display poster · SC Tracking sheet · Model Write · Writers' Toolkit<br>
+        <strong>Root:</strong> Knowledge Organiser · Vocabulary poster · Overview/LOE · SC Display poster · SC Tracking sheet · Model Write · Model Write B · Writers' Toolkit<br>
         <strong>Teaching/</strong>: lesson decks<br>
         <strong>LP/</strong>: learning papers<br>
         <strong>Resources/</strong>: sort cards · word cards · statement sort · timeline · hunt texts · handwriting · planning doc (blank + model)<br>
@@ -1653,7 +1653,7 @@ function updateDeliveryHelpForSubject(subject) {
   const rootLabel = isWriting ? 'Writing-level' : 'Root';
   const rootItems = (isWriting ? [] : ['Knowledge Organiser'])
     .concat(['Vocabulary poster', 'Overview/LOE', 'SC Display poster', 'SC Tracking sheet',
-             'Model Write', "Writers' Toolkit"])
+             'Model Write', 'Model Write B', "Writers' Toolkit"])
     .concat(isWriting ? ['Label Summary Index'] : []);
   const resourcesItems = (isWriting ? [] : ['sort cards', 'word cards', 'statement sort', 'timeline', 'hunt texts'])
     .concat(['handwriting'])
@@ -2163,6 +2163,17 @@ function buildNaming(topic, slug, txwy, subject, text) {
     sc_display: `SC-DISP_${t}_${role}_${name}.pdf`,
     sc_tracking: `SC-TRACK_${t}_${role}_${name}.pdf`,
     model_write: `MW_${t}_${role}_${name}.pdf`,
+    // Model Write B ("Draft B") — real, second differently-worded model
+    // write used for the planning-lesson process. Converged onto the
+    // general subject pipeline 2026-08-26 (scripts/shared/
+    // build_model_write.py's build_model_write_b()); Writing already had
+    // it (build_all_writing.py's _build_model_write_b, since 2026-08-23).
+    // Same {txwy}-placeholder pattern as Writers' Toolkit below, same
+    // real reason: for Writing it's delivered to the planning lesson's
+    // own week (not knowable at brief-writing time); general subjects
+    // currently keep the plain resolved start-week txwy, matching how
+    // Model Write/Planning docs/Toolkit already behave for them.
+    model_write_b: isWriting ? `MW-B_{txwy}_${role}_${name}.pdf` : `MW-B_${t}_${role}_${name}.pdf`,
     // Writers' Toolkit — real fix, 2026-08-20 (Innes: "the toolkit
     // filename say the delivered week (i.e. when it will be used)"):
     // enquiry_filename_for() now takes an explicit txwy override for
@@ -3068,6 +3079,7 @@ function buildReview() {
           ['SC Display poster', nc.sc_display],
           ['SC Tracking sheet', nc.sc_tracking],
           ['Model Write', nc.model_write],
+          ['Model Write B', nc.model_write_b],
           ["Writers' Toolkit", nc.writers_toolkit],
         ])
         .concat(d.subject === 'writing' ? [['Label Summary Index', nc.label_index]] : [])
@@ -3381,6 +3393,7 @@ function buildPrompt(d) {
   L.push(`  ${nc.model_write}`);
   if (d.subject === 'writing') L.push(`  ${nc.label_index}`);
   if (d.subject !== 'writing') {
+    L.push(`  ${nc.model_write_b}`);
     L.push(`  ${nc.writers_toolkit}`);
     L.push(`  ${nc.plan_blank}`);
     L.push(`  ${nc.plan_model}`);
@@ -3395,7 +3408,10 @@ function buildPrompt(d) {
     L.push('say the delivered week"): the Toolkit\'s filename now carries THAT');
     L.push('week, not the enquiry\'s start week — {txwy} below resolves to the');
     L.push('planning lesson\'s own week once the real unit is authored, not');
-    L.push('knowable at brief-writing time:');
+    L.push('knowable at brief-writing time. Model Write B (the real second,');
+    L.push('differently-worded draft used for the planning process) follows');
+    L.push('the exact same rule, same reason:');
+    L.push(`  ${nc.model_write_b}`);
     L.push(`  ${nc.writers_toolkit}`);
     L.push('The planning doc still has NO real TxWy/Role in its filename at');
     L.push('all — a separate, genuine inconsistency in build_writing_plan_doc.py');
