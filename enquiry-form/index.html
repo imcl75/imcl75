@@ -234,13 +234,17 @@
     #modelSubjectField.show { display: block; }
     #timelineNotesField { display: none; }
     #timelineNotesField.show { display: block; }
+    #priorKnowledgeNotesField, #equipmentNotesField, #slotNotesField,
+    #confusableNotesField, #mustNotesField, #realPhotoNotesField { display: none; }
+    #priorKnowledgeNotesField.show, #equipmentNotesField.show, #slotNotesField.show,
+    #confusableNotesField.show, #mustNotesField.show, #realPhotoNotesField.show { display: block; }
   </style>
 </head>
 <body>
 
 <header>
   <h1>Enquiry Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v26.08.26a</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v29.08.26a</span></p>
 </header>
 
 <div class="container">
@@ -569,6 +573,88 @@
           <span class="hint">Filenames of any images already committed under assets/{subject}/. One per line.</span>
         </label>
         <textarea id="f_images" rows="3" placeholder="e.g.&#10;solar_system_diagram.png"></textarea>
+      </div>
+
+      <p class="subtitle" style="margin-top:1.6rem;">Quick checks <span class="hint">Seven taps, done — only type anything if the answer is the exception.</span></p>
+
+      <div class="field">
+        <label class="field-label">Has this class already met any part of this topic before? <span class="hint">Another school, an assembly, a pupil's own interest, home exposure.</span></label>
+        <div class="pill-group">
+          <label class="pill on" data-g="prior_knowledge" data-v="no" onclick="checkReveal('prior_knowledge','priorKnowledgeNotesField','yes')">No, this is new to them</label>
+          <label class="pill" data-g="prior_knowledge" data-v="yes" onclick="checkReveal('prior_knowledge','priorKnowledgeNotesField','yes')">Yes</label>
+        </div>
+      </div>
+      <div class="field" id="priorKnowledgeNotesField">
+        <label class="field-label" for="f_prior_knowledge_notes">What have they already encountered? <span class="optional">(optional)</span></label>
+        <textarea id="f_prior_knowledge_notes" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Can you get hold of basic everyday objects for physical demonstrations? <span class="hint">Torches, balls, string, household items — whatever a lesson turns out to need.</span></label>
+        <div class="pill-group">
+          <label class="pill on" data-g="equipment_access" data-v="yes" onclick="checkReveal('equipment_access','equipmentNotesField','no')">Yes, assume normal access</label>
+          <label class="pill" data-g="equipment_access" data-v="no" onclick="checkReveal('equipment_access','equipmentNotesField','no')">No / limited</label>
+        </div>
+      </div>
+      <div class="field" id="equipmentNotesField">
+        <label class="field-label" for="f_equipment_notes">What's limited or unavailable? <span class="optional">(optional)</span></label>
+        <textarea id="f_equipment_notes" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Are all of this enquiry's lesson slots the same length?</label>
+        <div class="pill-group">
+          <label class="pill on" data-g="slot_lengths" data-v="yes" onclick="checkReveal('slot_lengths','slotNotesField','no')">Yes, all standard length</label>
+          <label class="pill" data-g="slot_lengths" data-v="no" onclick="checkReveal('slot_lengths','slotNotesField','no')">No, some differ</label>
+        </div>
+      </div>
+      <div class="field" id="slotNotesField">
+        <label class="field-label" for="f_slot_notes">Which slots, and how long? <span class="optional">(optional)</span></label>
+        <textarea id="f_slot_notes" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Differentiation will use the class register on file (class_config.json).</label>
+        <div class="pill-group">
+          <label class="pill on" data-g="register_current" data-v="yes">It's current</label>
+          <label class="pill" data-g="register_current" data-v="no">Needs updating first</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Do you already expect any topics in this enquiry to get mixed up with each other, or with something taught earlier?</label>
+        <div class="pill-group">
+          <label class="pill on" data-g="confusable_topics" data-v="no" onclick="checkReveal('confusable_topics','confusableNotesField','yes')">No</label>
+          <label class="pill" data-g="confusable_topics" data-v="yes" onclick="checkReveal('confusable_topics','confusableNotesField','yes')">Yes</label>
+        </div>
+      </div>
+      <div class="field" id="confusableNotesField">
+        <label class="field-label" for="f_confusable_notes">Which topics? <span class="optional">(optional)</span></label>
+        <textarea id="f_confusable_notes" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Anything that must be included or must be avoided? <span class="hint">A trip, an event, a link to another subject — or an overlap with a separate unit to keep clear of.</span></label>
+        <div class="pill-group">
+          <label class="pill on" data-g="must_include_avoid" data-v="no" onclick="checkReveal('must_include_avoid','mustNotesField','yes')">Nothing specific</label>
+          <label class="pill" data-g="must_include_avoid" data-v="yes" onclick="checkReveal('must_include_avoid','mustNotesField','yes')">Yes</label>
+        </div>
+      </div>
+      <div class="field" id="mustNotesField">
+        <label class="field-label" for="f_must_notes">What must be included or avoided? <span class="optional">(optional)</span></label>
+        <textarea id="f_must_notes" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Does anything in this topic need a real photo for factual accuracy, rather than an AI-generated diagram?</label>
+        <div class="pill-group">
+          <label class="pill on" data-g="real_photo_needed" data-v="no" onclick="checkReveal('real_photo_needed','realPhotoNotesField','yes')">No, AI-generated is fine throughout</label>
+          <label class="pill" data-g="real_photo_needed" data-v="yes" onclick="checkReveal('real_photo_needed','realPhotoNotesField','yes')">Yes</label>
+        </div>
+      </div>
+      <div class="field" id="realPhotoNotesField">
+        <label class="field-label" for="f_real_photo_notes">Which part? <span class="optional">(optional)</span></label>
+        <textarea id="f_real_photo_notes" rows="2"></textarea>
       </div>
 
       <div id="timelineField">
@@ -2064,7 +2150,7 @@ function collect() {
   const concept = (subject === 'science' || subject === 'history') ? fv('f_concept') : null;
 
   return {
-    form_version: '1.4',
+    form_version: '1.5',
     created: new Date().toISOString().slice(0,10),
     subject,
     year_group: pill('year_group'),
@@ -2114,6 +2200,23 @@ function collect() {
     xccw_style: 'dotted',
     include_timeline: pill('timeline') !== 'no',
     timeline_notes: fv('f_timeline_notes') || null,
+    // "Quick checks" — low-effort pill toggles added 2026-08-29, each
+    // defaulting to the no-extra-work answer so a normal enquiry costs
+    // seven taps. The paired _notes field is only ever non-null when the
+    // pill was flipped to the exception answer.
+    prior_knowledge_exists: pill('prior_knowledge') === 'yes',
+    prior_knowledge_notes: fv('f_prior_knowledge_notes') || null,
+    equipment_access_limited: pill('equipment_access') === 'no',
+    equipment_notes: fv('f_equipment_notes') || null,
+    slot_lengths_differ: pill('slot_lengths') === 'no',
+    slot_notes: fv('f_slot_notes') || null,
+    class_register_current: pill('register_current') !== 'no',
+    confusable_topics_flagged: pill('confusable_topics') === 'yes',
+    confusable_topics_notes: fv('f_confusable_notes') || null,
+    must_include_or_avoid: pill('must_include_avoid') === 'yes',
+    must_include_avoid_notes: fv('f_must_notes') || null,
+    real_photo_needed: pill('real_photo_needed') === 'yes',
+    real_photo_notes: fv('f_real_photo_notes') || null,
     specific_vocab: lines('f_vocab').length ? lines('f_vocab') : null,
     existing_images: lines('f_images').length ? lines('f_images') : null,
     other_notes: fv('f_notes') || null,
@@ -2881,6 +2984,29 @@ function checkTimeline() {
   setTimeout(applyTimelineVisibility, 0);
 }
 
+// Generic version of applyTimelineVisibility/checkTimeline above, for the
+// "Quick checks" pill+reveal fields (2026-08-29) — one reusable pair
+// instead of a bespoke checkX()/applyXVisibility() per field. Same
+// setTimeout(0) deferral for the same reason: it must run AFTER the
+// delegated .pill click handler (registered separately, below) has
+// already toggled the 'on' class, or it reads the pre-click state.
+function applyReveal(group, fieldId, revealValue) {
+  const on = pill(group) === revealValue;
+  const field = document.getElementById(fieldId);
+  if (field) field.classList.toggle('show', on);
+}
+function checkReveal(group, fieldId, revealValue) {
+  setTimeout(() => applyReveal(group, fieldId, revealValue), 0);
+}
+function applyAllQuickCheckVisibility() {
+  applyReveal('prior_knowledge', 'priorKnowledgeNotesField', 'yes');
+  applyReveal('equipment_access', 'equipmentNotesField', 'no');
+  applyReveal('slot_lengths', 'slotNotesField', 'no');
+  applyReveal('confusable_topics', 'confusableNotesField', 'yes');
+  applyReveal('must_include_avoid', 'mustNotesField', 'yes');
+  applyReveal('real_photo_needed', 'realPhotoNotesField', 'yes');
+}
+
 function getParagraphData() {
   const blocks = document.querySelectorAll('#paraBlocks .para-block');
   return Array.from(blocks).map(function(block) {
@@ -3098,6 +3224,19 @@ function buildReview() {
         ? rvMono('Label sheet', nc.ll_fallback) + rvMono('Final-write label', nc.final_write_label)
         : rvMono('Label sheet', nc.label_sheet)}
     </div>
+    ${d.prior_knowledge_exists || d.equipment_access_limited || d.slot_lengths_differ ||
+      !d.class_register_current || d.confusable_topics_flagged || d.must_include_or_avoid ||
+      d.real_photo_needed ? `
+    <div class="rv-section">
+      <h3>Quick checks</h3>
+      ${d.prior_knowledge_exists ? rvRow('Prior knowledge', d.prior_knowledge_notes || '(flagged, no detail given)') : ''}
+      ${d.equipment_access_limited ? rvRow('Equipment access limited', d.equipment_notes || '(flagged, no detail given)') : ''}
+      ${d.slot_lengths_differ ? rvRow('Lesson slots differ', d.slot_notes || '(flagged, no detail given)') : ''}
+      ${!d.class_register_current ? rvRow('Class register', 'Needs updating before differentiation work') : ''}
+      ${d.confusable_topics_flagged ? rvRow('Confusable topics', d.confusable_topics_notes || '(flagged, no detail given)') : ''}
+      ${d.must_include_or_avoid ? rvRow('Must include/avoid', d.must_include_avoid_notes || '(flagged, no detail given)') : ''}
+      ${d.real_photo_needed ? rvRow('Real photo needed', d.real_photo_notes || '(flagged, no detail given)') : ''}
+    </div>` : ''}
     ${d.specific_vocab || d.other_notes ? `
     <div class="rv-section">
       <h3>Notes</h3>
@@ -3332,6 +3471,17 @@ function buildPrompt(d) {
   });
   L.push('');
   L.push(`Timeline:       ${d.include_timeline ? 'Yes — include a timeline resource in Resources/' : 'No — omit timeline resource'}${d.timeline_notes ? ' (' + d.timeline_notes + ')' : ''}`);
+  // "Quick checks" (2026-08-29) — only ever printed when Innes flagged the
+  // exception answer, so a normal enquiry's prompt carries no extra noise.
+  const quickChecks = [];
+  if (d.prior_knowledge_exists) quickChecks.push(`Prior knowledge: this class has already met part of this topic.${d.prior_knowledge_notes ? ' ' + d.prior_knowledge_notes : ' (no detail given — ask Innes before assuming what they already know)'}`);
+  if (d.equipment_access_limited) quickChecks.push(`Equipment access is limited.${d.equipment_notes ? ' ' + d.equipment_notes : ' (no detail given — check with Innes before planning a physical demo)'}`);
+  if (d.slot_lengths_differ) quickChecks.push(`Lesson slots are NOT all the same length this enquiry.${d.slot_notes ? ' ' + d.slot_notes : ' (no detail given — check real slot lengths with Innes before sizing lesson content)'}`);
+  if (!d.class_register_current) quickChecks.push('Class register (class_config.json) needs updating — confirm it is current with Innes before doing any differentiation work.');
+  if (d.confusable_topics_flagged) quickChecks.push(`Innes already expects specific topics in this enquiry to get confused with each other or with something taught earlier.${d.confusable_topics_notes ? ' ' + d.confusable_topics_notes : ' (no detail given — ask which topics before writing the MTP Summary)'}`);
+  if (d.must_include_or_avoid) quickChecks.push(`There is a real must-include or must-avoid constraint on this enquiry's content.${d.must_include_avoid_notes ? ' ' + d.must_include_avoid_notes : ' (no detail given — ask Innes what it is before writing the MTP Summary)'}`);
+  if (d.real_photo_needed) quickChecks.push(`Part of this topic needs a real (not AI-generated) photo for factual accuracy.${d.real_photo_notes ? ' ' + d.real_photo_notes : ' (no detail given — ask Innes which part before generating images)'}`);
+  if (quickChecks.length) { L.push(''); L.push('Quick checks from Innes:'); quickChecks.forEach(q => L.push(`- ${q}`)); }
   if (d.specific_vocab?.length) { L.push(''); L.push(`Specific vocab to include: ${d.specific_vocab.join(', ')}`); }
   if (d.existing_images?.length) { L.push(''); L.push(`Images already in assets: ${d.existing_images.join(', ')}`); }
   if (d.other_notes) { L.push(''); L.push('Additional notes:'); L.push(d.other_notes); }
@@ -3533,6 +3683,19 @@ function saveState() {
       notes: fv('f_notes'),
       timeline: pill('timeline'),
       timeline_notes: fv('f_timeline_notes'),
+      prior_knowledge: pill('prior_knowledge'),
+      prior_knowledge_notes: fv('f_prior_knowledge_notes'),
+      equipment_access: pill('equipment_access'),
+      equipment_notes: fv('f_equipment_notes'),
+      slot_lengths: pill('slot_lengths'),
+      slot_notes: fv('f_slot_notes'),
+      register_current: pill('register_current'),
+      confusable_topics: pill('confusable_topics'),
+      confusable_notes: fv('f_confusable_notes'),
+      must_include_avoid: pill('must_include_avoid'),
+      must_notes: fv('f_must_notes'),
+      real_photo_needed: pill('real_photo_needed'),
+      real_photo_notes: fv('f_real_photo_notes'),
       topicChipsOff: Array.from(document.querySelectorAll('.topic-chip:not(.on)')).map(c => c.dataset.topic),
       skillChipsOn: Array.from(document.querySelectorAll('.skill-chip.on:not(.locked)')).map(c => c.dataset.export),
       teachingFocusOn: getWritingSkillsTeachingFocus(),
@@ -3670,6 +3833,32 @@ function applyRestoredState() {
     if (tn) tn.value = _savedState.timeline_notes;
   }
 
+  // "Quick checks" pills + notes (2026-08-29) — same restore pattern as
+  // the timeline pill above, generalised: one (group, notesFieldId) pair
+  // per field. Visibility of each notes box is re-applied by
+  // applyAllQuickCheckVisibility(), called right after this function
+  // returns (see resumeDraft()) — restoring the 'on' class alone doesn't
+  // re-run the reveal logic.
+  function restorePill(group, notesId) {
+    const saved = _savedState[group];
+    if (saved) {
+      document.querySelectorAll(`[data-g="${group}"]`).forEach(p => {
+        p.classList.toggle('on', p.dataset.v === saved);
+      });
+    }
+    if (notesId && _savedState[notesId] !== undefined) {
+      const el = document.getElementById('f_' + notesId);
+      if (el) el.value = _savedState[notesId];
+    }
+  }
+  restorePill('prior_knowledge', 'prior_knowledge_notes');
+  restorePill('equipment_access', 'equipment_notes');
+  restorePill('slot_lengths', 'slot_notes');
+  restorePill('register_current', null);
+  restorePill('confusable_topics', 'confusable_notes');
+  restorePill('must_include_avoid', 'must_notes');
+  restorePill('real_photo_needed', 'real_photo_notes');
+
   // Weekly schedule — rebuild one week block per saved week, each with its
   // own Enq. slots and reading-day markers. Renumbered contiguously on
   // restore in case any historical gap existed (defensive, shouldn't
@@ -3724,6 +3913,7 @@ function resumeDraft() {
   document.getElementById('draftBanner').classList.remove('show');
   applyRestoredState();
   applyTimelineVisibility();
+  applyAllQuickCheckVisibility();
 }
 
 function discardDraft() {
@@ -3740,6 +3930,7 @@ document.addEventListener('change', saveState);
 // filling this in explicitly chooses to (see checkForSavedDraft).
 checkForSavedDraft();
 applyTimelineVisibility();
+applyAllQuickCheckVisibility();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderBar();
