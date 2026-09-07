@@ -245,7 +245,7 @@
 <body>
 
 <header>
-  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.4.0</span></h1>
+  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.4.1</span></h1>
   <p>Tile a PDF, image or web page across A3 sheets</p>
 </header>
 
@@ -529,6 +529,28 @@ function loadFile(file) {
   }
 }
 
+// ─── Render a PDF page, but give up cleanly instead of hanging forever ────────
+// Some PDFs (typically ones with complex hand-drawn/script embedded fonts,
+// e.g. exported from Canva) make pdf.js's canvas renderer stall for minutes —
+// at any resolution, not just high quality. Racing against a timeout means
+// the user gets a clear message instead of a frozen page.
+function renderPageWithTimeout(page, viewport, ctx, timeoutMs) {
+  const task = page.render({ canvasContext: ctx, viewport });
+  let settled = false;
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => {
+      if (settled) return;
+      try { task.cancel(); } catch (e) {}
+      reject(new Error(
+        "This PDF's page is too complex for the browser to render in reasonable time " +
+        '(often caused by an intricate embedded font). Workaround: open the PDF, export/screenshot ' +
+        'it as a PNG or JPG, and drop that image in instead — the image path does not use this renderer.'
+      ));
+    }, timeoutMs);
+  });
+  return Promise.race([task.promise.then(r => { settled = true; return r; }), timeout]);
+}
+
 // ─── Load PDF ─────────────────────────────────────────────────────────────────
 async function loadPDF(file) {
   dropZone.querySelector('.primary').textContent = 'Loading…';
@@ -548,7 +570,7 @@ async function loadPDF(file) {
     const sc = Math.min(220 / vp.height, 180 / vp.width, 1.5);
     const pvp = page.getViewport({ scale: sc });
     previewCanvas.width = pvp.width; previewCanvas.height = pvp.height;
-    await page.render({ canvasContext: previewCanvas.getContext('2d'), viewport: pvp }).promise;
+    await renderPageWithTimeout(page, pvp, previewCanvas.getContext('2d'), 15000);
     sourceCanvas = null;
     captureWidthRow.classList.add('hidden');
     applyAutoLayout(pageInf.widthMm, pageInf.heightMm);
@@ -801,7 +823,7 @@ async function generatePDF() {
       const srcCtx = src.getContext('2d');
       srcCtx.fillStyle = '#fff';
       srcCtx.fillRect(0, 0, src.width, src.height);
-      await page.render({ canvasContext: srcCtx, viewport: vp }).promise;
+      await renderPageWithTimeout(page, vp, srcCtx, 30000);
     } else {
       src = sourceCanvas;
     }
