@@ -245,7 +245,7 @@
 <body>
 
 <header>
-  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.4.1</span></h1>
+  <h1>PDF Tiler <span style="font-size:0.65rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">v1.5.0</span></h1>
   <p>Tile a PDF, image or web page across A3 sheets</p>
 </header>
 
@@ -330,6 +330,25 @@
             <span class="lb-desc">1 col × 3 sheets</span>
           </button>
 
+        </div>
+      </div>
+
+      <!-- Sheet orientation override -->
+      <div style="grid-column:1/-1;">
+        <span class="opt-label">Sheet orientation</span>
+        <div class="width-presets" id="oriPicker">
+          <button class="width-btn active" data-ori="match" id="oriMatch">
+            <span class="wb-name">Match layout</span>
+            <span class="wb-desc">Landscape/portrait set by grid above</span>
+          </button>
+          <button class="width-btn" data-ori="landscape" id="oriLandscape">
+            <span class="wb-name">Force landscape</span>
+            <span class="wb-desc">All sheets landscape A3</span>
+          </button>
+          <button class="width-btn" data-ori="portrait" id="oriPortrait">
+            <span class="wb-name">Force portrait</span>
+            <span class="wb-desc">All sheets portrait A3</span>
+          </button>
         </div>
       </div>
 
@@ -421,6 +440,7 @@ let captureWidth = 6000;   // HTML capture width in px
 let layoutCols = 2;
 let layoutRows = 2;
 let layoutOri  = 'auto'; // 'landscape' | 'portrait' | 'auto' (auto = match source)
+let sheetOriOverride = null; // null = use layout's own orientation; 'landscape' | 'portrait' = force all sheets
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 const dropZone        = document.getElementById('dropZone');
@@ -510,9 +530,20 @@ function applyAutoLayout(widthMm, heightMm) {
 
 // ─── Resolve sheet orientation ────────────────────────────────────────────────
 function resolveOri(ori) {
+  if (sheetOriOverride) return sheetOriOverride;
   if (ori === 'auto') return (pageInf && pageInf.isPortrait) ? 'portrait' : 'landscape';
   return ori;
 }
+
+// ─── Sheet orientation override picker ───────────────────────────────────────
+document.querySelectorAll('#oriPicker .width-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#oriPicker .width-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    sheetOriOverride = btn.dataset.ori === 'match' ? null : btn.dataset.ori;
+    updateInfo();
+  });
+});
 
 // ─── Load dispatcher ──────────────────────────────────────────────────────────
 function loadFile(file) {
