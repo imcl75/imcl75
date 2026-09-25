@@ -418,6 +418,7 @@
   </div>
 
 </div><!-- /wrap -->
+<footer style="text-align:center;font-size:0.75rem;color:#94a3b8;padding:0 0 1.5rem;">PDF Tiler · v25.09.26a</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -837,7 +838,10 @@ async function generatePDF() {
     const pgH_mm = sheetOri === 'landscape' ? A3H : A3W;
 
     // ── Build source canvas ───────────────────────────────────────────────────
+    // srcMmW/H = physical size (mm) that `src` covers ON THE OUTPUT. For PDFs the
+    // page is rendered already enlarged, so this is source size × scale.
     let src;
+    let srcMmW = pageInf.widthMm, srcMmH = pageInf.heightMm;
     if (sourceType === 'pdf') {
       const contentScale = Math.min(
         (cols * pgW_mm) / pageInf.widthMm,
@@ -855,6 +859,8 @@ async function generatePDF() {
       srcCtx.fillStyle = '#fff';
       srcCtx.fillRect(0, 0, src.width, src.height);
       await renderPageWithTimeout(page, vp, srcCtx, 30000);
+      srcMmW = pageInf.widthMm  * contentScale;
+      srcMmH = pageInf.heightMm * contentScale;
     } else {
       src = sourceCanvas;
     }
@@ -903,20 +909,17 @@ async function generatePDF() {
       interCtx.drawImage(src, interOffX, interOffY, scaledSrcW, scaledSrcH);
 
       src = interCanvas;
-      // Rewrite pageInf so tile loop sees src as filling the grid exactly (offX=offY=0)
-      pageInf = { ...pageInf, widthMm: cols * pgW_mm, heightMm: rows * pgH_mm };
+      // src now fills the grid exactly (offX=offY=0)
+      srcMmW = cols * pgW_mm;
+      srcMmH = rows * pgH_mm;
     }
 
     // ── Tile maths ────────────────────────────────────────────────────────────
     // At this point src is always at output resolution and fills widthMm × heightMm.
     // For PDFs the pre-scaled canvas already does this; for image/HTML the
     // intermediate canvas above did. Either way: offX ≈ 0, offY ≈ 0.
-    const scale = Math.min(
-      (cols * pgW_mm) / pageInf.widthMm,
-      (rows * pgH_mm) / pageInf.heightMm
-    );
     // In source pixels, how many px = 1mm on output
-    const pxPerMm = src.width / pageInf.widthMm;
+    const pxPerMm = src.width / srcMmW;
     // Grid size in source pixels
     const gridW_px = Math.round(cols * pgW_mm * pxPerMm);
     const gridH_px = Math.round(rows * pgH_mm * pxPerMm);
