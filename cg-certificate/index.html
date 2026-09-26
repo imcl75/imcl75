@@ -96,7 +96,7 @@
     <h2>3 · Add a list of children</h2>
     <p class="hint">One child per line: <b>Week, Name, Reason</b> separated by a tab (paste straight from a spreadsheet) or by <b>|</b>. For example <code>T1W3 | Ada Lovelace | her perseverance in maths…</code>. Write the reason as the words that come after “…today because”.</p>
     <textarea id="bulk" placeholder="T1W3 | Child Name | reason…"></textarea>
-    <div class="btns"><button class="primary" id="bulkAdd">Add to schedule</button><span class="status" id="bulkStatus"></span></div>
+    <div class="btns"><button id="bulkFileBtn">Choose a file…</button><input type="file" id="bulkFile" accept=".txt,.csv,.tsv" hidden><button class="primary" id="bulkAdd">Add to schedule</button><span class="status" id="bulkStatus"></span></div>
   </div>
 
   <div class="card">
@@ -113,7 +113,7 @@
     </details>
   </div>
 
-  <footer>CG Certificates · 26.09.26b</footer>
+  <footer>CG Certificates · 26.09.26c</footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -265,6 +265,8 @@ $('addOne').onclick = () => {
 };
 
 // ── Bulk add ───────────────────────────────────────
+$('bulkFileBtn').onclick = () => $('bulkFile').click();
+$('bulkFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; $('bulk').value = await f.text(); e.target.value = ''; $('bulkAdd').click(); };
 $('bulkAdd').onclick = () => {
   const lines = $('bulk').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   let added = 0; const bad = [];
