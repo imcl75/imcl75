@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CG Certificates</title>
+<style>
+  :root {
+    --bg:#F4F5F7; --surface:#FFFFFF; --border:#DDE1EB; --text:#1A2030; --muted:#7A8499;
+    --accent:#2E5F8A; --accent-lo:#EBF1F8; --danger:#B3412F; --ok:#2F7D4F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0F1520; --surface:#192030; --border:#242E42; --text:#DEE5F2; --muted:#7A8AA8;
+      --accent:#5090C0; --accent-lo:#152030; --danger:#E27B69; --ok:#6CC28C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0F1520; --surface:#192030; --border:#242E42; --text:#DEE5F2; --muted:#7A8AA8;
+    --accent:#5090C0; --accent-lo:#152030; --danger:#E27B69; --ok:#6CC28C;
+  }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; min-height:100vh; }
+  .wrap { max-width:980px; margin:0 auto; padding:0 16px 40px; }
+  header { padding:22px 0 10px; }
+  header a { color:var(--muted); font-size:.85rem; text-decoration:none; }
+  h1 { font-size:1.5rem; margin-top:4px; }
+  .sub { color:var(--muted); font-size:.9rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:16px; }
+  .card h2 { font-size:1.05rem; margin-bottom:4px; }
+  .card p.hint { color:var(--muted); font-size:.85rem; margin-bottom:10px; }
+  label { display:block; font-size:.8rem; color:var(--muted); margin:8px 0 3px; }
+  input, select, textarea { width:100%; font:inherit; font-size:16px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); }
+  textarea { resize:vertical; min-height:70px; }
+  input[type=color] { padding:2px; height:38px; width:64px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  .row > * { flex:1 1 200px; }
+  .row .fixed { flex:0 0 auto; }
+  button { font:inherit; font-size:.9rem; padding:8px 14px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.danger { color:var(--danger); }
+  button:disabled { opacity:.45; cursor:default; }
+  .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+  .week { border:1px solid var(--border); border-radius:8px; margin-top:12px; overflow:hidden; }
+  .week-h { background:var(--accent-lo); padding:8px 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .week-h b { font-size:1rem; }
+  .week-h .d { color:var(--muted); font-size:.85rem; flex:1; }
+  .week-h button { padding:4px 10px; font-size:.8rem; }
+  .child { padding:10px 12px; border-top:1px solid var(--border); display:grid; grid-template-columns:180px 1fr 90px 34px; gap:8px; align-items:start; }
+  .child textarea { min-height:60px; }
+  .cnt { font-size:.75rem; color:var(--muted); }
+  .cnt.over { color:var(--danger); font-weight:600; }
+  .empty { padding:10px 12px; color:var(--muted); font-size:.85rem; }
+  .status { font-size:.85rem; color:var(--muted); }
+  .status.ok { color:var(--ok); } .status.bad { color:var(--danger); }
+  details summary { cursor:pointer; font-weight:600; }
+  footer { text-align:center; color:var(--muted); font-size:.75rem; padding:24px 0 0; }
+  @media (max-width:700px) { .child { grid-template-columns:1fr 1fr; } .child .reason { grid-column:1 / -1; order:3; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="../">← Tools</a>
+    <h1>Celebration Gathering certificates</h1>
+    <div class="sub">Assign children to weeks, then download that week's certificates as a PowerPoint.</div>
+  </header>
+
+  <div class="card">
+    <h2>1 · Generate</h2>
+    <div class="row">
+      <div><label for="genWeek">Week</label><select id="genWeek"></select></div>
+      <div><label for="zone">Learning zone</label><select id="zone"></select></div>
+      <div class="fixed"><label for="colour">Colour</label><input type="color" id="colour"></div>
+    </div>
+    <label for="sig">Signature line</label>
+    <input id="sig">
+    <div class="btns">
+      <button class="primary" id="gen">Download PowerPoint</button>
+      <span class="status" id="genStatus"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Schedule</h2>
+    <p class="hint">Each child sits in a week. “No gathering this week” moves that week and every later week along by one, skipping holidays because only school weeks are in the list. Everything is editable in place.</p>
+    <div class="btns" style="margin-top:0">
+      <button id="undo" disabled>Undo last move</button>
+      <button id="addOne">+ Add a child</button>
+      <span class="status" id="schedStatus"></span>
+    </div>
+    <div id="schedule"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Add a list of children</h2>
+    <p class="hint">One child per line: <b>Week, Name, Reason</b> separated by a tab (paste straight from a spreadsheet) or by <b>|</b>. For example <code>T1W3 | Ada Lovelace | her perseverance in maths…</code>. Write the reason as the words that come after “…today because”.</p>
+    <textarea id="bulk" placeholder="T1W3 | Child Name | reason…"></textarea>
+    <div class="btns"><button class="primary" id="bulkAdd">Add to schedule</button><span class="status" id="bulkStatus"></span></div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Term weeks, backup and template</summary>
+      <p class="hint" style="margin-top:8px">The list of school weeks, in order. Paste rows from the TermDates sheet (Term, Week, StartDate — any layout with a label like T1W3 or Term and Week numbers, plus an optional date). Until you do, a placeholder T1–T6 × 7 weeks list is used.</p>
+      <textarea id="weeksBox" placeholder="T1W1	2026-09-01"></textarea>
+      <div class="btns"><button id="weeksSave">Save term weeks</button><span class="status" id="weeksStatus"></span></div>
+      <div class="btns" style="margin-top:18px">
+        <button id="exp">Export backup (.json)</button>
+        <button id="impBtn">Import backup</button>
+        <input type="file" id="imp" accept=".json" hidden>
+        <button class="danger" id="clearAll">Clear all children</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Names are stored only in this browser (and in any backup you export) — never on the website itself. The certificate design is <code>master.pptx</code> next to this page; replace that file to change the design. It looks for the text “Child Name”, “Hazel”, “T1W3”, the “Celebration Gathering today because […]” sentence and the signature line.</p>
+    </details>
+  </div>
+
+  <footer>CG Certificates · 26.09.26a</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const ZONES = [
+  ['Oak','#1798d3'],['Beech','#e67e22'],['Willow','#27AE60'],['Acer','#C0157A'],
+  ['Maple','#1798d3'],['Hazel','#e67e22'],['Elm','#27AE60']
+];
+const PREFIX = 'Celebration Gathering today because ';
+const MAX_CHARS = 300;
+const KEY = 'cg_cert_v1';
+
+let S = load();
+let undoSnap = null;
+
+function defaultWeeks() {
+  const w = [];
+  for (let t = 1; t <= 6; t++) for (let k = 1; k <= 7; k++) w.push({ label:`T${t}W${k}`, start:'' });
+  return w;
+}
+function load() {
+  const d = { weeks:defaultWeeks(), weeksCustom:false, children:[], zone:'Hazel', colour:'#e67e22', sig:'Mr McLean, Mrs Savory and Mrs Cave' };
+  try { const j = JSON.parse(localStorage.getItem(KEY)); if (j) return Object.assign(d, j); } catch(e) {}
+  return d;
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+const $ = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const wIdx = label => S.weeks.findIndex(w => w.label === label);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+function currentWeekLabel() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (const w of S.weeks) {
+    if (!w.start) continue;
+    const s = new Date(w.start + 'T00:00:00'), e = new Date(s); e.setDate(e.getDate() + 4);
+    if (today <= e) return w.label;
+  }
+  return null;
+}
+function weekOptions(sel, selected) {
+  sel.innerHTML = S.weeks.map(w => `<option value="${w.label}"${w.label===selected?' selected':''}>${w.label}${w.start?' · '+fmtDate(w.start):''}</option>`).join('');
+}
+
+// ── Schedule ───────────────────────────────────────
+function render() {
+  const used = S.children.map(c => wIdx(c.w)).filter(i => i >= 0);
+  const unknown = S.children.filter(c => wIdx(c.w) < 0);
+  let html = '';
+  if (used.length) {
+    const lo = Math.min(...used), hi = Math.max(...used);
+    for (let i = lo; i <= hi; i++) {
+      const w = S.weeks[i];
+      const kids = S.children.filter(c => c.w === w.label);
+      html += `<div class="week"><div class="week-h"><b>${w.label}</b><span class="d">${fmtDate(w.start)}${kids.length?` · ${kids.length} certificate${kids.length>1?'s':''}`:' · no certificates'}</span>`
+        + (kids.length ? `<button data-skip="${i}">No gathering this week →</button>` : `<button data-close="${i}">Close this gap ←</button>`)
+        + `</div>` + (kids.length ? kids.map(childRow).join('') : `<div class="empty">Empty week.</div>`) + `</div>`;
+    }
+  }
+  if (unknown.length) {
+    html += `<div class="week"><div class="week-h"><b>Not in the term list</b><span class="d">Pick a week for each</span></div>${unknown.map(childRow).join('')}</div>`;
+  }
+  if (!html) html = `<div class="empty">No children yet — add some below.</div>`;
+  $('schedule').innerHTML = html;
+  $('schedule').querySelectorAll('select[data-w]').forEach(sel => weekOptions(sel, sel.dataset.w));
+  const cw = $('genWeek').value || currentWeekLabel() || (S.children[0] && S.children[0].w) || S.weeks[0].label;
+  weekOptions($('genWeek'), cw);
+  refreshGen();
+  $('undo').disabled = !undoSnap;
+}
+function childRow(c) {
+  const n = c.reason.length;
+  return `<div class="child" data-id="${c.id}">
+    <input data-f="name" value="${esc(c.name)}" placeholder="Child name" aria-label="Child name">
+    <div class="reason"><textarea data-f="reason" placeholder="…the words after “today because”" aria-label="Reason">${esc(c.reason)}</textarea><div class="cnt${n>MAX_CHARS?' over':''}">${n} / ${MAX_CHARS}${n>MAX_CHARS?' — may overflow the certificate':''}</div></div>
+    <select data-w="${esc(c.w)}" data-f="w" aria-label="Week"></select>
+    <button class="danger" data-del="${c.id}" aria-label="Remove">✕</button>
+  </div>`;
+}
+$('schedule').addEventListener('input', e => {
+  const row = e.target.closest('.child'); if (!row || !e.target.dataset.f) return;
+  const c = S.children.find(x => x.id === row.dataset.id); if (!c) return;
+  const f = e.target.dataset.f;
+  if (f === 'w') return;
+  c[f] = e.target.value; save();
+  if (f === 'reason') {
+    const cnt = row.querySelector('.cnt'), n = c.reason.length;
+    cnt.textContent = `${n} / ${MAX_CHARS}${n>MAX_CHARS?' — may overflow the certificate':''}`;
+    cnt.classList.toggle('over', n > MAX_CHARS);
+  }
+  refreshGen();
+});
+$('schedule').addEventListener('change', e => {
+  if (e.target.dataset.f !== 'w') return;
+  const c = S.children.find(x => x.id === e.target.closest('.child').dataset.id);
+  c.w = e.target.value; save(); render();
+});
+$('schedule').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.del) {
+    const c = S.children.find(x => x.id === b.dataset.del);
+    if (c && (c.name || c.reason) && !confirm(`Remove ${c.name || 'this child'}?`)) return;
+    S.children = S.children.filter(x => x.id !== b.dataset.del); save(); render();
+  } else if (b.dataset.skip) shiftFrom(+b.dataset.skip, 1);
+  else if (b.dataset.close) shiftFrom(+b.dataset.close + 1, -1);
+});
+function shiftFrom(idx, by) {
+  const moving = S.children.filter(c => wIdx(c.w) >= idx);
+  const status = $('schedStatus'); status.className = 'status';
+  const target = i => S.weeks[wIdx(i.w) + by];
+  if (moving.some(c => !target(c))) { status.className = 'status bad'; status.textContent = 'That would push someone past the last week in the term list.'; return; }
+  undoSnap = JSON.stringify(S.children);
+  moving.forEach(c => { c.w = target(c).label; });
+  save(); render();
+  status.className = 'status ok';
+  status.textContent = by > 0 ? `Moved ${moving.length} child${moving.length===1?'':'ren'} one week later.` : `Moved ${moving.length} child${moving.length===1?'':'ren'} one week earlier.`;
+}
+$('undo').onclick = () => { if (!undoSnap) return; S.children = JSON.parse(undoSnap); undoSnap = null; save(); render(); $('schedStatus').textContent = 'Undone.'; };
+$('addOne').onclick = () => {
+  const w = $('genWeek').value || S.weeks[0].label;
+  S.children.push({ id:uid(), name:'', reason:'', w }); save(); render();
+  const rows = document.querySelectorAll('.child'); const last = [...rows].pop(); if (last) last.querySelector('input').focus();
+};
+
+// ── Bulk add ───────────────────────────────────────
+$('bulkAdd').onclick = () => {
+  const lines = $('bulk').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let added = 0; const bad = [];
+  lines.forEach((l, i) => {
+    const p = (l.includes('\t') ? l.split('\t') : l.split('|')).map(x => x.trim());
+    let [w, name, ...rest] = p; const reason = rest.join(' ').trim();
+    const m = /^T?(\d)\s*W?\s*(\d+)$/i.exec((w || '').replace(/\s+/g, ''));
+    const label = m ? `T${m[1]}W${m[2]}` : null;
+    if (!label || !name || wIdx(label) < 0) { bad.push(i + 1); return; }
+    S.children.push({ id:uid(), name, reason, w:label }); added++;
+  });
+  save();
+  const st = $('bulkStatus');
+  st.className = 'status ' + (bad.length ? 'bad' : 'ok');
+  st.textContent = `Added ${added}.` + (bad.length ? ` Couldn't read line${bad.length>1?'s':''} ${bad.join(', ')} (need a week like T1W3 that is in the term list, and a name).` : '');
+  if (!bad.length) $('bulk').value = '';
+  render();
+};
+
+// ── Term weeks ─────────────────────────────────────
+function parseWeeks(text) {
+  const out = []; const seen = new Set();
+  for (const raw of text.split(/\r?\n/)) {
+    const l = raw.trim(); if (!l) continue;
+    let label = null;
+    let m = /\bT\s*(\d)\s*W\s*(\d+)\b/i.exec(l);
+    if (m) label = `T${m[1]}W${m[2]}`;
+    else { m = /^\D*(\d)\D+(\d+)\b/.exec(l); if (m && +m[1] >= 1 && +m[1] <= 6) label = `T${m[1]}W${m[2]}`; }
+    if (!label || seen.has(label)) continue;
+    let start = '';
+    const iso = /(\d{4})-(\d{2})-(\d{2})/.exec(l), uk = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})/.exec(l);
+    if (iso) start = iso[0];
+    else if (uk) { const y = uk[3].length === 2 ? '20' + uk[3] : uk[3]; start = `${y}-${uk[2].padStart(2,'0')}-${uk[1].padStart(2,'0')}`; }
+    seen.add(label); out.push({ label, start });
+  }
+  return out;
+}
+$('weeksSave').onclick = () => {
+  const w = parseWeeks($('weeksBox').value); const st = $('weeksStatus');
+  if (!w.length) { st.className = 'status bad'; st.textContent = 'No weeks found.'; return; }
+  S.weeks = w; S.weeksCustom = true; save(); render();
+  st.className = 'status ok'; st.textContent = `Saved ${w.length} weeks.`;
+};
+function fillWeeksBox() { $('weeksBox').value = S.weeksCustom ? S.weeks.map(w => `${w.label}\t${w.start}`).join('\n') : ''; }
+
+// ── Backup ─────────────────────────────────────────
+$('exp').onclick = () => download(new Blob([JSON.stringify(S, null, 1)], { type:'application/json' }), `cg-certificates-backup-${new Date().toISOString().slice(0,10)}.json`);
+$('impBtn').onclick = () => $('imp').click();
+$('imp').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); if (!Array.isArray(j.children) || !Array.isArray(j.weeks)) throw 0; S = Object.assign(load(), j); save(); init(); }
+  catch(err) { alert("That doesn't look like a backup file."); }
+  e.target.value = '';
+};
+$('clearAll').onclick = () => { if (confirm('Remove every child from the schedule?')) { S.children = []; undoSnap = null; save(); render(); } };
+
+// ── Settings ───────────────────────────────────────
+$('zone').innerHTML = ZONES.map(z => `<option>${z[0]}</option>`).join('') + '<option value="__custom">Other…</option>';
+$('zone').onchange = () => {
+  const z = ZONES.find(z => z[0] === $('zone').value);
+  if (z) { S.zone = z[0]; S.colour = z[1]; $('colour').value = z[1]; }
+  else { const n = prompt('Zone name?', S.zone); if (n) S.zone = n.trim(); setZoneSelect(); }
+  save();
+};
+$('colour').oninput = () => { S.colour = $('colour').value; save(); };
+$('sig').oninput = () => { S.sig = $('sig').value; save(); };
+function setZoneSelect() {
+  const known = ZONES.some(z => z[0] === S.zone);
+  if (!known) { const o = document.querySelector('#zone option[value="__custom"]'); o.textContent = S.zone + ' (custom)'; }
+  $('zone').value = known ? S.zone : '__custom';
+}
+
+// ── PowerPoint ─────────────────────────────────────
+function refreshGen() {
+  const n = S.children.filter(c => c.w === $('genWeek').value && c.name.trim()).length;
+  $('gen').disabled = !n;
+  $('gen').textContent = n ? `Download PowerPoint (${n} certificate${n>1?'s':''})` : 'Download PowerPoint';
+  $('genStatus').textContent = n ? '' : 'No children in this week.';
+  $('genStatus').className = 'status';
+}
+$('genWeek').onchange = refreshGen;
+
+function fillSlide(xml, c, week) {
+  const x = s => esc(s);
+  const swap = (re, val) => { let hit = false; xml = xml.replace(re, m => { hit = true; return typeof val === 'function' ? val(m) : val; }); if (!hit) throw new Error('Template text not found: ' + re); };
+  swap(/<a:t>Child Name<\/a:t>/, `<a:t>${x(c.name.trim())}</a:t>`);
+  swap(/<a:t>Celebration Gathering today because [^<]*<\/a:t>/, `<a:t>${x(PREFIX + c.reason.trim())}</a:t>`);
+  swap(/<a:t>T1W3<\/a:t>/, `<a:t>${x(week)}</a:t>`);
+  // Zone name sits in the centre of the logo ring: keep it centred on the ring and shrink long names to fit.
+  const zsz = S.zone.length <= 5 ? 1400 : S.zone.length === 6 ? 1200 : 1000;
+  swap(/<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<a:t>Hazel<\/a:t>[\s\S]*?<\/p:sp>/, m => m
+    .replace('<a:off x="8412928" y="679744"/><a:ext cx="590098" cy="307777"/>', '<a:off x="8157977" y="679744"/><a:ext cx="1100000" cy="307777"/>')
+    .replace('wrap="none"', 'wrap="square"').replace('sz="1400"', `sz="${zsz}"`)
+    .replace('<a:t>Hazel</a:t>', `<a:t>${x(S.zone)}</a:t>`));
+  swap(/<a:t>Mr McLean, Mrs Savory and Mrs Cave<\/a:t>/, `<a:t>${x(S.sig)}</a:t>`);
+  const hex = (S.colour || '#e67e22').replace('#', '').toUpperCase();
+  xml = xml.replace(/<a:schemeClr val="accent2"\/>/g, `<a:srgbClr val="${hex}"/>`);
+  return xml;
+}
+
+let masterBuf = null;
+async function getMaster() {
+  if (masterBuf) return masterBuf;
+  const r = await fetch('master.pptx'); if (!r.ok) throw new Error('Could not load master.pptx');
+  return (masterBuf = await r.arrayBuffer());
+}
+$('gen').onclick = async () => {
+  const st = $('genStatus'); st.className = 'status'; st.textContent = 'Building…'; $('gen').disabled = true;
+  try {
+    const week = $('genWeek').value;
+    const kids = S.children.filter(c => c.w === week && c.name.trim());
+    const zip = await JSZip.loadAsync(await getMaster());
+    const slide = await zip.file('ppt/slides/slide1.xml').async('string');
+    const rels = await zip.file('ppt/slides/_rels/slide1.xml.rels').async('string');
+    let ct = await zip.file('[Content_Types].xml').async('string');
+    let pres = await zip.file('ppt/presentation.xml').async('string');
+    let presRels = await zip.file('ppt/_rels/presentation.xml.rels').async('string');
+    let ids = '';
+    kids.forEach((c, i) => {
+      const n = i + 1, filled = fillSlide(slide, c, week);
+      zip.file(`ppt/slides/slide${n}.xml`, filled);
+      if (n > 1) {
+        zip.file(`ppt/slides/_rels/slide${n}.xml.rels`, rels);
+        ct = ct.replace('</Types>', `<Override PartName="/ppt/slides/slide${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>`);
+        presRels = presRels.replace('</Relationships>', `<Relationship Id="rIdCG${n}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${n}.xml"/></Relationships>`);
+        ids += `<p:sldId id="${381 + n}" r:id="rIdCG${n}"/>`;
+      }
+    });
+    pres = pres.replace('</p:sldIdLst>', ids + '</p:sldIdLst>');
+    zip.file('[Content_Types].xml', ct); zip.file('ppt/presentation.xml', pres); zip.file('ppt/_rels/presentation.xml.rels', presRels);
+    const blob = await zip.generateAsync({ type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation', compression:'DEFLATE' });
+    download(blob, `CG-certificates-${week}.pptx`);
+    refreshGen();
+    st.className = 'status ok'; st.textContent = `Downloaded ${kids.length} certificate${kids.length>1?'s':''}.`;
+  } catch (err) { refreshGen(); st.className = 'status bad'; st.textContent = String(err.message || err); }
+};
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function init() {
+  $('colour').value = S.colour; $('sig').value = S.sig;
+  setZoneSelect(); fillWeeksBox(); render();
+}
+init();
+</script>
+</body>
+</html>
