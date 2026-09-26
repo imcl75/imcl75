@@ -101,21 +101,19 @@
 
   <div class="card">
     <details>
-      <summary>Term weeks, backup and template</summary>
-      <p class="hint" style="margin-top:8px">The list of school weeks, in order. Paste rows from the TermDates sheet (Term, Week, StartDate — any layout with a label like T1W3 or Term and Week numbers, plus an optional date). Until you do, a placeholder T1–T6 × 7 weeks list is used.</p>
-      <textarea id="weeksBox" placeholder="T1W1	2026-09-01"></textarea>
-      <div class="btns"><button id="weeksSave">Save term weeks</button><span class="status" id="weeksStatus"></span></div>
-      <div class="btns" style="margin-top:18px">
+      <summary>Backup and template</summary>
+      <div class="btns" style="margin-top:12px">
         <button id="exp">Export backup (.json)</button>
         <button id="impBtn">Import backup</button>
         <input type="file" id="imp" accept=".json" hidden>
         <button class="danger" id="clearAll">Clear all children</button>
       </div>
+      <p class="status" id="termSrc" style="margin-top:10px"></p>
       <p class="hint" style="margin-top:10px">Names are stored only in this browser (and in any backup you export) — never on the website itself. The certificate design is <code>master.pptx</code> next to this page; replace that file to change the design. It looks for the text “Child Name”, “Hazel”, “T1W3”, the “Celebration Gathering today because […]” sentence and the signature line.</p>
     </details>
   </div>
 
-  <footer>CG Certificates · 26.09.26a</footer>
+  <footer>CG Certificates · 26.09.26b</footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -128,19 +126,40 @@ const PREFIX = 'Celebration Gathering today because ';
 const MAX_CHARS = 300;
 const KEY = 'cg_cert_v1';
 
-let S = load();
+let S;
 let undoSnap = null;
 
-function defaultWeeks() {
-  const w = [];
-  for (let t = 1; t <= 6; t++) for (let k = 1; k <= 7; k++) w.push({ label:`T${t}W${k}`, start:'' });
-  return w;
+// Built-in 2026-27 term dates (Monday of each school week). The live school calendar replaces these when reachable.
+const TERM_SNAPSHOT = [
+  {label:'T1W1',start:'2026-09-07'},{label:'T1W2',start:'2026-09-14'},{label:'T1W3',start:'2026-09-21'},{label:'T1W4',start:'2026-09-28'},{label:'T1W5',start:'2026-10-05'},{label:'T1W6',start:'2026-10-12'},{label:'T1W7',start:'2026-10-19'},
+  {label:'T2W1',start:'2026-11-02'},{label:'T2W2',start:'2026-11-09'},{label:'T2W3',start:'2026-11-16'},{label:'T2W4',start:'2026-11-23'},{label:'T2W5',start:'2026-11-30'},{label:'T2W6',start:'2026-12-07'},{label:'T2W7',start:'2026-12-14'},
+  {label:'T3W1',start:'2027-01-04'},{label:'T3W2',start:'2027-01-11'},{label:'T3W3',start:'2027-01-18'},{label:'T3W4',start:'2027-01-25'},{label:'T3W5',start:'2027-02-01'},{label:'T3W6',start:'2027-02-08'},{label:'T4W1',start:'2027-02-22'},
+  {label:'T4W2',start:'2027-03-01'},{label:'T4W3',start:'2027-03-08'},{label:'T4W4',start:'2027-03-15'},{label:'T4W5',start:'2027-03-22'},{label:'T5W1',start:'2027-04-12'},{label:'T5W2',start:'2027-04-19'},{label:'T5W3',start:'2027-04-26'},
+  {label:'T5W4',start:'2027-05-03'},{label:'T5W5',start:'2027-05-10'},{label:'T5W6',start:'2027-05-17'},{label:'T5W7',start:'2027-05-24'},{label:'T6W1',start:'2027-06-07'},{label:'T6W2',start:'2027-06-14'},{label:'T6W3',start:'2027-06-21'},
+  {label:'T6W4',start:'2027-06-28'},{label:'T6W5',start:'2027-07-05'},{label:'T6W6',start:'2027-07-12'},{label:'T6W7',start:'2027-07-19'},
+];
+const TERM_API = 'https://api.wallscourt-farm-academy.co.uk/planning/tab?tab=TermDates&token=ac8f1237baba46f6ff07442ceb9cb22f3ddf0e3ff80a477b'; // narrow read-only token: can read TermDates only
+let termSource = 'built-in 2026-27 dates';
+function defaultWeeks() { return TERM_SNAPSHOT.map(w => ({ ...w })); }
+async function loadLiveWeeks() {
+  try {
+    const r = await fetch(TERM_API, { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    const w = (j.rows || []).map(x => {
+      const m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(x.StartDate || '');
+      return m && x.Label ? { label:String(x.Label).trim(), start:`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` } : null;
+    }).filter(Boolean).sort((a, b) => a.start.localeCompare(b.start));
+    if (w.length < 10) return;
+    S.weeks = w; termSource = 'live school calendar'; render(); showTermSource();
+  } catch (e) { /* offline or blocked: built-in dates stay */ }
 }
+function showTermSource() { $('termSrc').textContent = 'Term dates: ' + termSource; }
 function load() {
-  const d = { weeks:defaultWeeks(), weeksCustom:false, children:[], zone:'Hazel', colour:'#e67e22', sig:'Mr McLean, Mrs Savory and Mrs Cave' };
-  try { const j = JSON.parse(localStorage.getItem(KEY)); if (j) return Object.assign(d, j); } catch(e) {}
+  const d = { weeks:defaultWeeks(), children:[], zone:'Hazel', colour:'#e67e22', sig:'Mr McLean, Mrs Savory and Mrs Cave' };
+  try { const j = JSON.parse(localStorage.getItem(KEY)); if (j) { delete j.weeks; return Object.assign(d, j); } } catch(e) {}
   return d;
 }
+S = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
 const $ = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -265,38 +284,12 @@ $('bulkAdd').onclick = () => {
   render();
 };
 
-// ── Term weeks ─────────────────────────────────────
-function parseWeeks(text) {
-  const out = []; const seen = new Set();
-  for (const raw of text.split(/\r?\n/)) {
-    const l = raw.trim(); if (!l) continue;
-    let label = null;
-    let m = /\bT\s*(\d)\s*W\s*(\d+)\b/i.exec(l);
-    if (m) label = `T${m[1]}W${m[2]}`;
-    else { m = /^\D*(\d)\D+(\d+)\b/.exec(l); if (m && +m[1] >= 1 && +m[1] <= 6) label = `T${m[1]}W${m[2]}`; }
-    if (!label || seen.has(label)) continue;
-    let start = '';
-    const iso = /(\d{4})-(\d{2})-(\d{2})/.exec(l), uk = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})/.exec(l);
-    if (iso) start = iso[0];
-    else if (uk) { const y = uk[3].length === 2 ? '20' + uk[3] : uk[3]; start = `${y}-${uk[2].padStart(2,'0')}-${uk[1].padStart(2,'0')}`; }
-    seen.add(label); out.push({ label, start });
-  }
-  return out;
-}
-$('weeksSave').onclick = () => {
-  const w = parseWeeks($('weeksBox').value); const st = $('weeksStatus');
-  if (!w.length) { st.className = 'status bad'; st.textContent = 'No weeks found.'; return; }
-  S.weeks = w; S.weeksCustom = true; save(); render();
-  st.className = 'status ok'; st.textContent = `Saved ${w.length} weeks.`;
-};
-function fillWeeksBox() { $('weeksBox').value = S.weeksCustom ? S.weeks.map(w => `${w.label}\t${w.start}`).join('\n') : ''; }
-
 // ── Backup ─────────────────────────────────────────
 $('exp').onclick = () => download(new Blob([JSON.stringify(S, null, 1)], { type:'application/json' }), `cg-certificates-backup-${new Date().toISOString().slice(0,10)}.json`);
 $('impBtn').onclick = () => $('imp').click();
 $('imp').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { const j = JSON.parse(await f.text()); if (!Array.isArray(j.children) || !Array.isArray(j.weeks)) throw 0; S = Object.assign(load(), j); save(); init(); }
+  try { const j = JSON.parse(await f.text()); if (!Array.isArray(j.children)) throw 0; delete j.weeks; S = Object.assign(load(), j, { weeks:S.weeks }); save(); init(); }
   catch(err) { alert("That doesn't look like a backup file."); }
   e.target.value = '';
 };
@@ -389,9 +382,10 @@ function download(blob, name) {
 
 function init() {
   $('colour').value = S.colour; $('sig').value = S.sig;
-  setZoneSelect(); fillWeeksBox(); render();
+  setZoneSelect(); render(); showTermSource();
 }
 init();
+loadLiveWeeks();
 </script>
 </body>
 </html>
