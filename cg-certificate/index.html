@@ -80,6 +80,13 @@
       <button class="primary" id="gen">Download PowerPoint</button>
       <span class="status" id="genStatus"></span>
     </div>
+    <div class="btns" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <button id="autoBtn">Save automatically to a folder…</button>
+      <button id="exp">Export backup (.json)</button>
+      <button id="impBtn">Import backup</button>
+      <input type="file" id="imp" accept=".json" hidden>
+    </div>
+    <p class="status" id="saveStatus" style="margin-top:6px"></p>
   </div>
 
   <div class="card">
@@ -104,17 +111,14 @@
     <details>
       <summary>Backup and template</summary>
       <div class="btns" style="margin-top:12px">
-        <button id="exp">Export backup (.json)</button>
-        <button id="impBtn">Import backup</button>
-        <input type="file" id="imp" accept=".json" hidden>
         <button class="danger" id="clearAll">Clear all children</button>
       </div>
       <p class="status" id="termSrc" style="margin-top:10px"></p>
-      <p class="hint" style="margin-top:10px">Names are stored only in this browser (and in any backup you export) — never on the website itself. The certificate design is <code>master.pptx</code> next to this page; replace that file to change the design. It looks for the text “Child Name”, “Hazel”, “T1W3”, the “Celebration Gathering today because […]” sentence and the signature line.</p>
+      <p class="hint" style="margin-top:10px">Names live only in this browser — never on the website itself. “Save automatically to a folder…” (at the top of the page) asks Chrome or Edge to remember a folder on your Mac, such as your CG HCF folder in OneDrive, and from then on writes <code>CG certificates backup.json</code> there every time something changes — no further clicking needed, and OneDrive keeps its own older versions of that file if you ever need to go back. It only works in Chrome or Edge; Safari can't do this, so use Export/Import there instead. The certificate design is <code>master.pptx</code> next to this page; replace that file to change the design. It looks for the text “Child Name”, “Hazel”, “T1W3”, the “Celebration Gathering today because […]” sentence and the signature line.</p>
     </details>
   </div>
 
-  <footer>CG Certificates · 26.09.26c</footer>
+  <footer>CG Certificates · 26.09.26d</footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -161,7 +165,7 @@ function load() {
   return d;
 }
 S = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} queueAutoSave(); }
 const $ = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const wIdx = label => S.weeks.findIndex(w => w.label === label);
@@ -298,6 +302,45 @@ $('imp').onchange = async e => {
 };
 $('clearAll').onclick = () => { if (confirm('Remove every child from the schedule?')) { S.children = []; undoSnap = null; save(); render(); } };
 
+// ── Auto-save to a folder on your Mac (Chrome/Edge only — File System Access API) ──
+// Names never touch the website; this folder handle and the file itself live only on this
+// computer, remembered by the browser (in IndexedDB) between visits.
+const FS_SUPPORTED = !!window.showDirectoryPicker;
+let dirHandle = null, saveTimer = null;
+function idbOpen() { return new Promise((res, rej) => { const r = indexedDB.open('cgcert', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbGetHandle() { try { const db = await idbOpen(); return await new Promise(res => { const g = db.transaction('h', 'readonly').objectStore('h').get('dir'); g.onsuccess = () => res(g.result || null); g.onerror = () => res(null); }); } catch(e) { return null; } }
+async function idbSetHandle(h) { try { const db = await idbOpen(); await new Promise(res => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').put(h, 'dir'); tx.oncomplete = res; tx.onerror = res; }); } catch(e) {} }
+function setSaveStatus(cls, text) { const el = $('saveStatus'); el.className = 'status' + (cls ? ' ' + cls : ''); el.textContent = text; }
+async function writeAutoBackup() {
+  if (!dirHandle) return;
+  try {
+    if ((await dirHandle.queryPermission({ mode:'readwrite' })) !== 'granted') {
+      setSaveStatus('bad', `Auto-save paused — click Resume to keep saving to "${dirHandle.name}".`);
+      $('autoBtn').textContent = 'Resume auto-save'; return;
+    }
+    const fh = await dirHandle.getFileHandle('CG certificates backup.json', { create:true });
+    const w = await fh.createWritable(); await w.write(JSON.stringify(S, null, 1)); await w.close();
+    setSaveStatus('ok', `Auto-saving to "${dirHandle.name}" · saved ${new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}`);
+    $('autoBtn').textContent = 'Change folder…';
+  } catch (e) { setSaveStatus('bad', "Couldn't save to that folder: " + (e.message || e)); }
+}
+function queueAutoSave() { if (!dirHandle) return; clearTimeout(saveTimer); saveTimer = setTimeout(writeAutoBackup, 800); }
+$('autoBtn').onclick = async () => {
+  if (!FS_SUPPORTED) { alert('Auto-save to a folder needs Chrome or Edge on a Mac or PC — this browser can\'t do it. Use "Export backup" instead, or open this page in Chrome.'); return; }
+  if (dirHandle && (await dirHandle.queryPermission({ mode:'readwrite' })) !== 'granted') {
+    if ((await dirHandle.requestPermission({ mode:'readwrite' })) === 'granted') { await writeAutoBackup(); return; }
+  }
+  try { const h = await window.showDirectoryPicker({ mode:'readwrite' }); dirHandle = h; await idbSetHandle(h); await writeAutoBackup(); }
+  catch (e) { /* the folder picker was cancelled */ }
+};
+async function restoreAutoSave() {
+  if (!FS_SUPPORTED) { $('autoBtn').disabled = true; setSaveStatus('', 'Auto-save needs Chrome or Edge — use Export backup instead.'); return; }
+  const h = await idbGetHandle(); if (!h) return;
+  dirHandle = h;
+  if ((await h.queryPermission({ mode:'readwrite' })) === 'granted') { setSaveStatus('ok', `Auto-saving to "${h.name}".`); $('autoBtn').textContent = 'Change folder…'; }
+  else { setSaveStatus('bad', `Auto-save paused — click Resume to keep saving to "${h.name}".`); $('autoBtn').textContent = 'Resume auto-save'; }
+}
+
 // ── Settings ───────────────────────────────────────
 $('zone').innerHTML = ZONES.map(z => `<option>${z[0]}</option>`).join('') + '<option value="__custom">Other…</option>';
 $('zone').onchange = () => {
@@ -389,6 +432,7 @@ function init() {
 }
 init();
 loadLiveWeeks();
+restoreAutoSave();
 </script>
 </body>
 </html>
