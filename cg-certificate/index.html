@@ -56,6 +56,36 @@
   .status.ok { color:var(--ok); } .status.bad { color:var(--danger); }
   details summary { cursor:pointer; font-weight:600; }
   footer { text-align:center; color:var(--muted); font-size:.75rem; padding:24px 0 0; }
+  .tabs { display:flex; gap:8px; margin-top:14px; }
+  .tabs button { flex:1; padding:10px 14px; font-weight:600; }
+  .tabs button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .child.noreason { grid-template-columns:1fr 90px 34px; }
+  .hide { display:none !important; }
+  #hcPreview { --u:.17px; margin-top:12px; }
+  /* Hot Chocolate Friday certificate: every size is in "u" units so it scales from preview to A7 (74mm wide) */
+  .hc { --navy:#0a0101; width:calc(var(--u)*1406); height:calc(var(--u)*2000); position:relative; overflow:hidden; background:#EB4458; color:var(--navy); font-family:"Avenir Next","Helvetica Neue",Arial,sans-serif; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; flex:none; }
+  .hc .w { position:absolute; inset:calc(var(--u)*30); background:#fff; }
+  .hc .g { position:absolute; inset:calc(var(--u)*46); background:#92D050; }
+  .hc .b { position:absolute; inset:calc(var(--u)*72); background:#DDEAF8; }
+  .hc .t { position:absolute; left:0; right:0; margin:0; }
+  .hc .t1 { top:calc(var(--u)*100); font-size:calc(var(--u)*72); font-weight:700; line-height:calc(var(--u)*100); }
+  .hc .t2 { top:calc(var(--u)*253); font-size:calc(var(--u)*68); line-height:calc(var(--u)*91); }
+  .hc .t3 { top:calc(var(--u)*1612); font-size:calc(var(--u)*64); line-height:calc(var(--u)*80); }
+  .hc img { position:absolute; left:calc(var(--u)*356); top:calc(var(--u)*534); width:calc(var(--u)*782); height:calc(var(--u)*765); }
+  .hc .ln { position:absolute; left:calc(var(--u)*235); width:calc(var(--u)*910); top:calc(var(--u)*1471); height:calc(var(--u)*6); background:#16607F; }
+  .hc .nm { position:absolute; left:calc(var(--u)*235); width:calc(var(--u)*910); bottom:calc(var(--u)*(2000 - 1455)); text-align:center; font-weight:600; white-space:nowrap; line-height:1.15; }
+  #printArea { display:none; --u:calc(74mm/1406); }
+  @media print {
+    @page { size:A4 portrait; margin:0; }
+    html, body { background:#fff; min-height:0; }
+    .wrap { display:none; }
+    #printArea { display:block; }
+    .sheet { width:210mm; height:297mm; position:relative; break-after:page; page-break-after:always; overflow:hidden; }
+    .sheet:last-child { break-after:auto; page-break-after:auto; }
+    .sheet .grid { position:absolute; left:31mm; top:43.5mm; width:148mm; height:210mm; display:grid; grid-template-columns:74mm 74mm; grid-template-rows:105mm 105mm; }
+    .sheet svg { position:absolute; inset:0; width:210mm; height:297mm; }
+    .sheet .foot { position:absolute; left:0; right:0; top:262mm; text-align:center; font:7pt Arial,sans-serif; color:#888; }
+  }
   @media (max-width:700px) { .child { grid-template-columns:1fr 1fr; } .child .reason { grid-column:1 / -1; order:3; } }
 </style>
 </head>
@@ -63,22 +93,33 @@
 <div class="wrap">
   <header>
     <a href="../">← Tools</a>
-    <h1>Celebration Gathering certificates</h1>
-    <div class="sub">Assign children to weeks, then download that week's certificates as a PowerPoint.</div>
+    <h1 id="pageTitle">Celebration Gathering certificates</h1>
+    <div class="sub" id="pageSub">Assign children to weeks, then download that week's certificates as a PowerPoint.</div>
   </header>
+
+  <div class="tabs">
+    <button id="tabCG" class="on">Celebration Gathering</button>
+    <button id="tabHCF">Hot Chocolate Friday</button>
+  </div>
 
   <div class="card">
     <h2>1 · Generate</h2>
     <div class="row">
       <div><label for="genWeek">Week</label><select id="genWeek"></select></div>
-      <div><label for="zone">Learning zone</label><select id="zone"></select></div>
-      <div class="fixed"><label for="colour">Colour</label><input type="color" id="colour"></div>
+      <div class="cgOnly"><label for="zone">Learning zone</label><select id="zone"></select></div>
+      <div class="fixed cgOnly"><label for="colour">Colour</label><input type="color" id="colour"></div>
     </div>
-    <label for="sig">Signature line</label>
-    <input id="sig">
+    <div class="cgOnly"><label for="sig">Signature line</label>
+    <input id="sig"></div>
     <div class="btns">
-      <button class="primary" id="gen">Download PowerPoint</button>
+      <button class="primary cgOnly" id="gen">Download PowerPoint</button>
+      <button class="primary hcfOnly hide" id="printWeek">Print this week</button>
+      <button class="hcfOnly hide" id="printTerm">Print the whole term</button>
       <span class="status" id="genStatus"></span>
+    </div>
+    <div class="hcfOnly hide">
+      <p class="hint" style="margin-top:10px">Prints on A4, four A7 certificates to a sheet, with small cut marks in the corners. In the print window choose <b>Actual size</b> (100%) and turn headers and footers off. The preview below shows the first child in the chosen week.</p>
+      <div id="hcPreview"></div>
     </div>
     <div class="btns" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
       <button id="autoBtn">Save automatically to a folder…</button>
@@ -102,8 +143,8 @@
 
   <div class="card">
     <h2>3 · Add a list of children</h2>
-    <p class="hint">One child per line: <b>Week, Name, Reason</b> separated by a tab (paste straight from a spreadsheet) or by <b>|</b>. For example <code>T1W3 | Ada Lovelace | her perseverance in maths…</code>. Write the reason as the words that come after “…today because”.</p>
-    <textarea id="bulk" placeholder="T1W3 | Child Name | reason…"></textarea>
+    <p class="hint" id="bulkHint"></p>
+    <textarea id="bulk"></textarea>
     <div class="btns"><button id="bulkFileBtn">Choose a file…</button><input type="file" id="bulkFile" accept=".txt,.csv,.tsv" hidden><button class="primary" id="bulkAdd">Add to schedule</button><span class="status" id="bulkStatus"></span></div>
   </div>
 
@@ -118,8 +159,9 @@
     </details>
   </div>
 
-  <footer>CG Certificates · 26.09.26d</footer>
+  <footer>CG Certificates · 08.10.26a</footer>
 </div>
+<div id="printArea"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
@@ -133,6 +175,9 @@ const KEY = 'cg_cert_v1';
 
 let S;
 let undoSnap = null;
+let mode = 'cg';
+const list = () => mode === 'hcf' ? S.hcf : S.children;
+const setList = v => { if (mode === 'hcf') S.hcf = v; else S.children = v; };
 
 // Built-in 2026-27 term dates (Monday of each school week). The live school calendar replaces these when reachable.
 const TERM_SNAPSHOT = [
@@ -160,11 +205,12 @@ async function loadLiveWeeks() {
 }
 function showTermSource() { $('termSrc').textContent = 'Term dates: ' + termSource; }
 function load() {
-  const d = { weeks:defaultWeeks(), children:[], zone:'Hazel', colour:'#e67e22', sig:'Mr McLean, Mrs Savory and Mrs Cave' };
+  const d = { weeks:defaultWeeks(), children:[], hcf:[], zone:'Hazel', colour:'#e67e22', sig:'Mr McLean, Mrs Savory and Mrs Cave' };
   try { const j = JSON.parse(localStorage.getItem(KEY)); if (j) { delete j.weeks; return Object.assign(d, j); } } catch(e) {}
   return d;
 }
 S = load();
+if (!Array.isArray(S.hcf)) S.hcf = [];
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} queueAutoSave(); }
 const $ = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -191,14 +237,15 @@ function weekOptions(sel, selected) {
 
 // ── Schedule ───────────────────────────────────────
 function render() {
-  const used = S.children.map(c => wIdx(c.w)).filter(i => i >= 0);
-  const unknown = S.children.filter(c => wIdx(c.w) < 0);
+  const L = list();
+  const used = L.map(c => wIdx(c.w)).filter(i => i >= 0);
+  const unknown = L.filter(c => wIdx(c.w) < 0);
   let html = '';
   if (used.length) {
     const lo = Math.min(...used), hi = Math.max(...used);
     for (let i = lo; i <= hi; i++) {
       const w = S.weeks[i];
-      const kids = S.children.filter(c => c.w === w.label);
+      const kids = L.filter(c => c.w === w.label);
       html += `<div class="week"><div class="week-h"><b>${w.label}</b><span class="d">${fmtDate(w.start)}${kids.length?` · ${kids.length} certificate${kids.length>1?'s':''}`:' · no certificates'}</span>`
         + (kids.length ? `<button data-skip="${i}">No gathering this week →</button>` : `<button data-close="${i}">Close this gap ←</button>`)
         + `</div>` + (kids.length ? kids.map(childRow).join('') : `<div class="empty">Empty week.</div>`) + `</div>`;
@@ -210,13 +257,18 @@ function render() {
   if (!html) html = `<div class="empty">No children yet — add some below.</div>`;
   $('schedule').innerHTML = html;
   $('schedule').querySelectorAll('select[data-w]').forEach(sel => weekOptions(sel, sel.dataset.w));
-  const cw = $('genWeek').value || currentWeekLabel() || (S.children[0] && S.children[0].w) || S.weeks[0].label;
+  const cw = $('genWeek').value || currentWeekLabel() || (L[0] && L[0].w) || S.weeks[0].label;
   weekOptions($('genWeek'), cw);
   refreshGen();
   $('undo').disabled = !undoSnap;
 }
 function childRow(c) {
-  const n = c.reason.length;
+  const n = (c.reason || '').length;
+  if (mode === 'hcf') return `<div class="child noreason" data-id="${c.id}">
+    <input data-f="name" value="${esc(c.name)}" placeholder="Child name" aria-label="Child name">
+    <select data-w="${esc(c.w)}" data-f="w" aria-label="Week"></select>
+    <button class="danger" data-del="${c.id}" aria-label="Remove">✕</button>
+  </div>`;
   return `<div class="child" data-id="${c.id}">
     <input data-f="name" value="${esc(c.name)}" placeholder="Child name" aria-label="Child name">
     <div class="reason"><textarea data-f="reason" placeholder="…the words after “today because”" aria-label="Reason">${esc(c.reason)}</textarea><div class="cnt${n>MAX_CHARS?' over':''}">${n} / ${MAX_CHARS}${n>MAX_CHARS?' — may overflow the certificate':''}</div></div>
@@ -226,7 +278,7 @@ function childRow(c) {
 }
 $('schedule').addEventListener('input', e => {
   const row = e.target.closest('.child'); if (!row || !e.target.dataset.f) return;
-  const c = S.children.find(x => x.id === row.dataset.id); if (!c) return;
+  const c = list().find(x => x.id === row.dataset.id); if (!c) return;
   const f = e.target.dataset.f;
   if (f === 'w') return;
   c[f] = e.target.value; save();
@@ -239,33 +291,33 @@ $('schedule').addEventListener('input', e => {
 });
 $('schedule').addEventListener('change', e => {
   if (e.target.dataset.f !== 'w') return;
-  const c = S.children.find(x => x.id === e.target.closest('.child').dataset.id);
+  const c = list().find(x => x.id === e.target.closest('.child').dataset.id);
   c.w = e.target.value; save(); render();
 });
 $('schedule').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.del) {
-    const c = S.children.find(x => x.id === b.dataset.del);
+    const c = list().find(x => x.id === b.dataset.del);
     if (c && (c.name || c.reason) && !confirm(`Remove ${c.name || 'this child'}?`)) return;
-    S.children = S.children.filter(x => x.id !== b.dataset.del); save(); render();
+    setList(list().filter(x => x.id !== b.dataset.del)); save(); render();
   } else if (b.dataset.skip) shiftFrom(+b.dataset.skip, 1);
   else if (b.dataset.close) shiftFrom(+b.dataset.close + 1, -1);
 });
 function shiftFrom(idx, by) {
-  const moving = S.children.filter(c => wIdx(c.w) >= idx);
+  const moving = list().filter(c => wIdx(c.w) >= idx);
   const status = $('schedStatus'); status.className = 'status';
   const target = i => S.weeks[wIdx(i.w) + by];
   if (moving.some(c => !target(c))) { status.className = 'status bad'; status.textContent = 'That would push someone past the last week in the term list.'; return; }
-  undoSnap = JSON.stringify(S.children);
+  undoSnap = JSON.stringify(list());
   moving.forEach(c => { c.w = target(c).label; });
   save(); render();
   status.className = 'status ok';
   status.textContent = by > 0 ? `Moved ${moving.length} child${moving.length===1?'':'ren'} one week later.` : `Moved ${moving.length} child${moving.length===1?'':'ren'} one week earlier.`;
 }
-$('undo').onclick = () => { if (!undoSnap) return; S.children = JSON.parse(undoSnap); undoSnap = null; save(); render(); $('schedStatus').textContent = 'Undone.'; };
+$('undo').onclick = () => { if (!undoSnap) return; setList(JSON.parse(undoSnap)); undoSnap = null; save(); render(); $('schedStatus').textContent = 'Undone.'; };
 $('addOne').onclick = () => {
   const w = $('genWeek').value || S.weeks[0].label;
-  S.children.push({ id:uid(), name:'', reason:'', w }); save(); render();
+  list().push(mode === 'hcf' ? { id:uid(), name:'', w } : { id:uid(), name:'', reason:'', w }); save(); render();
   const rows = document.querySelectorAll('.child'); const last = [...rows].pop(); if (last) last.querySelector('input').focus();
 };
 
@@ -277,11 +329,11 @@ $('bulkAdd').onclick = () => {
   let added = 0; const bad = [];
   lines.forEach((l, i) => {
     const p = (l.includes('\t') ? l.split('\t') : l.split('|')).map(x => x.trim());
-    let [w, name, ...rest] = p; const reason = rest.join(' ').trim();
+    let [w, name, ...rest] = p; const reason = mode === 'hcf' ? '' : rest.join(' ').trim();
     const m = /^T?(\d)\s*W?\s*(\d+)$/i.exec((w || '').replace(/\s+/g, ''));
     const label = m ? `T${m[1]}W${m[2]}` : null;
     if (!label || !name || wIdx(label) < 0) { bad.push(i + 1); return; }
-    S.children.push({ id:uid(), name, reason, w:label }); added++;
+    list().push(mode === 'hcf' ? { id:uid(), name, w:label } : { id:uid(), name, reason, w:label }); added++;
   });
   save();
   const st = $('bulkStatus');
@@ -300,7 +352,7 @@ $('imp').onchange = async e => {
   catch(err) { alert("That doesn't look like a backup file."); }
   e.target.value = '';
 };
-$('clearAll').onclick = () => { if (confirm('Remove every child from the schedule?')) { S.children = []; undoSnap = null; save(); render(); } };
+$('clearAll').onclick = () => { if (confirm(mode === 'hcf' ? 'Remove every child from the Hot Chocolate Friday schedule?' : 'Remove every child from the Celebration Gathering schedule?')) { setList([]); undoSnap = null; save(); render(); } };
 
 // ── Auto-save to a folder on your Mac (Chrome/Edge only — File System Access API) ──
 // Names never touch the website; this folder handle and the file itself live only on this
@@ -359,9 +411,10 @@ function setZoneSelect() {
 
 // ── PowerPoint ─────────────────────────────────────
 function refreshGen() {
-  const n = S.children.filter(c => c.w === $('genWeek').value && c.name.trim()).length;
-  $('gen').disabled = !n;
+  const n = list().filter(c => c.w === $('genWeek').value && c.name.trim()).length;
+  $('gen').disabled = !n; $('printWeek').disabled = !n; $('printTerm').disabled = !termKids().length;
   $('gen').textContent = n ? `Download PowerPoint (${n} certificate${n>1?'s':''})` : 'Download PowerPoint';
+  if (mode === 'hcf') { const t = $('genWeek').value.slice(0, 2); $('printTerm').textContent = `Print all of ${t} (${termKids().length})`; drawPreview(); }
   $('genStatus').textContent = n ? '' : 'No children in this week.';
   $('genStatus').className = 'status';
 }
@@ -426,9 +479,67 @@ function download(blob, name) {
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+// ── Hot Chocolate Friday ───────────────────────────
+function hcCard(name) {
+  const n = name.trim(), fs = Math.min(96, 880 / (Math.max(n.length, 1) * 0.55));
+  return `<div class="hc"><div class="w"></div><div class="g"></div><div class="b"></div>
+    <p class="t t1">Hot Chocolate Friday!</p>
+    <p class="t t2">Today I was selected for a hot<br>chocolate celebration</p>
+    <img src="hcf-mug.png" alt="">
+    <div class="nm" style="font-size:calc(var(--u)*${fs.toFixed(1)})">${esc(n)}</div><div class="ln"></div>
+    <p class="t t3">Well done for being chosen for Hot<br>Chocolate Friday! Thank you for being<br>a part of our school community</p></div>`;
+}
+const weekOrder = c => wIdx(c.w);
+function termKids() {
+  const t = $('genWeek').value.slice(0, 2);
+  return S.hcf.filter(c => c.name.trim() && c.w.startsWith(t)).sort((a, b) => weekOrder(a) - weekOrder(b));
+}
+function drawPreview() {
+  const c = S.hcf.find(c => c.w === $('genWeek').value && c.name.trim());
+  $('hcPreview').innerHTML = c ? hcCard(c.name) : '';
+}
+const ticks = [31, 105, 179], tickY = [43.5, 148.5, 253.5];
+function marks() {
+  let d = '';
+  ticks.forEach(x => { d += `M${x} 38.5V42.5M${x} 254.5V258.5`; });
+  tickY.forEach(y => { d += `M26 ${y}H30M180 ${y}H184`; });
+  return `<svg viewBox="0 0 210 297"><path d="${d}" stroke="#999" stroke-width=".25" fill="none"/></svg>`;
+}
+function printCards(kids) {
+  if (!kids.length) return;
+  let h = '';
+  for (let i = 0; i < kids.length; i += 4) {
+    const page = kids.slice(i, i + 4);
+    h += `<section class="sheet">${marks()}<div class="grid">${page.map(c => hcCard(c.name)).join('')}</div><div class="foot">${page.map(c => esc(c.w + ' ' + c.name.trim())).join(' · ')}</div></section>`;
+  }
+  $('printArea').innerHTML = h;
+  const imgs = [...$('printArea').querySelectorAll('img')];
+  Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))).then(() => window.print());
+}
+$('printWeek').onclick = () => printCards(S.hcf.filter(c => c.w === $('genWeek').value && c.name.trim()));
+$('printTerm').onclick = () => printCards(termKids());
+
+function setMode(m) {
+  mode = m; undoSnap = null;
+  const hcf = m === 'hcf';
+  $('tabCG').classList.toggle('on', !hcf); $('tabHCF').classList.toggle('on', hcf);
+  document.querySelectorAll('.cgOnly').forEach(e => e.classList.toggle('hide', hcf));
+  document.querySelectorAll('.hcfOnly').forEach(e => e.classList.toggle('hide', !hcf));
+  $('pageTitle').textContent = hcf ? 'Hot Chocolate Friday certificates' : 'Celebration Gathering certificates';
+  $('pageSub').textContent = hcf ? 'Assign children to Fridays, then print that week’s A7 certificate.' : 'Assign children to weeks, then download that week\'s certificates as a PowerPoint.';
+  $('bulkHint').innerHTML = hcf
+    ? 'One child per line: <b>Week, Name</b> separated by a tab (paste straight from a spreadsheet) or by <b>|</b>. For example <code>T1W3 | Ada</code>.'
+    : 'One child per line: <b>Week, Name, Reason</b> separated by a tab (paste straight from a spreadsheet) or by <b>|</b>. For example <code>T1W3 | Ada Lovelace | her perseverance in maths…</code>. Write the reason as the words that come after “…today because”.';
+  $('bulk').placeholder = hcf ? 'T1W3 | Child Name' : 'T1W3 | Child Name | reason…';
+  $('bulkStatus').textContent = ''; $('schedStatus').textContent = '';
+  render();
+}
+$('tabCG').onclick = () => setMode('cg');
+$('tabHCF').onclick = () => setMode('hcf');
+
 function init() {
   $('colour').value = S.colour; $('sig').value = S.sig;
-  setZoneSelect(); render(); showTermSource();
+  setZoneSelect(); setMode(mode); showTermSource();
 }
 init();
 loadLiveWeeks();
