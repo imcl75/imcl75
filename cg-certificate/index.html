@@ -74,6 +74,7 @@
   .hc img { position:absolute; left:calc(var(--u)*356); top:calc(var(--u)*534); width:calc(var(--u)*782); height:calc(var(--u)*765); }
   .hc .ln { position:absolute; left:calc(var(--u)*235); width:calc(var(--u)*910); top:calc(var(--u)*1471); height:calc(var(--u)*6); background:#16607F; }
   .hc .nm { position:absolute; left:calc(var(--u)*235); width:calc(var(--u)*910); bottom:calc(var(--u)*(2000 - 1455)); text-align:center; font-weight:600; white-space:nowrap; line-height:1.15; }
+  .hc .wk { position:absolute; left:calc(var(--u)*105); bottom:calc(var(--u)*92); font-size:calc(var(--u)*34); line-height:1; color:#5b6b80; }
   #printArea { display:none; --u:calc(74mm/1406); }
   @media print {
     @page { size:A4 portrait; margin:0; }
@@ -159,7 +160,7 @@
     </details>
   </div>
 
-  <footer>CG Certificates · 08.10.26a</footer>
+  <footer>CG Certificates · 08.10.26b</footer>
 </div>
 <div id="printArea"></div>
 
@@ -480,14 +481,14 @@ function download(blob, name) {
 }
 
 // ── Hot Chocolate Friday ───────────────────────────
-function hcCard(name) {
+function hcCard(name, week) {
   const n = name.trim(), fs = Math.min(96, 880 / (Math.max(n.length, 1) * 0.55));
   return `<div class="hc"><div class="w"></div><div class="g"></div><div class="b"></div>
     <p class="t t1">Hot Chocolate Friday!</p>
     <p class="t t2">Today I was selected for a hot<br>chocolate celebration</p>
     <img src="hcf-mug.png" alt="">
     <div class="nm" style="font-size:calc(var(--u)*${fs.toFixed(1)})">${esc(n)}</div><div class="ln"></div>
-    <p class="t t3">Well done for being chosen for Hot<br>Chocolate Friday! Thank you for being<br>a part of our school community</p></div>`;
+    <p class="t t3">Well done for being chosen for Hot<br>Chocolate Friday! Thank you for being<br>a part of our school community</p><div class="wk">${esc(week || '')}</div></div>`;
 }
 const weekOrder = c => wIdx(c.w);
 function termKids() {
@@ -496,7 +497,7 @@ function termKids() {
 }
 function drawPreview() {
   const c = S.hcf.find(c => c.w === $('genWeek').value && c.name.trim());
-  $('hcPreview').innerHTML = c ? hcCard(c.name) : '';
+  $('hcPreview').innerHTML = c ? hcCard(c.name, c.w) : '';
 }
 const ticks = [31, 105, 179], tickY = [43.5, 148.5, 253.5];
 function marks() {
@@ -510,7 +511,7 @@ function printCards(kids) {
   let h = '';
   for (let i = 0; i < kids.length; i += 4) {
     const page = kids.slice(i, i + 4);
-    h += `<section class="sheet">${marks()}<div class="grid">${page.map(c => hcCard(c.name)).join('')}</div><div class="foot">${page.map(c => esc(c.w + ' ' + c.name.trim())).join(' · ')}</div></section>`;
+    h += `<section class="sheet">${marks()}<div class="grid">${page.map(c => hcCard(c.name, c.w)).join('')}</div><div class="foot">${page.map(c => esc(c.w + ' ' + c.name.trim())).join(' · ')}</div></section>`;
   }
   $('printArea').innerHTML = h;
   const imgs = [...$('printArea').querySelectorAll('img')];
