@@ -83,7 +83,7 @@
     #printArea { display:block; }
     .sheet { width:210mm; height:297mm; position:relative; break-after:page; page-break-after:always; overflow:hidden; }
     .sheet:last-child { break-after:auto; page-break-after:auto; }
-    .sheet .grid { position:absolute; left:31mm; top:43.5mm; width:148mm; height:210mm; display:grid; grid-template-columns:74mm 74mm; grid-template-rows:105mm 105mm; }
+    .sheet .grid { position:absolute; left:30.85mm; top:43.35mm; width:148.3mm; height:210.3mm; display:grid; grid-template-columns:74mm 74mm; grid-template-rows:105mm 105mm; gap:.3mm; }
     .sheet svg { position:absolute; inset:0; width:210mm; height:297mm; }
     .sheet .foot { position:absolute; left:0; right:0; top:262mm; text-align:center; font:7pt Arial,sans-serif; color:#888; }
   }
@@ -160,7 +160,7 @@
     </details>
   </div>
 
-  <footer>CG Certificates · 08.10.26b</footer>
+  <footer>CG Certificates · 09.10.26a</footer>
 </div>
 <div id="printArea"></div>
 
@@ -499,11 +499,11 @@ function drawPreview() {
   const c = S.hcf.find(c => c.w === $('genWeek').value && c.name.trim());
   $('hcPreview').innerHTML = c ? hcCard(c.name, c.w) : '';
 }
-const ticks = [31, 105, 179], tickY = [43.5, 148.5, 253.5];
+const ticks = [30.85, 105, 179.15], tickY = [43.35, 148.5, 253.65];
 function marks() {
   let d = '';
-  ticks.forEach(x => { d += `M${x} 38.5V42.5M${x} 254.5V258.5`; });
-  tickY.forEach(y => { d += `M26 ${y}H30M180 ${y}H184`; });
+  ticks.forEach(x => { d += `M${x} 38.35V42.35M${x} 254.65V258.65`; });
+  tickY.forEach(y => { d += `M25.85 ${y}H29.85M180.15 ${y}H184.15`; });
   return `<svg viewBox="0 0 210 297"><path d="${d}" stroke="#999" stroke-width=".25" fill="none"/></svg>`;
 }
 function printCards(kids) {
