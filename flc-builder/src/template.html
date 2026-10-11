@@ -599,7 +599,7 @@ function lev(a,b){const m=a.length,n=b.length;if(Math.abs(m-n)>3)return 9;let pr
 /* Children type their own names: capitals, first name only, typos ("GARDNE"). Returns {p} or {why}. */
 function matchPupil(name){
   const m=matchPupil1(name);if(m.p)return m;
-  // attendance exports often put the surname first ("SMITH Jo" or "Smith Jo")
+  // attendance exports often put the surname first ("SURNAME Forename")
   const w=String(name||"").trim().split(/\s+/);
   if(w.length>1&&!/,/.test(name)){for(let k=1;k<w.length;k++){const m2=matchPupil1(w.slice(k).join(" ")+" "+w.slice(0,k).join(" "));if(m2.p)return m2}}
   return m;
