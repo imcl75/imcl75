@@ -242,8 +242,10 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
 
 <div class="modal-bg" id="m-importVoice"><div class="modal">
   <h2>Add pupil voice</h2>
-  <p class="hint">Open the Microsoft Forms results in Excel. Copy the <b>Name</b> column and the answer column(s) — with the header row — and paste below.
-  If there are several answer columns (e.g. <i>enjoyed / improve / how</i>), they are joined into one comment in that order.</p>
+  <p class="hint">In Microsoft Forms choose <b>Open results in Excel</b>. Click any cell, press <b>Ctrl+A</b> then <b>Ctrl+C</b> (⌘A, ⌘C on a Mac) and paste the whole sheet below.
+  The tool finds the column with the children's names (it ignores Forms' own “Name”/“Email” columns when they just say None or anonymous) and joins the answers in order.
+  Short answers are turned into sentences that fit the question — e.g. “Handwriting so I will practise” → “I would like to improve my handwriting so I will practise.”
+  Names typed in capitals, first names only and small spelling slips are matched; anything unsure is listed for you to choose.</p>
   <textarea id="voicePaste" rows="10"></textarea>
   <div id="voiceResult" class="hint"></div>
   <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="importVoice()">Match to pupils</button></div>
@@ -461,42 +463,70 @@ function importClass(){
 }
 
 /* ================= IMPORT VOICE ================= */
+function lev(a,b){const m=a.length,n=b.length;if(Math.abs(m-n)>3)return 9;let prev=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const curr=[i];for(let j=1;j<=n;j++)curr[j]=Math.min(prev[j]+1,curr[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=curr}return prev[n]}
+/* Children type their own names: capitals, first name only, typos ("GARDNE"). Returns {p} or {why}. */
 function matchPupil(name){
   name=String(name||"").trim();
   const cm=name.match(/^([^,]+),\s*(.+)$/);if(cm)name=cm[2]+" "+cm[1]; // "Surname, First"
-  const n=normName(name);if(!n)return null;
-  let p=state.pupils.find(x=>normName(x.name)===n);if(p)return p;
-  const parts=n.split(" ");
-  // first + last name match (ignoring middle names)
-  p=state.pupils.filter(x=>{const q=normName(x.name).split(" ");return q[0]===parts[0]&&q[q.length-1]===parts[parts.length-1]});
-  if(p.length===1)return p[0];
-  // unique first name
-  p=state.pupils.filter(x=>normName(x.name).split(" ")[0]===parts[0]);
-  if(p.length===1)return p[0];
-  return null;
+  const n=normName(name);if(!n||n==="none"||n==="anonymous")return{why:"no name"};
+  const parts=n.split(" "),f=parts[0],l=parts.length>1?parts[parts.length-1]:"";
+  const scored=state.pupils.map(x=>{const q=normName(x.name).split(" "),pf=q[0],pl=q[q.length-1];let sc=0;
+    if(normName(x.name)===n)sc=100;
+    else if(l){const fOk=f===pf||(f.length>=4&&lev(f,pf)<=1);
+      // the surname (or a middle name) must fit too — "Sam W" is not "Sam Sample"
+      const lOk=q.slice(1).some(x=>x===l||x.startsWith(l)||(l.length>=3&&(l.startsWith(x)||lev(l,x)<=2)))||parts.slice(1).some(x=>x===pl||(x.length>=3&&lev(x,pl)<=2));
+      if(fOk&&lOk)sc=f===pf?90:85;}
+    else{if(f===pf)sc=80;else if(f.length>=4&&lev(f,pf)<=1)sc=60;}
+    return{x,sc}}).filter(o=>o.sc>0).sort((a,b)=>b.sc-a.sc);
+  if(!scored.length){const sameFirst=state.pupils.filter(x=>normName(x.name).split(" ")[0]===f);
+    return{why:sameFirst.length?"surname doesn't match "+sameFirst.map(x=>x.name).join(" or "):"no pupil with that name"}}
+  if(scored.length>1&&scored[1].sc===scored[0].sc)return{why:"could be "+scored.filter(o=>o.sc===scored[0].sc).map(o=>o.x.name).join(" or ")};
+  return{p:scored[0].x};
 }
+let voicePending=[];
+function voiceFromParts(p){return p.voiceParts?p.voiceParts.map((t,i)=>tidyPart(t,(p.voiceKinds||[])[i])).join(" "):tidy(p.voiceRaw)}
+function setVoice(p,parts,kinds){p.voiceParts=parts;p.voiceKinds=kinds;p.voiceRaw=parts.join("\n");p.voice=voiceFromParts(p);p.voiceTidied=true}
 function importVoice(){
   const rows=parseTable($("voicePaste").value);
   if(rows.length<2){toast("Paste the header row and at least one child");return}
-  const h=rows[0].map(x=>x.trim().toLowerCase());
-  let nameI=findCol(h,[x=>x==="name",x=>x==="full name",x=>/pupil.*name|your name|child/.test(x)]);
-  if(nameI<0)nameI=0;
-  // Microsoft Forms adds ID/time/email columns — skip them
-  const skip=x=>/^(id|start time|completion time|email|last modified time|name)$/.test(x)||/time$/.test(x)||/email/.test(x);
-  const ans=h.map((x,i)=>i).filter(i=>i!==nameI&&!skip(h[i]));
-  let ok=0;const miss=[];
+  const head=rows[0].map(x=>x.trim()),h=head.map(x=>x.toLowerCase());
+  // Forms has its own "Name" column (often "None" or "Anonymous") as well as a "Your name" question — use whichever is filled in
+  const cand=h.map((x,i)=>i).filter(i=>/name/.test(h[i])&&h[i].length<40);
+  const filled=i=>rows.slice(1).filter(r=>{const v=(r[i]||"").trim().toLowerCase();return v&&v!=="none"&&v!=="anonymous"}).length;
+  const nameI=cand.length?cand.sort((a,b)=>filled(b)-filled(a))[0]:0;
+  const skip=x=>/^(id|start time|completion time|email|last modified time)$/.test(x)||/time$/.test(x)||/email/.test(x);
+  const ans=h.map((x,i)=>i).filter(i=>!cand.includes(i)&&i!==nameI&&!skip(h[i]));
+  const kinds=ans.map(i=>questionKind(head[i]));
+  state.voiceQuestions=ans.map(i=>head[i]);
+  const got=new Map();voicePending=[];
   rows.slice(1).forEach(r=>{
-    const nm=(r[nameI]||"").trim();if(!nm)return;
-    const p=matchPupil(nm);
-    const parts=ans.map(i=>(r[i]||"").trim()).filter(Boolean);
-    if(!parts.length)return;
-    if(!p){miss.push(nm);return}
-    p.voiceParts=parts;p.voiceRaw=parts.join("\n");p.voice=parts.map(tidy).join(" ");p.voiceTidied=true;ok++;
+    const nm=(r[nameI]||"").trim();const parts=ans.map(i=>(r[i]||"").trim());
+    if(!parts.some(Boolean))return;
+    const m=matchPupil(nm);
+    if(!m.p){voicePending.push({nm,parts,kinds,why:m.why});return}
+    if(!got.has(m.p.id))got.set(m.p.id,{p:m.p,n:0,typed:[]});
+    const g=got.get(m.p.id);g.n++;g.typed.push(nm);g.parts=parts; // later answers replace earlier ones
   });
+  got.forEach(g=>setVoice(g.p,g.parts,kinds));
   save();renderAll();
-  $("voiceResult").innerHTML=`<p><b>${ok}</b> comments matched and quick-tidied.</p>`+
-    (miss.length?`<p style="color:var(--bad)">Not matched (check spelling of name, or paste into that child's page by hand): ${miss.map(esc).join(", ")}</p>`:"");
+  const dup=[...got.values()].filter(g=>g.n>1);
+  const fuzzy=[...got.values()].filter(g=>g.typed.some(t=>normName(t)!==normName(g.p.name)));
+  $("voiceResult").innerHTML=`<p><b>${got.size}</b> comments matched and quick-tidied.</p>`+
+    (dup.length?`<p>Answered more than once — the latest answer is used: ${dup.map(g=>esc(g.p.name)).join(", ")}.</p>`:"")+
+    (fuzzy.length?`<details><summary>Check these name matches (${fuzzy.length})</summary><p>${fuzzy.map(g=>`“${esc(g.typed[g.typed.length-1])}” → <b>${esc(g.p.name)}</b>`).join("<br>")}</p></details>`:"")+
+    renderPending();
 }
+function renderPending(){
+  if(!voicePending.length)return"";
+  const opts=`<option value="">Choose a pupil…</option>`+state.pupils.map(p=>`<option value="${p.id}">${esc(p.name)}${p.voiceRaw?" (has a comment)":""}</option>`).join("");
+  const many=voicePending.length>8;
+  return`<div id="pending"><p style="color:var(--bad);margin-bottom:4px"><b>${voicePending.length}</b> not matched — choose who wrote each one${many?" (if the form went to the whole year group, most of these will be children in another class — just leave them)":""}:</p>
+    ${many?"<details><summary>Show the unmatched answers</summary>":""}<table class="mini">${voicePending.map((v,i)=>`<tr><td style="width:130px">“${esc(v.nm||"no name")}”<br><span class="hint">${esc(v.why)}</span></td><td>${esc(v.parts.filter(Boolean).join(" / ").slice(0,140))}…</td><td style="width:190px"><select onchange="assignPending(${i},this.value)">${opts}</select></td></tr>`).join("")}</table>${many?"</details>":""}</div>`;
+}
+function assignPending(i,id){const p=state.pupils.find(x=>x.id===id);const v=voicePending[i];if(!p||!v)return;
+  setVoice(p,v.parts,v.kinds);voicePending.splice(i,1);save();renderAll();
+  const el=$("pending");if(el)el.outerHTML=renderPending()||"<p>All matched.</p>";toast("Added to "+p.name)}
 
 /* ================= TIDY (rule-based) ================= */
 /*TIDY-START*/
@@ -523,17 +553,34 @@ const FIX={"becuase":"because","becase":"because","beacuse":"because","becaus":"
 "bisuits":"biscuits","biscits":"biscuits","bisciuts":"biscuits","biskits":"biscuits","bisquits":"biscuits","choclate":"chocolate","chocolat":"chocolate","resilliance":"resilience","resiliance":"resilience",
 "sentances":"sentences","sentance":"sentence","senteces":"sentences","paragragh":"paragraph","paragraf":"paragraph","descripton":"description","discription":"description","dicription":"description",
 "tables":"tables","timetables":"times tables","timestables":"times tables","times-tables":"times tables","ttrs":"TTRS","ttrockstars":"TT Rock Stars","sats":"SATs","pe":"PE","ict":"ICT","dt":"DT","ks2":"KS2",
+"biscut":"biscuit","biscuts":"biscuits","bisket":"biscuit","biskets":"biscuits","experement":"experiment","experment":"experiment","expermant":"experiment","exberent":"experiment","experiement":"experiment","experimint":"experiment",
+"commucation":"communication","comunication":"communication","confued":"confused","confussed":"confused","lmprove":"improve","imporve":"improve","ttr":"TTRS","ttrs":"TTRS",
+"yaer":"year","yeer":"year","spotes":"sports","sprots":"sports","neet":"neat","neatly":"neatly","relly":"really","rilly":"really","favroute":"favourite","favroite":"favourite","favourit":"favourite","favorit":"favourite",
+"evert":"every","recored":"record","handwitting":"handwriting","handwrting":"handwriting","handriting":"handwriting","enviroment":"environment","envirement":"environment","surgen":"surgeon","schoo":"school","skool":"school",
+"alyays":"always","allways":"always","Iiked":"I liked","iiked":"I liked","becuse":"because","bacause":"because","beacause":"because","becaouse":"because","becoz":"because",
+"scientis":"scientist","sientist":"scientist","athor":"author","auther":"author","arthur":"author","matamatician":"mathematician","mathamatician":"mathematician","artis":"artist",
+"tabels":"tables","tabls":"tables","divishon":"division","multiplacation":"multiplication","multyplication":"multiplication","subtraktion":"subtraction","adition":"addition","fracshons":"fractions",
+"vocabulery":"vocabulary","vocab":"vocabulary","discription":"description","descripsion":"description","presentaion":"presentation","punctation":"punctuation","grammer":"grammar",
+"hapy":"happy","happey":"happy","intrested":"interested","intresting":"interesting","exiting":"exciting","excitting":"exciting","amasing":"amazing","awsome":"awesome","awesom":"awesome",
+"story's":"stories","storys":"stories","coment":"comment","esy":"easy","doo":"do","coulering":"colouring","colering":"colouring","mathmatitcian":"mathematician","mathmatician":"mathematician","mathematition":"mathematician",
+"geograthy":"geography","jeography":"geography","arethemetics":"arithmetic","arithmatic":"arithmetic","enqiries":"enquiries","enquirys":"enquiries","handrinting":"handwriting","makeing":"making","takeing":"taking","step's":"steps","athelete":"athlete","athlet":"athlete",
 "english":"English","french":"French","spanish":"Spanish","monday":"Monday","tuesday":"Tuesday","wednesday":"Wednesday","thursday":"Thursday","friday":"Friday","saturday":"Saturday","sunday":"Sunday","christmas":"Christmas","easter":"Easter"};
 // two-word fixes where the meaning is clear from the words around them
 const PHRASE=[[/\bi what to\b/gi,"I want to"],[/\bnever new\b/gi,"never knew"],[/\bhand writing\b/gi,"handwriting"],[/\bwould of\b/gi,"would have"],[/\bcould of\b/gi,"could have"],[/\bshould of\b/gi,"should have"],[/\bmust of\b/gi,"must have"],[/\ba lot of of\b/gi,"a lot of"],[/\btime tables\b/gi,"times tables"],[/\btimes table's\b/gi,"times tables"],[/\bthat is why\b/gi,"that is why"],[/\bto practice\b/gi,"to practise"],[/\bwill practice\b/gi,"will practise"],[/\bcan practice\b/gi,"can practise"],
  [/\b(doing|did|in|with|of|on|for|enjoyed|liked|loved|about|made|making) are\b/gi,"$1 our"],[/\bhalf a hour\b/gi,"half an hour"],
  [/\bill (improve|practise|try|go|do|work|use|read|keep|learn|play|get|make|be)\b/gi,"I'll $1"],[/\b(will|I'll) to\b/gi,"$1 go to"],
- [/\bit (make|help|get)\b/gi,"it $1s"],[/\bplaces value\b/gi,"place value"],[/\b(tt|times?) ?tables? ?rock ?stars?\b/gi,"TT Rock Stars"],[/\bttrockstars\b/gi,"TT Rock Stars"]];
-function matchCase(src,rep){if(/^[A-Z]/.test(src)&&/^[a-z]/.test(rep))return rep[0].toUpperCase()+rep.slice(1);return rep}
+ [/\bit (make|help|get)\b/gi,"it $1s"],[/\bplaces value\b/gi,"place value"],[/\b(tt|times?) ?tables? ?rock ?stars?\b/gi,"Times Tables Rock Stars"],[/\bttrockstars\b/gi,"Times Tables Rock Stars"],
+ [/\bbrist\w*\s+sp\w*/gi,"Bristol Sports"],[/\bbeing and (artist|author|athlete|historian|geographer)\b/gi,"being an $1"],[/\btoo (improve|get|be|practise|learn|work)\b/gi,"to $1"],[/\brapped up\b/gi,"wrapped up"],[/\bhand of the\b/gi,"hand off the"],[/\b(?:year|yr)\s*(5|five)\b/gi,"Year 5"],[/\b(?:year|yr)\s*(4|four|for)\b/gi,"Year 4"],[/\b(?:year|yr)\s*(6|six)\b/gi,"Year 6"],[/\b(?:year|yr)\s*(3|three)\b/gi,"Year 3"],
+ [/\bmore (neat|clear|fast|quick|tidy|small|big|good|easy)\b/gi,"$1~"],
+ [/\b(find it|it's|it is|is|was|am|I'm|I am|get) bit\b/gi,"$1 a bit"],
+ [/\b(enjoyed|enjoy|enjoying|liked|like|loved|love) (?:a |an )?(scientist|author|artist|historian|geographer|mathematician|athlete)s?\b/gi,"$1 being a $2"],
+ [/\b(improve|improving) (?:a |an )?(scientist|author|artist|historian|geographer|mathematician|athlete)s?\b/gi,"$1 as a $2"]];
+const COMPARATIVE={neat:"neater",clear:"clearer",fast:"faster",quick:"quicker",tidy:"tidier",small:"smaller",big:"bigger",good:"better",easy:"easier"};
+function matchCase(src,rep){if(/^[A-Z]/.test(src)&&/^[a-z]/.test(rep)&&src[0].toLowerCase()===rep[0])return rep[0].toUpperCase()+rep.slice(1);return rep}
 function tidy(s){
   let t=String(s||"").replace(/\r/g,"").replace(/([.!?])?\s*\n+\s*/g,(m,p)=>(p||".")+" ").replace(/[ \t ]+/g," ").trim();
   if(!t)return"";
-  t=t.replace(/[’‘]/g,"'").replace(/\be\.\s?g\.?(?=\s)/gi,"e.g.\u200b").replace(/\bi\.\s?e\.?(?=\s)/gi,"i.e.\u200b");
+  t=t.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{E0000}-\u{E007F}]/gu,"").replace(/(^|\s)[>]?[:;]-?[)(DPp](?=\s|$|[.!?,])/g,"$1").replace(/[’‘]/g,"'").replace(/\be\.\s?g\.?(?=\s)/gi,"e.g.\u200b").replace(/\bi\.\s?e\.?(?=\s)/gi,"i.e.\u200b");
   t=t.replace(/[A-Za-z']+/g,(w,off,str)=>{const lw=w.toLowerCase();
     if(lw==="i"||lw==="l")return str[off+1]==="."&&/[a-z]/i.test(str[off+2]||"")?w:"I"; // leave "i.e."
     if(FIX[lw]!==undefined){const r=FIX[lw];return /^[A-Z]/.test(r)?r:matchCase(w,r)}
@@ -548,7 +595,7 @@ function tidy(s){
   t=fixSense(t);
   t=t.replace(/(^|[^\u200b][.!?]\s+)([a-z])/g,(m,p,c)=>p+c.toUpperCase());
   t=t.replace(/^\W+/,"");
-  t=t.charAt(0).toUpperCase()+t.slice(1);
+  t=t.trim();t=t.charAt(0).toUpperCase()+t.slice(1);
   if(!/[.!?]["')]?$/.test(t))t+=".";
   return t.replace(/ {2,}/g," ").replace(/\u200b/g,"").trim();
 }
@@ -556,6 +603,10 @@ function tidy(s){
 const SENSE_VERB="enjoyed|enjoy|liked|like|loved|love|want|wanted|would|will|think|thought|need|needed|found|find|also|really|am|was|have|had|can|could|learnt|learned|did|do|went|got|felt|feel|wish|hope";
 const SENSE_END="fun|interesting|exciting|good|hard|challenging|tricky|amazing|cool|great|enjoyable|easy|difficult|well|it|them|lot|day|days|week|weekend|night|home|school|class|group|groups|friends|classmates|maths|English|reading|writing|science|art|handwriting|spelling|spellings|tables|division|multiplication|fractions|PE|music|history|geography|printing|experiment|experiments|heart|body|book|books|teacher|year|term|lessons|games|TTRS|done|people|divisions|it";
 function fixSense(t){
+  t=t.replace(/\b(neat|clear|fast|quick|tidy|small|big|good|easy)~/gi,(m,w)=>COMPARATIVE[w.toLowerCase()]);
+  t=t.replace(/\ba (author|artist|historian|geographer|athlete)\b/gi,"an $1");
+  // "so it can neater" -> "so it can be neater"
+  t=t.replace(/\b(can|could|will|would|to|should|might|I'll)\s+(neater|clearer|faster|quicker|tidier|smaller|bigger|easier|more|less|better)\b(?!\s+at\b(?=[^.]*\b(?:than)\b))/gi,(m,a,b)=>/^(more|less)$/i.test(b)?m:`${a} be ${b}`);
   // "I want improve" -> "I want to improve"
   t=t.replace(/\b(want|wants|wanted|need|needs|would like|going|try|trying|hope|plan|like)\s+(improve|get|be|practise|learn|work|read|write|go|do|use|keep|make|become|spend|focus|know|remember|finish)\b/gi,"$1 to $2");
   // "its fun" -> "it's fun"
@@ -572,9 +623,36 @@ function fixSense(t){
   t=t.replace(/([a-z])\s+(The|My|We|It|This|When|Also|Next|Then|Our|Because)\s/g,"$1. $2 ");
   return t;
 }
+/* Forms answers are often fragments that answer the question ("Handwriting so I will…").
+   Give them the start of a sentence that matches the question. */
+const SENT_START=/^(i|i'm|im|i've|ive|i'd|id|i'll|we|we've|it|it's|its|this|that|there|when|in|during|at|on|last|since|probably|maybe|definitely|honestly|personally|overall|if|to|what|how|after|before|all|everything|something|nothing|because|so|also|me|year)$/i;
+const SENT_VERB=/\b(is|was|are|were|am|be|been|enjoy|enjoyed|enjoying|like|liked|love|loved|want|wanted|would|will|think|need|needed|have|has|had|can|could|should|found|find|get|got|did|do|helped|made|learned|learnt|improve|improved|felt|feel)\b/i;
+const BARE_SUBJ=/^(maths?|handwriting|hand|spelling|spellings|reading|writing|times|division|multiplication|fractions|english|science|presentation|punctuation|grammar|vocabulary|description|art|pe|confidence|focus|concentration|place|long|short|column|french|spanish|music|drawing|drama)\b/i;
+const ROLE=/^(?:being\s+)?(?:an?\s+)?(scientists?|authors?|artists?|historians?|geographers?|mathematicians?|athletes?)\b/i;
+function addStarter(t,kind){
+  t=String(t||"").trim();if(!t||!kind)return t;
+  const first=(t.match(/^[A-Za-z']+/)||[""])[0];
+  if(SENT_START.test(first))return t;
+  const head=t.split(/\b(?:because|cause|cos|coz|so|as|since|and)\b|[,.;!?]/i)[0];
+  if(SENT_VERB.test(head))return t;
+  let rest=t;
+  const isAcr=/^[A-Z]{2,5}$/.test(first);
+  const role=rest.match(ROLE);
+  if(role){const w=role[1].toLowerCase().replace(/s$/,"");const an=/^[aeiou]/.test(w)?"an":"a";
+    rest=(kind==="improve"?`as ${an} ${w}`:`being ${an} ${w}`)+rest.slice(role[0].length);
+    return (kind==="improve"?"I would like to improve ":"I have enjoyed ")+rest}
+  if(!isAcr)rest=rest.charAt(0).toLowerCase()+rest.slice(1);
+  if(kind==="improve"){
+    if(/^my\b/i.test(rest))return"I would like to improve "+rest;
+    if(BARE_SUBJ.test(rest))return"I would like to improve my "+rest;
+    return"I would like to improve "+rest}
+  return"I have enjoyed "+rest;
+}
+function questionKind(h){h=String(h||"").toLowerCase();if(/improve|better|next step|work on/.test(h))return"improve";if(/enjoy|favourite|proud|best/.test(h))return"enjoy";return""}
+function tidyPart(t,kind){return tidy(addStarter(t,kind))}
 /*TIDY-END*/
 function tidyAll(force){
-  let n=0;state.pupils.forEach(p=>{if(!p.voiceRaw)return;if(force||!p.voiceTidied||p.voice===p.voiceRaw){p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;n++}});
+  let n=0;state.pupils.forEach(p=>{if(!p.voiceRaw)return;if(force||!p.voiceTidied||p.voice===p.voiceRaw){p.voice=voiceFromParts(p);p.voiceTidied=true;n++}});
   save();renderAll();toast(n+" comments tidied");
 }
 /* word diff for showing what changed */
@@ -591,7 +669,8 @@ function diffWords(a,b){
 
 /* ================= AI ROUND-TRIP ================= */
 function copyAiPrompt(){
-  const list=state.pupils.map((p,i)=>p.voiceRaw?`${code(i)}: ${p.voiceRaw.replace(/\s*\n+\s*/g," / ")}`:null).filter(Boolean);
+  const list=state.pupils.map((p,i)=>p.voiceRaw?`${code(i)}: ${(p.voiceParts||[p.voiceRaw]).map(x=>x.replace(/\s*\n+\s*/g," ")).join(" / ")}`:null).filter(Boolean);
+  const qs=(state.voiceQuestions||[]).length?`\nThe children were answering these questions, in this order (answers are separated by " / "):\n${state.voiceQuestions.map((q,i)=>`${i+1}. ${q}`).join("\n")}\nIf an answer is only a fragment (e.g. "Handwriting so I will practise"), turn it into a full sentence that fits the question, e.g. "I would like to improve my handwriting so I will practise."\n`:"";
   if(!list.length){toast("No pupil voice comments yet");return}
   const prompt=`These are comments written by Year 5 children (age 9-10) for their Family Learning Conference with parents. Tidy each one up so it can be printed for parents.
 
@@ -601,7 +680,8 @@ Rules:
 - Keep the child's own words, ideas, meaning and voice. Keep it in the first person. It should still sound like a 10-year-old wrote it.
 - Do not add new ideas, details, praise or feelings. Do not remove anything the child said.
 - Split long run-on sentences into separate sentences where needed. A " / " shows where the child started a new answer.
-- Keep each comment roughly the same length.
+- Keep each comment roughly the same length. Leave out emojis.
+- Join each child's answers into one short paragraph.${qs}
 - Reply with ONLY one line per child, starting with the same code, like this:
 P01: tidied comment
 
@@ -700,7 +780,7 @@ function attNote(p){const a=attBand(p.att),l=lateBand(p.late);
   return`Attendance: <b>${a?BAND_NAME[a]:"—"}</b> · Punctuality: <b>${l?BAND_NAME[l]:"—"}</b><br>
   <span style="font-size:12px">Attendance: 99%+ Exceptional · 96%+ Expected · 90–95.9% Below Expected · under 90% Cause for Concern.
   Lates: 0 Exceptional · 1–2 Expected · 3–7 Below Expected · 8+ Cause for Concern. (Same rules as the FLC spreadsheet.)</span>`}
-function retidy(){const p=cur();p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;save();renderEditor();renderList()}
+function retidy(){const p=cur();p.voice=voiceFromParts(p);p.voiceTidied=true;save();renderEditor();renderList()}
 function renderPreview(){
   const p=cur(),el=$("preview");if(!p||!el)return;
   el.innerHTML=`<div class="preview-scale">${sheetHtml(p)}</div>`;
