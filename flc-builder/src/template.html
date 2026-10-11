@@ -91,9 +91,7 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
 .sheet .t1{color:#0b5cad;font-size:20pt;font-weight:700;text-align:center;line-height:1.15}
 .sheet .t2{color:#f5b800;font-size:17pt;font-weight:700;text-align:center;line-height:1.15;margin-bottom:3mm}
 .sheet .bubble{position:relative;border:1.4px solid #ed7d31;background:#fbe5d6;padding:3mm 4mm;font-size:9.5pt;line-height:1.35;margin:0 0 7mm;min-height:17mm}
-.sheet .bubble:after,.sheet .bubble:before{content:"";position:absolute;left:18mm;border-style:solid}
-.sheet .bubble:before{bottom:-5.2mm;border-width:5.2mm 9mm 0 0;border-color:#ed7d31 transparent transparent transparent}
-.sheet .bubble:after{bottom:-4mm;left:18.4mm;border-width:4.1mm 7.4mm 0 0;border-color:#fbe5d6 transparent transparent transparent}
+.sheet .bubble .tail{position:absolute;left:18mm;top:100%;width:34px;height:20px;overflow:visible}
 .sheet table{border-collapse:collapse;width:100%}
 .sheet .subjects td{border:1px solid #000;padding:1.6mm 2mm;vertical-align:middle}
 .sheet .subjects td.ic{width:9mm;text-align:center;padding:1mm}
@@ -199,7 +197,7 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
       <h2>Tidy pupil voice</h2>
       <p class="hint">Two ways to tidy children's comments. Both keep their words and meaning — only spelling, grammar and punctuation change. You always see the original next to the tidied version, and you can edit either.</p>
       <h3>Option A — quick tidy (built in, instant)</h3>
-      <p class="hint">Fixes capital letters, “i” and “l” for “I”, full stops, spacing, doubled words and about 150 common misspellings. It won't untangle long run-on sentences.</p>
+      <p class="hint">Fixes capital letters, “i” and “l” for “I”, spelling (about 150 common mistakes), full stops between run-together sentences, and small missing words — e.g. “…my handwriting <b>so</b> I will practise”, “I want <b>to</b> improve”, “<b>it's</b> fun”, “<b>our</b> experiment”. Always check the highlighted changes; very tangled comments are better tidied with Claude.</p>
       <div class="row"><button class="primary" onclick="tidyAll(false)">Quick-tidy all untouched comments</button><button onclick="tidyAll(true)">Re-tidy every comment (overwrites edits)</button></div>
       <h3>Option B — tidy with Claude (better for run-on sentences)</h3>
       <p class="hint">Copies all comments with a code for each child (P01, P02…) and <b>no names</b>. Paste into Claude, then paste the reply back here.</p>
@@ -501,6 +499,7 @@ function importVoice(){
 }
 
 /* ================= TIDY (rule-based) ================= */
+/*TIDY-START*/
 const FIX={"becuase":"because","becase":"because","beacuse":"because","becaus":"because","becuz":"because","cuz":"because","coz":"because","bcause":"because","beause":"because","becouse":"because","becasue":"because",
 "realy":"really","relly":"really","reely":"really","alot":"a lot","allot":"a lot","freind":"friend","freinds":"friends","frend":"friend","frends":"friends",
 "beleive":"believe","belive":"believe","wich":"which","whitch":"which","thier":"their","probaly":"probably","probly":"probably","intresting":"interesting","intristing":"interesting","interisting":"interesting",
@@ -526,7 +525,10 @@ const FIX={"becuase":"because","becase":"because","beacuse":"because","becaus":"
 "tables":"tables","timetables":"times tables","timestables":"times tables","times-tables":"times tables","ttrs":"TTRS","ttrockstars":"TT Rock Stars","sats":"SATs","pe":"PE","ict":"ICT","dt":"DT","ks2":"KS2",
 "english":"English","french":"French","spanish":"Spanish","monday":"Monday","tuesday":"Tuesday","wednesday":"Wednesday","thursday":"Thursday","friday":"Friday","saturday":"Saturday","sunday":"Sunday","christmas":"Christmas","easter":"Easter"};
 // two-word fixes where the meaning is clear from the words around them
-const PHRASE=[[/\bi what to\b/gi,"I want to"],[/\bnever new\b/gi,"never knew"],[/\bhand writing\b/gi,"handwriting"],[/\bwould of\b/gi,"would have"],[/\bcould of\b/gi,"could have"],[/\bshould of\b/gi,"should have"],[/\bmust of\b/gi,"must have"],[/\ba lot of of\b/gi,"a lot of"],[/\btime tables\b/gi,"times tables"],[/\btimes table's\b/gi,"times tables"],[/\bthat is why\b/gi,"that is why"],[/\bto practice\b/gi,"to practise"],[/\bwill practice\b/gi,"will practise"],[/\bcan practice\b/gi,"can practise"]];
+const PHRASE=[[/\bi what to\b/gi,"I want to"],[/\bnever new\b/gi,"never knew"],[/\bhand writing\b/gi,"handwriting"],[/\bwould of\b/gi,"would have"],[/\bcould of\b/gi,"could have"],[/\bshould of\b/gi,"should have"],[/\bmust of\b/gi,"must have"],[/\ba lot of of\b/gi,"a lot of"],[/\btime tables\b/gi,"times tables"],[/\btimes table's\b/gi,"times tables"],[/\bthat is why\b/gi,"that is why"],[/\bto practice\b/gi,"to practise"],[/\bwill practice\b/gi,"will practise"],[/\bcan practice\b/gi,"can practise"],
+ [/\b(doing|did|in|with|of|on|for|enjoyed|liked|loved|about|made|making) are\b/gi,"$1 our"],[/\bhalf a hour\b/gi,"half an hour"],
+ [/\bill (improve|practise|try|go|do|work|use|read|keep|learn|play|get|make|be)\b/gi,"I'll $1"],[/\b(will|I'll) to\b/gi,"$1 go to"],
+ [/\bit (make|help|get)\b/gi,"it $1s"],[/\bplaces value\b/gi,"place value"],[/\b(tt|times?) ?tables? ?rock ?stars?\b/gi,"TT Rock Stars"],[/\bttrockstars\b/gi,"TT Rock Stars"]];
 function matchCase(src,rep){if(/^[A-Z]/.test(src)&&/^[a-z]/.test(rep))return rep[0].toUpperCase()+rep.slice(1);return rep}
 function tidy(s){
   let t=String(s||"").replace(/\r/g,"").replace(/([.!?])?\s*\n+\s*/g,(m,p)=>(p||".")+" ").replace(/[ \t ]+/g," ").trim();
@@ -537,18 +539,40 @@ function tidy(s){
     if(FIX[lw]!==undefined){const r=FIX[lw];return /^[A-Z]/.test(r)?r:matchCase(w,r)}
     if(/^i'/.test(lw))return"I"+w.slice(1);
     return w});
-  PHRASE.forEach(([re,rep])=>{t=t.replace(re,m=>matchCase(m,rep))});
+  PHRASE.forEach(([re,rep])=>{t=t.replace(re,(...g)=>matchCase(g[0],rep.replace(/\$(\d)/g,(x,n)=>g[+n])))});
   t=t.replace(/\b(\w+)(\s+\1\b)+/gi,"$1");          // doubled words
   t=t.replace(/\s+([,.!?;:])/g,"$1");               // no space before punctuation
   t=t.replace(/([!?])[!?]+/g,"$1").replace(/\.{4,}/g,"...").replace(/([^.])\.\.(?!\.)/g,"$1."); // !!! -> !
   t=t.replace(/,\./g,".").replace(/\.\s+\./g,".");
   t=t.replace(/([,;:!?]|(?<!\b[A-Za-z])\.(?!\.))(?=[A-Za-z])/g,"$1 ");     // space after punctuation
+  t=fixSense(t);
   t=t.replace(/(^|[^\u200b][.!?]\s+)([a-z])/g,(m,p,c)=>p+c.toUpperCase());
   t=t.replace(/^\W+/,"");
   t=t.charAt(0).toUpperCase()+t.slice(1);
   if(!/[.!?]["')]?$/.test(t))t+=".";
   return t.replace(/ {2,}/g," ").replace(/\u200b/g,"").trim();
 }
+/* Adds small missing words and full stops where the child's meaning is clear */
+const SENSE_VERB="enjoyed|enjoy|liked|like|loved|love|want|wanted|would|will|think|thought|need|needed|found|find|also|really|am|was|have|had|can|could|learnt|learned|did|do|went|got|felt|feel|wish|hope";
+const SENSE_END="fun|interesting|exciting|good|hard|challenging|tricky|amazing|cool|great|enjoyable|easy|difficult|well|it|them|lot|day|days|week|weekend|night|home|school|class|group|groups|friends|classmates|maths|English|reading|writing|science|art|handwriting|spelling|spellings|tables|division|multiplication|fractions|PE|music|history|geography|printing|experiment|experiments|heart|body|book|books|teacher|year|term|lessons|games|TTRS|done|people|divisions|it";
+function fixSense(t){
+  // "I want improve" -> "I want to improve"
+  t=t.replace(/\b(want|wants|wanted|need|needs|would like|going|try|trying|hope|plan|like)\s+(improve|get|be|practise|learn|work|read|write|go|do|use|keep|make|become|spend|focus|know|remember|finish)\b/gi,"$1 to $2");
+  // "its fun" -> "it's fun"
+  t=t.replace(/\bits\s+(fun|good|hard|great|really|very|so|easy|interesting|cool|amazing|important|not|a|the|my|exciting|challenging|tricky|difficult|nice|helpful|boring)\b/gi,(m,w)=>matchCase(m,"it's")+" "+w);
+  // goal then plan with nothing joining them: "...better at my handwriting I will practise" -> "...handwriting so I will practise"
+  t=t.replace(/\b(improve|better|work on|confident|faster|quicker|neater)\b([^.!?]*?)(,?)\s+(I will|I'll|I can|I could|I'm going to|I am going to|I need to|I should|I might)\b/gi,(m,a,mid,c,plan)=>
+    /\b(so|because|by|and|but|when|if|then|which|that|or|to)\s*$/i.test(mid)||/\b(so|because|by)\b/i.test(mid)?m:`${a}${mid}${c} so ${plan}`);
+  // two sentences run together: "...the printing I want to..." -> "...the printing. I want to..."
+  // skipped when "was/is" follows, as in "the art I liked most was printing"
+  const re=new RegExp(`\\b(${SENSE_END})\\s+(I(?:'m|'ll|'ve|'d)?\\s+(?:${SENSE_VERB})\\b|I'm|I'll|I've|I'd)`,"g");
+  t=t.replace(re,(m,end,start,off,str)=>{const rest=str.slice(off+m.length).split(/[.!?,]/)[0];
+    return /\b(was|is|were|are)\b/i.test(rest.split(/\b(?:and|but|so|because)\b/)[0])?m:`${end}. ${start}`});
+  // a capital word mid-sentence usually means a missing full stop: "with people The area" -> "with people. The area"
+  t=t.replace(/([a-z])\s+(The|My|We|It|This|When|Also|Next|Then|Our|Because)\s/g,"$1. $2 ");
+  return t;
+}
+/*TIDY-END*/
 function tidyAll(force){
   let n=0;state.pupils.forEach(p=>{if(!p.voiceRaw)return;if(force||!p.voiceTidied||p.voice===p.voiceRaw){p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;n++}});
   save();renderAll();toast(n+" comments tidied");
@@ -572,7 +596,8 @@ function copyAiPrompt(){
   const prompt=`These are comments written by Year 5 children (age 9-10) for their Family Learning Conference with parents. Tidy each one up so it can be printed for parents.
 
 Rules:
-- Correct spelling, grammar and punctuation only. Use UK spelling.
+- Correct spelling, grammar and punctuation. Use UK spelling.
+- Add small missing words (e.g. "so", "to", "the", "go") and punctuation where they are needed for the sentence to make sense.
 - Keep the child's own words, ideas, meaning and voice. Keep it in the first person. It should still sound like a 10-year-old wrote it.
 - Do not add new ideas, details, praise or feelings. Do not remove anything the child said.
 - Split long run-on sentences into separate sentences where needed. A " / " shows where the child started a new answer.
@@ -629,7 +654,7 @@ function renderList(){
 function selectP(id){state.sel=id;save();renderList();renderEditor();window.scrollTo({top:0})}
 function addPupil(){const name=prompt("Child's full name");if(!name)return;const p={id:uid(),name:name.trim(),R:"",W:"",M:"",att:"",late:"",tR:"",tW:"",tM:"",voiceRaw:"",voice:"",notes:""};state.pupils.push(p);state.pupils.sort((a,b)=>a.name.localeCompare(b.name));state.sel=p.id;save();renderAll()}
 function delPupil(){const p=cur();if(!p||!confirm("Remove "+p.name+" from this list?"))return;const i=state.pupils.indexOf(p);state.pupils.splice(i,1);state.sel=(state.pupils[i]||state.pupils[i-1]||{}).id||null;save();renderAll()}
-function setF(k,v){const p=cur();if(!p)return;p[k]=v;save();renderList();renderPreview();if(["R","W","M"].includes(k))renderEditor()}
+function setF(k,v){const p=cur();if(!p)return;p[k]=v;save();renderList();renderPreview();if((k==="att"||k==="late")&&$("attNote"))$("attNote").innerHTML=attNote(p);if(["R","W","M"].includes(k))renderEditor()}
 function useTarget(s,i){const p=cur();const {match,other}=suggestions(s,band(p[s]));const t=(i<0?other[-i-1]:match[i]).t;p["t"+s]=t;save();renderEditor();renderList()}
 function navP(d){const i=state.pupils.findIndex(p=>p.id===state.sel);const n=state.pupils[i+d];if(n)selectP(n.id)}
 function renderEditor(){
@@ -655,6 +680,7 @@ function renderEditor(){
       <label>Attendance %<input type="number" step="0.01" value="${esc(p.att)}" oninput="setF('att',this.value===''?'':+this.value)"></label>
       <label>Lates<input type="number" value="${esc(p.late)}" oninput="setF('late',this.value===''?'':+this.value)"></label>
     </div>
+    <p class="hint" id="attNote" style="margin:6px 0 0">${attNote(p)}</p>
     <h3>Pupil voice</h3>
     <div class="voicebox">
       <div><div class="lab">What the child wrote</div><textarea rows="5" oninput="setF('voiceRaw',this.value)">${esc(p.voiceRaw)}</textarea></div>
@@ -669,6 +695,11 @@ function renderEditor(){
   renderPreview();
 }
 function p_changed(){}
+const BAND_NAME={exc:"Exceptional",exp:"Expected",bel:"Below Expected",con:"Cause for Concern"};
+function attNote(p){const a=attBand(p.att),l=lateBand(p.late);
+  return`Attendance: <b>${a?BAND_NAME[a]:"—"}</b> · Punctuality: <b>${l?BAND_NAME[l]:"—"}</b><br>
+  <span style="font-size:12px">Attendance: 99%+ Exceptional · 96%+ Expected · 90–95.9% Below Expected · under 90% Cause for Concern.
+  Lates: 0 Exceptional · 1–2 Expected · 3–7 Below Expected · 8+ Cause for Concern. (Same rules as the FLC spreadsheet.)</span>`}
 function retidy(){const p=cur();p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;save();renderEditor();renderList()}
 function renderPreview(){
   const p=cur(),el=$("preview");if(!p||!el)return;
@@ -686,7 +717,7 @@ function sheetHtml(p){
   <img class="logo" src="${IMG.logo}" alt="Wallscourt Farm Academy">
   <div class="t1">Family Learning Conference - ${esc(S.month)} ${esc(S.year)}</div>
   <div class="t2">${esc(p.name)} - ${esc(S.zone)} Learning Zone</div>
-  <div class="bubble">${esc(p.voice)}</div>
+  <div class="bubble">${esc(p.voice)}<svg class="tail" viewBox="0 0 34 20" aria-hidden="true"><polygon points="0.7,0 0.7,19 33,0" fill="#fbe5d6"/><polyline points="0.7,0 0.7,19 33,0" fill="none" stroke="#ed7d31" stroke-width="1.4" stroke-linejoin="miter"/></svg></div>
   <table class="subjects">${subj}</table>
   <table class="key">
     <tr class="tint"><td>GD - Greater Depth</td><td>Learners who have achieved the age-related standard for their year group and in some aspects have been learning at greater depth.</td></tr>
