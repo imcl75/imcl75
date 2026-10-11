@@ -136,6 +136,7 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
   <div class="grp">
     <label>Month <select id="setMonth"><option>November</option><option>April</option><option>March</option><option>May</option><option>December</option></select></label>
     <label>Year <input id="setYear" type="number" style="width:76px"></label>
+    <label>Class <input id="setCls" type="text" style="width:60px" placeholder="5H2"></label>
     <label>Learning Zone <select id="setZone">
       <option>Hazel</option><option>Oak</option><option>Beech</option><option>Willow</option><option>Acer</option><option>Maple</option><option>Elm</option>
     </select></label>
@@ -385,6 +386,8 @@ const BANK=[
 
 /* ================= STATE ================= */
 let state=load()||{setup:defaultSetup(),pupils:[],sel:null};
+state.setup=Object.assign(defaultSetup(),state.setup);
+if(!state.setup.clsChosen)state.setup.cls="5H2";
 let customBank=loadBank();
 function defaultSetup(){const d=new Date();const m=d.getMonth();
   // Term 2 conference in November; Term 4 in April
@@ -566,7 +569,8 @@ function refreshClassPick(){
   if(ci<0){row.style.display="none";return}
   const counts={};rows.slice(1).forEach(r=>{const c=(r[ci]||"").trim();if(c)counts[c]=(counts[c]||0)+1});
   const list=Object.keys(counts).sort();if(!list.length){row.style.display="none";return}
-  const want=state.setup.cls&&counts[state.setup.cls]?state.setup.cls:list[0];
+  const mine=String(state.setup.cls||"").trim().toUpperCase();
+  const want=list.find(c=>c.toUpperCase()===mine)||list[0];
   $("classPick").innerHTML=list.map(c=>`<option ${c===want?"selected":""} value="${esc(c)}">${esc(c)} (${counts[c]} children)</option>`).join("");
   row.style.display="flex";
 }
@@ -599,7 +603,7 @@ function importClass(){
   } else ci={full:0,first:-1,last:-1,R:1,W:2,M:3,att:4,late:5,tR:-1,tW:-1,tM:-1,voice:-1,cls:-1,status:-1};
   // only the chosen class, only children still on roll
   const pick=$("classPickRow").style.display!=="none"?$("classPick").value:"";
-  if(pick&&ci.cls>=0){state.setup.cls=pick;rows=rows.filter(r=>(r[ci.cls]||"").trim()===pick)}
+  if(pick&&ci.cls>=0)rows=rows.filter(r=>(r[ci.cls]||"").trim()===pick);
   if(ci.status>=0)rows=rows.filter(r=>!/left|leaver|inactive|archived/i.test(r[ci.status]||""));
   if(ci.full<0&&ci.first<0){toast("Couldn't find a Name column");return}
   if($("classReplace").checked)state.pupils=[];
@@ -619,7 +623,7 @@ function importClass(){
   });
   state.pupils.sort((a,b)=>a.name.localeCompare(b.name));
   if(!state.sel&&state.pupils[0])state.sel=state.pupils[0].id;
-  save();closeModal();renderAll();toast(`${added} added, ${updated} updated`+(state.setup.cls?` · ${state.setup.cls}`:""));
+  save();closeModal();renderAll();toast(`${added} added, ${updated} updated`+(pick?` · class ${pick}`:""));
 }
 
 /* ================= IMPORT VOICE ================= */
@@ -1046,7 +1050,11 @@ document.querySelectorAll(".modal-bg").forEach(m=>m.addEventListener("click",e=>
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 function showView(v){document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="view-"+v));if(v==="pupils")renderPreview()}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
-function syncSetup(){const S=state.setup;$("setMonth").value=S.month;$("setYear").value=S.year;$("setZone").value=S.zone}
+function syncSetup(){const S=state.setup;$("setMonth").value=S.month;$("setYear").value=S.year;$("setZone").value=S.zone;$("setCls").value=S.cls||""}
+const ZONE_LETTER={B:"Beech",W:"Willow",A:"Acer",M:"Maple",H:"Hazel",E:"Elm",O:"Oak"};
+$("setCls").addEventListener("change",()=>{const c=$("setCls").value.trim().toUpperCase();state.setup.cls=c;state.setup.clsChosen=true;
+  const z=ZONE_LETTER[(c.match(/^\d*([A-Z])/)||[])[1]];if(z){state.setup.zone=z;$("setZone").value=z}
+  save();renderPreview();toast("Class set to "+c)});
 ["setMonth","setYear","setZone"].forEach(id=>$(id).addEventListener("change",()=>{Object.assign(state.setup,{month:$("setMonth").value,year:$("setYear").value,zone:$("setZone").value});save();renderPreview()}));
 window.addEventListener("resize",()=>renderPreview());
 syncSetup();renderAll();
