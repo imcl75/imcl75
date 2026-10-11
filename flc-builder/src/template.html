@@ -141,9 +141,10 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
     </select></label>
   </div>
   <div class="grp" style="margin-left:auto">
-    <button onclick="openModal('importClass')">1. Add class data</button>
-    <button onclick="openModal('importVoice')">2. Add pupil voice</button>
-    <button onclick="suggestAll()">3. Suggest targets</button>
+    <button onclick="openModal('importClass')">1. Class</button>
+    <button onclick="openModal('importAtt')">2. Attendance</button>
+    <button onclick="openModal('importVoice')">3. Pupil voice</button>
+    <button onclick="suggestAll()">4. Suggest targets</button>
     <button class="primary" onclick="printAll()">Print / save PDF (all)</button>
   </div>
 </header>
@@ -158,10 +159,12 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
   <section class="view on" id="view-pupils">
     <div id="empty" class="card">
       <h2>Getting started</h2>
-      <p class="hint">1. <b>Add class data</b> — paste names, DOOYA (R, W, M), attendance % and lates from your spreadsheet.<br>
-      2. <b>Add pupil voice</b> — paste the Microsoft Forms results, then tidy them.<br>
-      3. <b>Suggest targets</b> — fills every blank target from the bank, matched to each child's DOOYA. Change any you want.<br>
-      4. <b>Print / save PDF</b> — one A4 page per child, in the usual FLC layout.</p>
+      <p class="hint">1. <b>Class</b> — open the Tracker CSV and pick your class (names and Reading, Writing, Maths DOOYA).<br>
+      2. <b>Attendance</b> — open the attendance spreadsheet (attendance % and lates).<br>
+      3. <b>Pupil voice</b> — open the Microsoft Forms results; comments are matched to children and tidied.<br>
+      4. <b>Suggest targets</b> — fills every blank target from the bank, matched to each child's DOOYA. Change any you want.<br>
+      5. <b>Print / save PDF</b> — one A4 page per child, in the usual FLC layout.<br>
+      Every step takes a file (Excel .xlsx or .csv) or a paste from Excel.</p>
       <p class="hint">Everything stays on this computer. Nothing is sent anywhere.</p>
       <button onclick="loadDemo()">Try it with 4 made-up pupils</button>
     </div>
@@ -234,7 +237,7 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
   <p class="hint"><b>Tracker CSV:</b> open the file — pick your class and the Reading, Writing and Maths DOOYA are read in (O1 and O2 both show as O). The Tracker has no attendance, so paste attendance and lates afterwards (Name, Attendance, Lates) — existing children are updated, nothing else changes.<br>
   <b>Anything else:</b> copy from Excel and paste below. Include a header row if you can — the tool looks for columns called <b>Name</b> (or First Name + Last Name), <b>R</b>, <b>W</b>, <b>M</b>, <b>Attendance</b> and <b>Lates</b>.
   With no header row it reads: Name, R, W, M, Attendance %, Lates.<br>DOOYA can be D, GD, O, Y, A, or “A Y3” for an earlier year group.</p>
-  <div class="row" style="margin-bottom:8px"><button onclick="$('classFile').click()">Open the Tracker CSV…</button><input id="classFile" type="file" accept=".csv,text/csv" style="display:none" onchange="loadClassFile(this)"><span class="hint">or paste below</span></div>
+  <div class="row" style="margin-bottom:8px"><button onclick="$('classFile').click()">Open the Tracker file…</button><input id="classFile" type="file" accept=".csv,.xlsx,.tsv,.txt" style="display:none" onchange="loadClassFile(this)"><span class="hint">or paste below</span></div>
   <textarea id="classPaste" rows="10" placeholder="Name&#9;R&#9;W&#9;M&#9;Attendance&#9;Lates" oninput="refreshClassPick()"></textarea>
   <div class="row" id="classPickRow" style="margin-top:8px;display:none"><label class="hint">Class <select id="classPick"></select></label><span class="hint" id="classPickInfo"></span></div>
   <div class="row" style="margin-top:8px">
@@ -249,9 +252,20 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
   The tool finds the column with the children's names (it ignores Forms' own “Name”/“Email” columns when they just say None or anonymous) and joins the answers in order.
   Short answers are turned into sentences that fit the question — e.g. “Handwriting so I will practise” → “I would like to improve my handwriting so I will practise.”
   Names typed in capitals, first names only and small spelling slips are matched; anything unsure is listed for you to choose.</p>
+  <div class="row" style="margin-bottom:8px"><button onclick="$('voiceFile').click()">Open the Forms results file…</button><input id="voiceFile" type="file" accept=".xlsx,.csv,.tsv,.txt" style="display:none" onchange="loadIntoBox(this,'voicePaste','voice',()=>importVoice())"><span class="hint">or paste below</span></div>
   <textarea id="voicePaste" rows="10"></textarea>
   <div id="voiceResult" class="hint"></div>
   <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="importVoice()">Match to pupils</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-importAtt"><div class="modal">
+  <h2>Add attendance and lates</h2>
+  <p class="hint">Open the attendance spreadsheet (.xlsx or .csv) or paste it from Excel. The tool finds the columns for the child's name, attendance % and number of lates, and matches names to your class.
+  Only your class is updated — other children in the file are ignored. Title rows above the table are fine.</p>
+  <div class="row" style="margin-bottom:8px"><button onclick="$('attFile').click()">Open the attendance file…</button><input id="attFile" type="file" accept=".xlsx,.csv,.tsv,.txt" style="display:none" onchange="loadIntoBox(this,'attPaste','att',()=>importAtt())"><span class="hint">or paste below</span></div>
+  <textarea id="attPaste" rows="8" placeholder="Name&#9;Attendance %&#9;Lates"></textarea>
+  <div id="attResult" class="hint"></div>
+  <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="importAtt()">Add</button></div>
 </div></div>
 
 <div class="modal-bg" id="m-aiPaste"><div class="modal">
@@ -422,8 +436,100 @@ function parseTable(txt){
   row.push(cell);rows.push(row);return rows.filter(r=>r.some(c=>c.trim()));
 }
 function findCol(h,tests){for(const t of tests){const i=h.findIndex(t);if(i>=0)return i}return -1} // tests in priority order
-function loadClassFile(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$("classPaste").value=String(rd.result).replace(/^\uFEFF/,"");$("classReplace").checked=true;refreshClassPick()};rd.readAsText(f);inp.value=""}
-function headerRows(txt){const rows=parseTable(txt);const hi=rows.slice(0,3).findIndex(r=>r.some(x=>/name/i.test(x)));if(hi>0)rows.splice(0,hi);return rows}
+function loadClassFile(inp){loadIntoBox(inp,"classPaste","class",()=>{$("classReplace").checked=true;refreshClassPick()})}
+function headerIndex(rows){return rows.slice(0,15).findIndex(r=>r.some(x=>/name|forename|surname/i.test(x)||/^(student|pupil|learner|child)s?$/i.test(String(x).trim())))}
+function headerRows(txt){const rows=parseTable(txt);const hi=headerIndex(rows);if(hi>0)rows.splice(0,hi);return rows}
+
+/* ===== Reading .xlsx / .csv files in the browser (nothing is uploaded anywhere) ===== */
+async function unzip(buf,want){
+  const dv=new DataView(buf),u8=new Uint8Array(buf),dec=new TextDecoder();
+  let eocd=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-66000);i--)if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}
+  if(eocd<0)throw new Error("not a zip");
+  const count=dv.getUint16(eocd+10,true);let off=dv.getUint32(eocd+16,true);const out={};
+  for(let k=0;k<count;k++){
+    if(dv.getUint32(off,true)!==0x02014b50)break;
+    const method=dv.getUint16(off+10,true),csize=dv.getUint32(off+20,true),nlen=dv.getUint16(off+28,true),elen=dv.getUint16(off+30,true),clen=dv.getUint16(off+32,true),loc=dv.getUint32(off+42,true);
+    const name=dec.decode(u8.subarray(off+46,off+46+nlen));off+=46+nlen+elen+clen;
+    if(!want(name))continue;
+    const start=loc+30+dv.getUint16(loc+26,true)+dv.getUint16(loc+28,true);const data=u8.subarray(start,start+csize);
+    if(method===0)out[name]=dec.decode(data);
+    else if(method===8)out[name]=await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+  }
+  return out;
+}
+function xmlDoc(t){return new DOMParser().parseFromString(t||"<x/>","application/xml")}
+function tags(el,n){return[...el.getElementsByTagNameNS("*",n)]}
+function colNum(ref){const m=/^[A-Z]+/.exec(ref||"");let n=0;if(m)for(const c of m[0])n=n*26+c.charCodeAt(0)-64;return n-1}
+async function readXlsx(buf){
+  const files=await unzip(buf,n=>/^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/[^/]+\.xml)$/.test(n));
+  const ss=tags(xmlDoc(files["xl/sharedStrings.xml"]),"si").map(si=>tags(si,"t").map(t=>t.textContent).join(""));
+  const rels={};tags(xmlDoc(files["xl/_rels/workbook.xml.rels"]),"Relationship").forEach(r=>rels[r.getAttribute("Id")]=r.getAttribute("Target"));
+  const sheets=tags(xmlDoc(files["xl/workbook.xml"]),"sheet").map(sh=>{
+    const rid=sh.getAttribute("r:id")||sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
+    let path=(rels[rid]||"").replace(/^\/?xl\//,"").replace(/^\//,"");return{name:sh.getAttribute("name"),path:"xl/"+path}});
+  return sheets.map(sh=>{
+    const doc=xmlDoc(files[sh.path]);const rows=[];
+    tags(doc,"row").forEach(row=>{const r=[];tags(row,"c").forEach(c=>{const i=colNum(c.getAttribute("r"));const t=c.getAttribute("t");
+      const v=tags(c,"v")[0];let val="";
+      if(t==="s")val=ss[+(v&&v.textContent)]??"";else if(t==="inlineStr")val=tags(c,"t").map(x=>x.textContent).join("");else val=v?v.textContent:"";
+      if(i>=0)r[i]=val});rows.push(Array.from(r,x=>x??""))});
+    return{name:sh.name,rows:rows.filter(r=>r.some(x=>String(x).trim()))};
+  });
+}
+// which sheet in a workbook looks like the right one for this step
+const SHEET_WORDS={class:/dooya|reading|writing|maths|class/i,att:/attend|late|present|%/i,voice:/enjoy|improve|name/i};
+function rowsToTSV(rows){return rows.map(r=>r.map(c=>{c=String(c??"");return/[\t\n"]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join("\t")).join("\n")}
+async function readAnyFile(f,kind){
+  if(/\.xlsx$/i.test(f.name)){
+    const sheets=await readXlsx(await f.arrayBuffer());
+    const score=sh=>{const hi=Math.max(0,headerIndex(sh.rows));const h=(sh.rows[hi]||[]).join(" ");return(headerIndex(sh.rows)>=0?10:0)+(h.match(new RegExp(SHEET_WORDS[kind].source,"gi"))||[]).length};
+    const best=sheets.slice().sort((a,b)=>score(b)-score(a))[0];
+    if(!best||!best.rows.length)throw new Error("empty");
+    return rowsToTSV(best.rows);
+  }
+  if(/\.xls$/i.test(f.name))throw new Error("old .xls");
+  return (await f.text()).replace(/^﻿/,"");
+}
+async function loadIntoBox(inp,boxId,kind,then){const f=inp.files[0];inp.value="";if(!f)return;
+  try{$(boxId).value=await readAnyFile(f,kind);toast("Opened "+f.name);then&&then()}
+  catch(e){toast(String(e.message).includes(".xls")?"Please save it as .xlsx (Excel Workbook) first":"Couldn't read that file — try copying and pasting instead")}}
+
+/* ===== ATTENDANCE ===== */
+function importAtt(){
+  let rows=parseTable($("attPaste").value);const hi=headerIndex(rows);
+  if(hi<0||rows.length<2){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find a header row with the children's names.</p>`;return}
+  rows=rows.slice(hi);const h=rows[0].map(x=>String(x).trim().toLowerCase());
+  const ci={
+    full:findCol(h,[x=>x==="name",x=>x==="full name",x=>x==="pupil",x=>x==="pupil name",x=>x==="student",x=>x==="student name",x=>x==="learner",x=>x==="child",x=>/^(legal |preferred )?name$/.test(x)]),
+    first:findCol(h,[x=>/^(preferred |legal )?(first ?name|forename)s?$/.test(x),x=>/forename|first/.test(x)]),
+    last:findCol(h,[x=>/^(legal |preferred )?(last ?name|surname|family name)$/.test(x),x=>/surname|last name/.test(x)]),
+    att:findCol(h,[x=>/^attendance ?%$|^% ?attendance$|^% ?present$|^present ?%$/.test(x),x=>/attendance/.test(x)&&!/late|unauth|auth|absen|possible|session|mark/.test(x),x=>/^%$|percent/.test(x)&&!/late|absen/.test(x),x=>/present/.test(x)&&/%/.test(x)]),
+    late:findCol(h,[x=>/^(no\.? of |number of |total )?lates?( count| marks?| sessions)?$/.test(x),x=>/^l$/.test(x),x=>/late/.test(x)&&!/%|percent/.test(x)]),
+    cls:findCol(h,[x=>x==="class",x=>x==="form",x=>x==="reg group",x=>x==="registration group",x=>x==="tutor group"])};
+  if(ci.full<0&&ci.first<0&&ci.last<0){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find a name column.</p>`;return}
+  if(ci.att<0&&ci.late<0){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find attendance or lates columns. Headers found: ${h.filter(Boolean).map(esc).join(", ")}</p>`;return}
+  let body=rows.slice(1);
+  if(ci.cls>=0&&state.setup.cls&&body.some(r=>(r[ci.cls]||"").trim()===state.setup.cls))body=body.filter(r=>(r[ci.cls]||"").trim()===state.setup.cls);
+  const g=(r,i)=>i>=0&&r[i]!=null?String(r[i]).trim():"";
+  // attendance may be stored as a fraction (0.9615) or a percentage (96.15 or "96.15%")
+  const attVals=body.map(r=>parseFloat(g(r,ci.att).replace("%",""))).filter(x=>!isNaN(x));
+  const frac=attVals.length&&attVals.every(x=>x<=1)&&!body.some(r=>g(r,ci.att).includes("%"));
+  const done=new Set(),other=[];let n=0;
+  body.forEach(r=>{
+    let nm=ci.full>=0?g(r,ci.full):"";
+    if(!nm)nm=(g(r,ci.first)+" "+g(r,ci.last)).trim();
+    if(!nm)return;
+    const m=matchPupil(nm);if(!m.p){other.push(nm);return}
+    const p=m.p;
+    if(ci.att>=0){const a=parseFloat(g(r,ci.att).replace("%",""));if(!isNaN(a))p.att=Math.round((frac?a*100:a)*100)/100}
+    if(ci.late>=0){const l=parseFloat(g(r,ci.late));p.late=isNaN(l)?0:l}
+    done.add(p.id);n++});
+  save();renderAll();
+  const missing=state.pupils.filter(p=>!done.has(p.id));
+  $("attResult").innerHTML=`<p><b>${n}</b> children updated${ci.att<0?" (no attendance column found — lates only)":""}${ci.late<0?" (no lates column found — attendance only)":""}.</p>`+
+    (missing.length?`<p style="color:var(--bad)">Not found in the file: ${missing.map(p=>esc(p.name)).join(", ")}</p>`:"")+
+    (other.length?`<details><summary>${other.length} names in the file not in your class (ignored)</summary><p>${other.map(esc).join(", ")}</p></details>`:"");
+}
 function refreshClassPick(){
   const rows=headerRows($("classPaste").value);const row=$("classPickRow");
   if(rows.length<2){row.style.display="none";return}
@@ -441,7 +547,7 @@ function importClass(){
   let rows=parseTable($("classPaste").value);
   if(!rows.length){toast("Nothing pasted");return}
   // header may not be the first row (e.g. the FLC Data tab has a "DOOYA / ATTENDANCE" row above it)
-  const hi=rows.slice(0,3).findIndex(r=>r.some(x=>/name/i.test(x)));
+  const hi=headerIndex(rows);
   if(hi>0)rows.splice(0,hi);
   const h=rows[0].map(x=>x.trim().toLowerCase());
   const has=h.some(x=>/name|^r$|reading|attend/.test(x));
@@ -492,6 +598,13 @@ function lev(a,b){const m=a.length,n=b.length;if(Math.abs(m-n)>3)return 9;let pr
   for(let i=1;i<=m;i++){const curr=[i];for(let j=1;j<=n;j++)curr[j]=Math.min(prev[j]+1,curr[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=curr}return prev[n]}
 /* Children type their own names: capitals, first name only, typos ("GARDNE"). Returns {p} or {why}. */
 function matchPupil(name){
+  const m=matchPupil1(name);if(m.p)return m;
+  // attendance exports often put the surname first ("SMITH Jo" or "Smith Jo")
+  const w=String(name||"").trim().split(/\s+/);
+  if(w.length>1&&!/,/.test(name)){for(let k=1;k<w.length;k++){const m2=matchPupil1(w.slice(k).join(" ")+" "+w.slice(0,k).join(" "));if(m2.p)return m2}}
+  return m;
+}
+function matchPupil1(name){
   name=String(name||"").trim();
   const cm=name.match(/^([^,]+),\s*(.+)$/);if(cm)name=cm[2]+" "+cm[1]; // "Surname, First"
   const n=normName(name);if(!n||n==="none"||n==="anonymous")return{why:"no name"};
@@ -860,7 +973,7 @@ function renderBank(){
 }
 function renderVoiceList(){
   const el=$("voiceList");const list=state.pupils.filter(p=>p.voiceRaw||p.voice);
-  if(!list.length){el.innerHTML=`<p class="hint">No comments yet. Use <b>2. Add pupil voice</b>.</p>`;return}
+  if(!list.length){el.innerHTML=`<p class="hint">No comments yet. Use <b>3. Pupil voice</b>.</p>`;return}
   el.innerHTML=`<table class="mini"><tr><th style="width:150px">Pupil</th><th>Changes (red = removed, green = added)</th><th style="width:60px"></th></tr>`+
     list.map(p=>`<tr><td>${esc(p.name)}<br><span class="hint">${code(state.pupils.indexOf(p))}</span></td><td class="diff">${p.voiceRaw?diffWords(p.voiceRaw.replace(/\n/g," "),p.voice||""):esc(p.voice)}</td><td><button class="small" onclick="selectP('${p.id}');showView('pupils')">Edit</button></td></tr>`).join("")+`</table>`;
 }
@@ -896,7 +1009,8 @@ function loadDemo(){
 
 /* ================= MODALS / TABS / SETUP ================= */
 function openModal(id){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"));$("m-"+id).classList.add("on");
-  $("voiceResult").innerHTML="";$("aiResult").innerHTML="";
+  $("voiceResult").innerHTML="";$("aiResult").innerHTML="";$("attResult").innerHTML="";
+  if(id==="importAtt"&&!state.pupils.length){closeModal();toast("Add your class first");return}
   if(id==="importVoice"&&!state.pupils.length){closeModal();toast("Add your class data first");}}
 function closeModal(){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"))}
 document.querySelectorAll(".modal-bg").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal()}));
