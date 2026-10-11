@@ -16,6 +16,7 @@ button,select,input,textarea{font:inherit}
 button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px}
 button:hover{border-color:var(--brand)}
 button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+button:disabled{opacity:.45;cursor:default}
 button.small{padding:3px 8px;font-size:12px;border-radius:6px}
 button.danger{color:var(--bad)}
 header.app{background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
@@ -197,13 +198,21 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
 
   <!-- VOICE -->
   <section class="view" id="view-voice">
+    <div class="card" id="claudeCard">
+      <h2>Tidy with Claude (automatic)</h2>
+      <p class="hint">Sends the children's comments to Claude and puts the tidied versions straight into each child's page. Only the comments are sent, each labelled with a code (P01, P02…). <b>Names, grades and attendance are never sent.</b>
+      Spelling, grammar and punctuation are corrected, small missing words are added, and short answers become full sentences — the children's own words and ideas are kept.</p>
+      <div id="claudeSetup"></div>
+      <div class="row" style="margin-top:8px"><button class="primary" id="claudeAllBtn" onclick="claudeTidyAll(false)">Tidy all comments with Claude</button><button onclick="claudeTidyAll(true)">Redo every comment with Claude (overwrites edits)</button></div>
+      <div id="claudeStatus" class="hint" style="margin-top:6px"></div>
+    </div>
     <div class="card">
-      <h2>Tidy pupil voice</h2>
+      <h2>Other ways to tidy</h2>
       <p class="hint">Two ways to tidy children's comments. Both keep their words and meaning — only spelling, grammar and punctuation change. You always see the original next to the tidied version, and you can edit either.</p>
       <h3>Option A — quick tidy (built in, instant)</h3>
       <p class="hint">Fixes capital letters, “i” and “l” for “I”, spelling (about 150 common mistakes), full stops between run-together sentences, and small missing words — e.g. “…my handwriting <b>so</b> I will practise”, “I want <b>to</b> improve”, “<b>it's</b> fun”, “<b>our</b> experiment”. Always check the highlighted changes; very tangled comments are better tidied with Claude.</p>
       <div class="row"><button class="primary" onclick="tidyAll(false)">Quick-tidy all untouched comments</button><button onclick="tidyAll(true)">Re-tidy every comment (overwrites edits)</button></div>
-      <h3>Option B — tidy with Claude (better for run-on sentences)</h3>
+      <h3>Option B — copy and paste through a Claude chat (no API key needed)</h3>
       <p class="hint">Copies all comments with a code for each child (P01, P02…) and <b>no names</b>. Paste into Claude, then paste the reply back here.</p>
       <div class="row"><button onclick="copyAiPrompt()">Copy comments for Claude</button><button onclick="openModal('aiPaste')">Paste Claude's reply</button></div>
     </div>
@@ -679,7 +688,8 @@ function importVoice(){
     if(!got.has(m.p.id))got.set(m.p.id,{p:m.p,n:0,typed:[]});
     const g=got.get(m.p.id);g.n++;g.typed.push(nm);g.parts=parts; // later answers replace earlier ones
   });
-  got.forEach(g=>setVoice(g.p,g.parts,kinds));
+  got.forEach(g=>{setVoice(g.p,g.parts,kinds);g.p.voiceBy=""});
+  if(got.size&&claudeKey()&&state.setup.claudeAuto!==false)setTimeout(()=>claudeRun([...got.values()].map(g=>g.p),"the new comments"),300);
   save();renderAll();
   const dup=[...got.values()].filter(g=>g.n>1);
   const fuzzy=[...got.values()].filter(g=>g.typed.some(t=>normName(t)!==normName(g.p.name)));
@@ -839,11 +849,9 @@ function diffWords(a,b){
 }
 
 /* ================= AI ROUND-TRIP ================= */
-function copyAiPrompt(){
-  const list=state.pupils.map((p,i)=>p.voiceRaw?`${code(i)}: ${(p.voiceParts||[p.voiceRaw]).map(x=>x.replace(/\s*\n+\s*/g," ")).join(" / ")}`:null).filter(Boolean);
+function claudeRules(){
   const qs=(state.voiceQuestions||[]).length?`\nThe children were answering these questions, in this order (answers are separated by " / "):\n${state.voiceQuestions.map((q,i)=>`${i+1}. ${q}`).join("\n")}\nIf an answer is only a fragment (e.g. "Handwriting so I will practise"), turn it into a full sentence that fits the question, e.g. "I would like to improve my handwriting so I will practise."\n`:"";
-  if(!list.length){toast("No pupil voice comments yet");return}
-  const prompt=`These are comments written by Year 5 children (age 9-10) for their Family Learning Conference with parents. Tidy each one up so it can be printed for parents.
+  return`These are comments written by Year 5 children (age 9-10) for their Family Learning Conference with parents. Tidy each one up so it can be printed for parents.
 
 Rules:
 - Correct spelling, grammar and punctuation. Use UK spelling.
@@ -852,7 +860,74 @@ Rules:
 - Do not add new ideas, details, praise or feelings. Do not remove anything the child said.
 - Split long run-on sentences into separate sentences where needed. A " / " shows where the child started a new answer.
 - Keep each comment roughly the same length. Leave out emojis.
-- Join each child's answers into one short paragraph.${qs}
+- Join each child's answers into one short paragraph.${qs}`}
+function voiceLine(p){return(p.voiceParts||String(p.voiceRaw||"").split(/\n+/)).map(x=>String(x||"").replace(/\s+/g," ").trim()).filter(Boolean).join(" / ")}
+
+/* ===== Tidy with Claude through the Claude API, straight from this page =====
+   The API key is kept only in this browser (never in saved files or exports).
+   Only comments are sent, labelled P01, P02… — no names, grades or attendance. */
+const CLAUDE_KEY_STORE="wfa_flc_claude_key",CLAUDE_MODEL="claude-opus-5-5";
+function claudeKey(){try{return localStorage.getItem(CLAUDE_KEY_STORE)||""}catch(e){return""}}
+function renderClaudeSetup(){const el=$("claudeSetup");if(!el)return;const k=claudeKey();
+  el.innerHTML=k?`<p class="hint">✓ Claude API key saved in this browser (…${esc(k.slice(-4))}). <button class="small" onclick="claudeForget()">Remove key</button>
+      <label style="margin-left:10px"><input type="checkbox" id="claudeAuto" ${state.setup.claudeAuto!==false?"checked":""} onchange="state.setup.claudeAuto=this.checked;save()"> Tidy with Claude automatically when I open the Forms file</label></p>`
+    :`<p class="hint"><b>One-time setup:</b> paste a Claude API key (from <b>console.anthropic.com</b> → API keys). It's kept only in this browser on this computer. A class of 30 costs roughly 5–10p.</p>
+      <div class="row"><input id="claudeKeyIn" type="password" placeholder="sk-ant-…" style="flex:1;min-width:240px" autocomplete="off"><button onclick="claudeSaveKey()">Save key</button></div>`;
+  const b=$("claudeAllBtn");if(b)b.disabled=!k;}
+function claudeSaveKey(){const k=$("claudeKeyIn").value.trim();if(!/^sk-ant-/.test(k)){toast("That doesn't look like a Claude API key (it starts sk-ant-)");return}
+  try{localStorage.setItem(CLAUDE_KEY_STORE,k)}catch(e){toast("This browser won't save the key");return}renderClaudeSetup();toast("Key saved")}
+function claudeForget(){if(!confirm("Remove the Claude API key from this browser?"))return;try{localStorage.removeItem(CLAUDE_KEY_STORE)}catch(e){}renderClaudeSetup()}
+async function claudeCall(items){
+  const body={model:CLAUDE_MODEL,max_tokens:16000,
+    output_config:{effort:"medium",format:{type:"json_schema",schema:{type:"object",additionalProperties:false,required:["comments"],
+      properties:{comments:{type:"array",items:{type:"object",additionalProperties:false,required:["code","text"],properties:{code:{type:"string"},text:{type:"string"}}}}}}}},
+    system:claudeRules()+`\n- Return every comment you are given, each with its code unchanged, as JSON.`,
+    messages:[{role:"user",content:items.map(x=>`${x.code}: ${x.line}`).join("\n")}],
+    fallbacks:"default"};
+  const send=async(b,beta)=>{const h={"content-type":"application/json","x-api-key":claudeKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+    if(beta)h["anthropic-beta"]="server-side-fallback-2026-07-01";
+    return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:h,body:JSON.stringify(b)})};
+  let res=await send(body,true);
+  if(res.status===400){const t=await res.clone().text();if(/fallback/i.test(t)){const b2={...body};delete b2.fallbacks;res=await send(b2,false)}}
+  if(!res.ok){let msg="";try{msg=(await res.json()).error?.message||""}catch(e){}
+    if(res.status===401)throw new Error("The API key wasn't accepted — check it on console.anthropic.com");
+    if(res.status===429)throw new Error("Claude is busy (rate limit) — wait a minute and try again");
+    if(res.status===400&&/credit|billing|balance/i.test(msg))throw new Error("Your Claude account needs credit — add some on console.anthropic.com → Billing");
+    throw new Error("Claude returned an error ("+res.status+")"+(msg?": "+msg:""))}
+  const data=await res.json();
+  if(data.stop_reason==="refusal")throw new Error("Claude declined to tidy this batch — use Quick tidy for these");
+  if(data.stop_reason==="max_tokens")throw new Error("The reply was cut short — try again");
+  const txt=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  const out=JSON.parse(txt).comments||[];
+  return{out,usage:data.usage||{}};
+}
+let claudeBusy=false;
+async function claudeRun(list,label){
+  if(claudeBusy)return;if(!claudeKey()){showView("voice");toast("Add a Claude API key first");return}
+  if(!list.length){toast("No comments to tidy");return}
+  claudeBusy=true;const st=$("claudeStatus");const btn=$("claudeAllBtn");if(btn)btn.disabled=true;
+  const items=list.map(p=>({p,code:code(state.pupils.indexOf(p)),line:voiceLine(p)}));
+  const chunks=[];for(let i=0;i<items.length;i+=10)chunks.push(items.slice(i,i+10));
+  let done=0,failed=0,inTok=0,outTok=0;const errors=new Set();
+  const say=()=>{const m=`Tidying ${label} with Claude… ${done} of ${items.length} done`;if(st)st.textContent=m;toast(m)};say();
+  await Promise.all(chunks.map(async ch=>{
+    try{const {out,usage}=await claudeCall(ch);inTok+=usage.input_tokens||0;outTok+=usage.output_tokens||0;
+      const by=Object.fromEntries(out.map(o=>[String(o.code).trim().toUpperCase(),String(o.text||"").trim()]));
+      ch.forEach(x=>{const t=by[x.code];if(t){x.p.voice=t;x.p.voiceTidied=true;x.p.voiceBy="claude";done++}else failed++});}
+    catch(e){failed+=ch.length;errors.add(e.message)}
+    save();renderList();say();}));
+  claudeBusy=false;if(btn)btn.disabled=!claudeKey();renderAll();
+  const pence=Math.max(1,Math.round((inTok*4+outTok*20)/1e6*100*0.8)); // $4 / $20 per million tokens, ~0.8 £ per $
+  const msg=`Claude tidied ${done} comment${done===1?"":"s"}`+(failed?` · ${failed} not done${errors.size?" — "+[...errors].join("; "):""}`:"")+(done?` · cost about ${pence}p`:"");
+  if(st)st.textContent=msg;toast(msg);
+}
+function claudeTidyAll(force){claudeRun(state.pupils.filter(p=>p.voiceRaw&&(force||p.voiceBy!=="claude")),"all comments")}
+function claudeTidyOne(){const p=cur();if(!p||!p.voiceRaw){toast("No comment from this child yet");return}claudeRun([p],p.name.split(" ")[0]+"'s comment")}
+
+function copyAiPrompt(){
+  const list=state.pupils.map((p,i)=>p.voiceRaw?`${code(i)}: ${voiceLine(p)}`:null).filter(Boolean);
+  if(!list.length){toast("No pupil voice comments yet");return}
+  const prompt=`${claudeRules()}
 - Reply with ONLY one line per child, starting with the same code, like this:
 P01: tidied comment
 
@@ -935,7 +1010,7 @@ function renderEditor(){
     <h3>Pupil voice</h3>
     <div class="voicebox">
       <div><div class="lab">What the child wrote</div><textarea rows="5" oninput="setF('voiceRaw',this.value)">${esc(p.voiceRaw)}</textarea></div>
-      <div><div class="lab">Printed version (edit freely) <button class="small" onclick="retidy()">Quick tidy</button></div><textarea rows="5" oninput="setF('voice',this.value);p_changed()">${esc(p.voice)}</textarea></div>
+      <div><div class="lab">Printed version (edit freely) <button class="small" onclick="retidy()">Quick tidy</button> <button class="small" onclick="claudeTidyOne()">Tidy with Claude</button></div><textarea rows="5" oninput="setF('voice',this.value);p_changed()">${esc(p.voice)}</textarea></div>
     </div>
     ${p.voiceRaw&&p.voice&&p.voiceRaw!==p.voice?`<div class="lab hint" style="margin-top:6px">Changes: <span class="diff">${diffWords(p.voiceRaw.replace(/\n/g," "),p.voice)}</span></div>`:""}
     <h3>Targets</h3>${subjHtml}
@@ -951,7 +1026,7 @@ function attNote(p){const a=attBand(p.att),l=lateBand(p.late);
   return`Attendance: <b>${a?BAND_NAME[a]:"—"}</b> · Punctuality: <b>${l?BAND_NAME[l]:"—"}</b><br>
   <span style="font-size:12px">Attendance: over 98.9% Exceptional · 96%+ Expected · 90–95.99% Below Expected · under 90% Cause for Concern.
   Lates: 0 Always on time · 1–5 Very rarely late · 6–39 Frequently late · 40+ Persistently late. (Same rules as the school's FLC attendance lists.)</span>`}
-function retidy(){const p=cur();p.voice=voiceFromParts(p);p.voiceTidied=true;save();renderEditor();renderList()}
+function retidy(){const p=cur();p.voice=voiceFromParts(p);p.voiceBy="";p.voiceTidied=true;save();renderEditor();renderList()}
 function renderPreview(){
   const p=cur(),el=$("preview");if(!p||!el)return;
   el.innerHTML=`<div class="preview-scale">${sheetHtml(p)}</div>`;
@@ -1017,7 +1092,7 @@ function saveFile(){const blob=new Blob([JSON.stringify({app:"flc-builder",versi
 function openFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.app!=="flc-builder")throw 0;
   if(state.pupils.length&&!confirm("Replace the current work with this file?"))return;
   state=d.state;if(d.customBank){const ids=new Set(customBank.map(x=>x.t));d.customBank.forEach(x=>{if(!ids.has(x.t))customBank.push(x)});saveBank()}
-  save();syncSetup();renderAll();toast("Opened")}catch(e){toast("That isn't an FLC Builder file")}};r.readAsText(f);inp.value=""}
+  save();syncSetup();renderAll();renderClaudeSetup();toast("Opened")}catch(e){toast("That isn't an FLC Builder file")}};r.readAsText(f);inp.value=""}
 function copyExport(){
   const cell=v=>{v=String(v??"");return/[\t\n"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   // same columns as the Data tab (B to P), formulas included so pasting doesn't break them
@@ -1048,7 +1123,7 @@ function openModal(id){document.querySelectorAll(".modal-bg").forEach(m=>m.class
 function closeModal(){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"))}
 document.querySelectorAll(".modal-bg").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal()}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
-function showView(v){document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="view-"+v));if(v==="pupils")renderPreview()}
+function showView(v){if(v==="voice")renderClaudeSetup();document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="view-"+v));if(v==="pupils")renderPreview()}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
 function syncSetup(){const S=state.setup;$("setMonth").value=S.month;$("setYear").value=S.year;$("setZone").value=S.zone;$("setCls").value=S.cls||""}
 const ZONE_LETTER={B:"Beech",W:"Willow",A:"Acer",M:"Maple",H:"Hazel",E:"Elm",O:"Oak"};
@@ -1057,7 +1132,7 @@ $("setCls").addEventListener("change",()=>{const c=$("setCls").value.trim().toUp
   save();renderPreview();toast("Class set to "+c)});
 ["setMonth","setYear","setZone"].forEach(id=>$(id).addEventListener("change",()=>{Object.assign(state.setup,{month:$("setMonth").value,year:$("setYear").value,zone:$("setZone").value});save();renderPreview()}));
 window.addEventListener("resize",()=>renderPreview());
-syncSetup();renderAll();
+syncSetup();renderAll();renderClaudeSetup();
 </script>
 </body>
 </html>
