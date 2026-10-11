@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLC Builder</title>
+<style>
+:root{
+  --brand:#1798d3; --ink:#0a0101; --muted:#5b6670; --line:#d5dde3; --bg:#f4f7f9;
+  --ok:#2e9e4f; --warn:#d98a00; --bad:#c0392b;
+  --exc:#00b0f0; --exp:#92d050; --bel:#ffc000; --con:#ff0000;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Calibri,Carlito,Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+button,select,input,textarea{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px}
+button:hover{border-color:var(--brand)}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+button.small{padding:3px 8px;font-size:12px;border-radius:6px}
+button.danger{color:var(--bad)}
+header.app{background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header.app h1{font-size:18px;margin:0 8px 0 0;color:var(--brand)}
+header.app .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+header.app label{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;padding:8px 16px 0;background:#fff;border-bottom:1px solid var(--line)}
+.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:none;padding:8px 14px;color:var(--muted)}
+.tabs button.on{border-bottom-color:var(--brand);color:var(--ink);font-weight:600}
+main{padding:16px}
+.view{display:none}.view.on{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 8px}
+.card h3{font-size:14px;margin:12px 0 6px}
+.hint{color:var(--muted);font-size:13px;line-height:1.45}
+textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
+input[type=text],input[type=number],select{border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+/* Pupils view */
+.split{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start}
+.plist{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:sticky;top:110px;max-height:calc(100vh - 130px);overflow-y:auto}
+.plist .p{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;gap:6px}
+.plist .p:hover{background:#f0f8fc}
+.plist .p.on{background:#e1f2fa;font-weight:600}
+.dots{display:flex;gap:3px;flex-shrink:0}
+.dot{width:16px;height:16px;border-radius:4px;font-size:10px;line-height:16px;text-align:center;color:#fff;background:#c8d0d6;font-weight:700}
+.dot.done{background:var(--ok)}
+.plist .sum{padding:8px 10px;font-size:12px;color:var(--muted);background:#fafcfd}
+.grid4{display:grid;grid-template-columns:repeat(6,minmax(80px,1fr));gap:8px}
+.grid4 label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+.subj{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}
+.subj .hd{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.subj .hd img{width:26px;height:26px}
+.subj .hd b{font-size:15px}
+.band{display:inline-block;min-width:34px;text-align:center;font-weight:700;border-radius:6px;padding:1px 6px;font-size:12px;color:#fff}
+.band.D{background:#6a3fb5}.band.O{background:var(--ok)}.band.Y{background:var(--warn)}.band.A{background:var(--bad)}.band.none{background:#9aa5ad}
+.sugg{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.sugg button{text-align:left;font-size:13px;padding:6px 9px;line-height:1.35}
+.sugg button .tag{font-size:10px;color:var(--muted);margin-left:6px;white-space:nowrap}
+.sugg button.cur{border-color:var(--ok);background:#eef9f1}
+details>summary{cursor:pointer;color:var(--muted);font-size:12px;margin-top:6px}
+.voicebox{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.voicebox .lab{font-size:12px;color:var(--muted);margin-bottom:3px}
+.orig{background:#fafafa;border:1px dashed var(--line);border-radius:8px;padding:8px;min-height:70px;font-size:13px;line-height:1.45;white-space:pre-wrap}
+.diff ins{background:#d8f5df;text-decoration:none;border-radius:3px}
+.diff del{background:#fde2e0;color:#a33;border-radius:3px}
+.preview-wrap{background:#e9eef1;border-radius:12px;padding:14px;overflow:auto}
+.preview-scale{transform-origin:top left;width:210mm}
+/* Bank view */
+.bank-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.bank-item{display:flex;gap:6px;align-items:flex-start;border-bottom:1px solid #eef1f3;padding:6px 0;font-size:13px;line-height:1.4}
+.bank-item .bands{display:flex;gap:2px;flex-shrink:0;padding-top:1px}
+.bank-item .bands .band{min-width:18px;padding:0 3px;font-size:10px}
+.bank-item .txt{flex:1}
+.bank-item .txt small{color:var(--muted)}
+.bank-sec{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,20,30,.45);display:none;align-items:flex-start;justify-content:center;z-index:20;padding:40px 16px;overflow:auto}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:820px;width:100%;padding:18px}
+.modal h2{margin:0 0 8px;font-size:18px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d2b36;color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .25s;z-index:30;pointer-events:none}
+.toast.on{opacity:1}
+footer.app{color:var(--muted);font-size:12px;text-align:center;padding:10px 0 24px}
+table.mini{border-collapse:collapse;font-size:12px;width:100%}
+table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-align:left}
+@media (max-width:900px){.split{grid-template-columns:1fr}.plist{position:static;max-height:300px}.bank-cols{grid-template-columns:1fr}.voicebox{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(3,1fr)}}
+
+/* ===== Printed FLC sheet (A4) ===== */
+.sheet{width:210mm;height:297mm;padding:7mm;background:#fff;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;color:#000;overflow:hidden}
+.sheet .frame{border:2.2mm solid #00b0f0;height:100%;padding:3.5mm 5mm 3mm;display:flex;flex-direction:column}
+.sheet .logo{display:block;margin:0 auto 1mm;height:17mm}
+.sheet .t1{color:#0b5cad;font-size:20pt;font-weight:700;text-align:center;line-height:1.15}
+.sheet .t2{color:#f5b800;font-size:17pt;font-weight:700;text-align:center;line-height:1.15;margin-bottom:3mm}
+.sheet .bubble{position:relative;border:1.4px solid #ed7d31;background:#fbe5d6;padding:3mm 4mm;font-size:9.5pt;line-height:1.35;margin:0 0 7mm;min-height:17mm}
+.sheet .bubble:after,.sheet .bubble:before{content:"";position:absolute;left:18mm;border-style:solid}
+.sheet .bubble:before{bottom:-5.2mm;border-width:5.2mm 9mm 0 0;border-color:#ed7d31 transparent transparent transparent}
+.sheet .bubble:after{bottom:-4mm;left:18.4mm;border-width:4.1mm 7.4mm 0 0;border-color:#fbe5d6 transparent transparent transparent}
+.sheet table{border-collapse:collapse;width:100%}
+.sheet .subjects td{border:1px solid #000;padding:1.6mm 2mm;vertical-align:middle}
+.sheet .subjects td.ic{width:9mm;text-align:center;padding:1mm}
+.sheet .subjects td.ic img{width:7mm;height:7mm;object-fit:contain}
+.sheet .subjects td.lb{width:47mm;white-space:nowrap;font-weight:700;font-size:10.5pt}
+.sheet .subjects td.gr{width:10mm;text-align:center;font-weight:700;font-size:13pt;white-space:nowrap}
+.sheet .subjects td.gr.long{font-size:10pt}
+.sheet .subjects td.tg{font-size:9.5pt;line-height:1.3;height:12.5mm}
+.sheet .key{margin-top:2mm}
+.sheet .key td{border:1px solid #555;padding:1.3mm 2mm;vertical-align:middle}
+.sheet .key td:first-child{width:52mm;font-size:8.5pt}
+.sheet .key td:last-child{font-size:7pt;line-height:1.25}
+.sheet .key tr.tint td{background:#dde9f6}
+.sheet .charter-hd{display:flex;align-items:center;justify-content:space-between;margin:3mm 0 1.5mm}
+.sheet .charter-hd b{text-decoration:underline;font-size:10.5pt;margin-left:4mm}
+.sheet .charter-hd .imgs{display:flex;gap:9mm;margin-right:4mm}
+.sheet .charter-hd .imgs img{height:14mm;width:14mm;object-fit:cover}
+.sheet .charter{font-size:9.2pt;line-height:1.3}
+.sheet .charter p{margin:0 0 2.6mm}
+.sheet .charter .bl{color:#2e9be0}
+.sheet .att{margin-top:auto}
+.sheet .att td,.sheet .att th{border:1px solid #000;padding:1.2mm 2mm;text-align:center;font-size:9.5pt;font-weight:400}
+.sheet .att th{background:#b4c7e7}
+.sheet .att td.l{font-weight:700;width:30%}
+.sheet .exc{background:var(--exc);color:#fff}.sheet .exp{background:var(--exp)}.sheet .bel{background:var(--bel)}.sheet .con{background:var(--con);color:#fff}
+#print-area{display:none}
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff}
+  .app-shell,.toast,.modal-bg{display:none !important}
+  #print-area{display:block}
+  .sheet{page-break-after:always;break-after:page}
+  .sheet:last-child{page-break-after:auto;break-after:auto}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<header class="app">
+  <h1>FLC Builder</h1>
+  <div class="grp">
+    <label>Month <select id="setMonth"><option>November</option><option>April</option><option>March</option><option>May</option><option>December</option></select></label>
+    <label>Year <input id="setYear" type="number" style="width:76px"></label>
+    <label>Learning Zone <select id="setZone">
+      <option>Hazel</option><option>Oak</option><option>Beech</option><option>Willow</option><option>Acer</option><option>Maple</option><option>Elm</option>
+    </select></label>
+  </div>
+  <div class="grp" style="margin-left:auto">
+    <button onclick="openModal('importClass')">1. Add class data</button>
+    <button onclick="openModal('importVoice')">2. Add pupil voice</button>
+    <button onclick="suggestAll()">3. Suggest targets</button>
+    <button class="primary" onclick="printAll()">Print / save PDF (all)</button>
+  </div>
+</header>
+<nav class="tabs">
+  <button class="on" data-view="pupils">Pupils</button>
+  <button data-view="bank">Target bank</button>
+  <button data-view="voice">Pupil voice</button>
+  <button data-view="file">Save, open &amp; export</button>
+</nav>
+<main>
+  <!-- PUPILS -->
+  <section class="view on" id="view-pupils">
+    <div id="empty" class="card">
+      <h2>Getting started</h2>
+      <p class="hint">1. <b>Add class data</b> — paste names, DOOYA (R, W, M), attendance % and lates from your spreadsheet.<br>
+      2. <b>Add pupil voice</b> — paste the Microsoft Forms results, then tidy them.<br>
+      3. <b>Suggest targets</b> — fills every blank target from the bank, matched to each child's DOOYA. Change any you want.<br>
+      4. <b>Print / save PDF</b> — one A4 page per child, in the usual FLC layout.</p>
+      <p class="hint">Everything stays on this computer. Nothing is sent anywhere.</p>
+      <button onclick="loadDemo()">Try it with 4 made-up pupils</button>
+    </div>
+    <div class="split" id="split" style="display:none">
+      <div class="plist" id="plist"></div>
+      <div id="editor"></div>
+    </div>
+  </section>
+
+  <!-- BANK -->
+  <section class="view" id="view-bank">
+    <div class="card">
+      <h2>Target bank</h2>
+      <p class="hint">Targets are grouped by subject and tagged with the DOOYA bands they suit:
+        <span class="band D">D</span> greater depth, <span class="band O">O</span> on track, <span class="band Y">Y</span> yet to be on track, <span class="band A">A</span> earlier stage.
+        Targets marked <b>Nov 2024</b> are the ones you used last time. Add your own below — they are saved on this computer and offered first.</p>
+      <div class="row" style="margin-top:8px">
+        <select id="newSubj"><option value="R">Reading</option><option value="W">Writing</option><option value="M">Maths</option></select>
+        <label class="hint"><input type="checkbox" class="nb" value="D">D</label>
+        <label class="hint"><input type="checkbox" class="nb" value="O" checked>O</label>
+        <label class="hint"><input type="checkbox" class="nb" value="Y">Y</label>
+        <label class="hint"><input type="checkbox" class="nb" value="A">A</label>
+        <input id="newText" type="text" placeholder="To …" style="flex:1;min-width:240px">
+        <button onclick="addBank()">Add to bank</button>
+      </div>
+    </div>
+    <div class="bank-cols" id="bankCols"></div>
+  </section>
+
+  <!-- VOICE -->
+  <section class="view" id="view-voice">
+    <div class="card">
+      <h2>Tidy pupil voice</h2>
+      <p class="hint">Two ways to tidy children's comments. Both keep their words and meaning — only spelling, grammar and punctuation change. You always see the original next to the tidied version, and you can edit either.</p>
+      <h3>Option A — quick tidy (built in, instant)</h3>
+      <p class="hint">Fixes capital letters, “i” and “l” for “I”, full stops, spacing, doubled words and about 150 common misspellings. It won't untangle long run-on sentences.</p>
+      <div class="row"><button class="primary" onclick="tidyAll(false)">Quick-tidy all untouched comments</button><button onclick="tidyAll(true)">Re-tidy every comment (overwrites edits)</button></div>
+      <h3>Option B — tidy with Claude (better for run-on sentences)</h3>
+      <p class="hint">Copies all comments with a code for each child (P01, P02…) and <b>no names</b>. Paste into Claude, then paste the reply back here.</p>
+      <div class="row"><button onclick="copyAiPrompt()">Copy comments for Claude</button><button onclick="openModal('aiPaste')">Paste Claude's reply</button></div>
+    </div>
+    <div class="card"><h2>All comments</h2><div id="voiceList"></div></div>
+  </section>
+
+  <!-- FILE -->
+  <section class="view" id="view-file">
+    <div class="card">
+      <h2>Save and open</h2>
+      <p class="hint">Your work saves automatically in this browser on this computer. To keep a copy (or move to another computer), save a file. Keep it somewhere secure — it contains children's names and comments.</p>
+      <div class="row"><button onclick="saveFile()">Save work to a file</button><label class="hint"><button onclick="document.getElementById('openInp').click()">Open a saved file</button><input id="openInp" type="file" accept=".json" style="display:none" onchange="openFile(this)"></label></div>
+    </div>
+    <div class="card">
+      <h2>Export to the old spreadsheet</h2>
+      <p class="hint">Copies a table in the same column order as the <b>Data</b> tab of the FLC Excel template (ID, First Name, Last Name, R, W, M, Attendance, Lates, targets, pupil voice). Paste into cell B3 of the Data tab.</p>
+      <button onclick="copyExport()">Copy table for Excel</button>
+    </div>
+    <div class="card">
+      <h2>Finished?</h2>
+      <p class="hint">Clears all pupils, comments and targets from this browser. Your own bank targets are kept.</p>
+      <button class="danger" onclick="clearAll()">Clear all pupil data</button>
+    </div>
+  </section>
+</main>
+<footer class="app">FLC Builder · Wallscourt Farm Academy · version <span id="ver">__VERSION__</span></footer>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="m-importClass"><div class="modal">
+  <h2>Add class data</h2>
+  <p class="hint">Copy from Excel and paste below. Include a header row if you can — the tool looks for columns called <b>Name</b> (or First Name + Last Name), <b>R</b>, <b>W</b>, <b>M</b>, <b>Attendance</b> and <b>Lates</b>.
+  With no header row it reads: Name, R, W, M, Attendance %, Lates.<br>DOOYA can be D, GD, O, Y, A, or “A Y3” for an earlier year group.</p>
+  <textarea id="classPaste" rows="10" placeholder="Name&#9;R&#9;W&#9;M&#9;Attendance&#9;Lates"></textarea>
+  <div class="row" style="margin-top:8px">
+    <label class="hint"><input type="checkbox" id="classReplace"> Replace the current class (otherwise new names are added and existing names updated)</label>
+  </div>
+  <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Cancel</button><button class="primary" onclick="importClass()">Add</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-importVoice"><div class="modal">
+  <h2>Add pupil voice</h2>
+  <p class="hint">Open the Microsoft Forms results in Excel. Copy the <b>Name</b> column and the answer column(s) — with the header row — and paste below.
+  If there are several answer columns (e.g. <i>enjoyed / improve / how</i>), they are joined into one comment in that order.</p>
+  <textarea id="voicePaste" rows="10"></textarea>
+  <div id="voiceResult" class="hint"></div>
+  <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="importVoice()">Match to pupils</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-aiPaste"><div class="modal">
+  <h2>Paste Claude's reply</h2>
+  <p class="hint">Paste the whole reply. Lines that start with a code (P01:, P02:…) are matched to children. The original comment is kept so you can compare.</p>
+  <textarea id="aiPaste" rows="12"></textarea>
+  <div id="aiResult" class="hint"></div>
+  <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="applyAi()">Apply</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="print-area"></div>
+
+<script>
+const VERSION="__VERSION__";
+const IMG={logo:"__IMG_LOGO__",R:"__IMG_READER__",W:"__IMG_WRITER__",M:"__IMG_MATHS__",
+  cur:"__IMG_CUR__",res:"__IMG_RES__",ind:"__IMG_IND__",col:"__IMG_COL__"};
+const SUBJ={R:"Being a reader",W:"Being a writer",M:"Being a mathematician"};
+const SUBJ_SHORT={R:"Reading",W:"Writing",M:"Maths"};
+const STORE="wfa_flc_builder_v1", BANK_STORE="wfa_flc_bank_custom_v1";
+
+/* ================= TARGET BANK =================
+   b = DOOYA bands the target suits (D, O, Y, A). src:'2024' = used in Nov 2024 FLC.
+   Strands follow the Y5 programme of study. */
+const BANK=[
+ // ---------- READING ----------
+ {s:'R',b:'AY',k:'Reading habits',src:'2024',t:"To read my book to an adult at home at least twice a week and to read independently every day. To answer questions about what I have read."},
+ {s:'R',b:'A',k:'Word reading',t:"To use my phonics to sound out unfamiliar words, then reread the sentence to check it makes sense."},
+ {s:'R',b:'A',k:'Word reading',t:"To read the common exception words for my year group quickly and accurately."},
+ {s:'R',b:'AY',k:'Fluency',t:"To read aloud with fluency and expression, using punctuation to guide my voice."},
+ {s:'R',b:'A',k:'Retrieval',t:"To retell the main events of a story in the right order."},
+ {s:'R',b:'AY',k:'Retrieval',t:"To find and copy key words from a text to answer a question."},
+ {s:'R',b:'Y',k:'Retrieval',t:"To skim and scan a text to find information quickly."},
+ {s:'R',b:'Y',k:'Vocabulary',t:"To work out the meaning of unfamiliar words using the sentence around them, and check with a dictionary."},
+ {s:'R',b:'Y',k:'Inference',t:"To explain my answers using evidence from the text (“I think… because the text says…”)."},
+ {s:'R',b:'Y',k:'Summarising',t:"To summarise a paragraph in one sentence, picking out the most important idea."},
+ {s:'R',b:'Y',k:'Reading habits',t:"To read every day for at least 20 minutes, choosing books at the right level of challenge."},
+ {s:'R',b:'OD',k:'Reading habits',src:'2024',t:"To read a variety of books, including those from the school reading challenge and books linked to our enquiries. To capture new vocabulary."},
+ {s:'R',b:'O',k:'Reading habits',src:'2024',t:"To consistently read a variety of books at an appropriate level of challenge."},
+ {s:'R',b:'OD',k:'Reading habits',src:'2024',t:"To consistently read a variety of books at an appropriate level of challenge, including books from the Y5/6 reading challenge."},
+ {s:'R',b:'O',k:'Reading habits',src:'2024',t:"To read different texts including non-fiction linked to our enquiries (e.g. news web sites)."},
+ {s:'R',b:'O',k:'Inference',t:"To infer characters' feelings, thoughts and motives from their actions, and justify my ideas with evidence."},
+ {s:'R',b:'O',k:'Summarising',t:"To summarise the main ideas from more than one paragraph, identifying the key details."},
+ {s:'R',b:'OD',k:"Author's choices",t:"To explain how an author's choice of words and phrases affects the reader."},
+ {s:'R',b:'O',k:'Prediction',t:"To make predictions using details that are stated and implied in the text."},
+ {s:'R',b:'O',k:'Comparison',t:"To compare characters, settings and themes within a book and across different books."},
+ {s:'R',b:'O',k:'Fluency',t:"To read aloud with intonation, tone and volume that shows my understanding of the text."},
+ {s:'R',b:'D',k:"Author's choices",t:"To explain and evaluate how authors use language, structure and presentation to create effects, using precise vocabulary."},
+ {s:'R',b:'D',k:'Inference',t:"To make and justify inferences using more than one piece of evidence, and consider other possible interpretations."},
+ {s:'R',b:'D',k:'Non-fiction',t:"To distinguish between fact and opinion, and evaluate how persuasive a text is."},
+ {s:'R',b:'D',k:'Reading habits',t:"To recommend books to others, giving reasons for my choices and comparing them with other books I have read."},
+ {s:'R',b:'D',k:'Reading habits',t:"To read challenging texts beyond my comfort zone, including classic fiction, poetry and plays."},
+
+ // ---------- WRITING ----------
+ {s:'W',b:'A',k:'Composition',src:'2024',t:"To independently compose my idea verbally before writing. To write with clear spaces between words and letters which are close together."},
+ {s:'W',b:'AY',k:'Editing',src:'2024',t:"To check that every sentence makes complete sense on its own and independently edit."},
+ {s:'W',b:'A',k:'Punctuation',t:"To begin each sentence with a capital letter and end it with a full stop, question mark or exclamation mark."},
+ {s:'W',b:'A',k:'Sentences',t:"To use conjunctions (when, if, because, although) to join ideas in my sentences."},
+ {s:'W',b:'A',k:'Spelling',t:"To spell the common exception words for my year group correctly."},
+ {s:'W',b:'A',k:'Handwriting',t:"To form my letters correctly, with tall letters and tails the right size."},
+ {s:'W',b:'Y',k:'Handwriting',src:'2024',t:"To practise cursive handwriting to develop my confidence and writing clarity."},
+ {s:'W',b:'Y',k:'Spelling',src:'2024',t:"To carefully check my spelling, including with another learner and a dictionary."},
+ {s:'W',b:'Y',k:'Sentences',t:"To use a range of conjunctions and fronted adverbials to vary how my sentences begin."},
+ {s:'W',b:'Y',k:'Structure',t:"To organise my writing into paragraphs, each with one clear main idea."},
+ {s:'W',b:'Y',k:'Punctuation',t:"To punctuate speech accurately using inverted commas."},
+ {s:'W',b:'YO',k:'Punctuation',t:"To use apostrophes correctly for contraction and possession."},
+ {s:'W',b:'Y',k:'Editing',t:"To reread my writing aloud to check it makes sense, then improve it."},
+ {s:'W',b:'OD',k:'Vocabulary',src:'2024',t:"To use vocabulary from reading and select words which are appropriate and effective in my writing."},
+ {s:'W',b:'O',k:'Grammar',src:'2024',t:"To check the tense and articles of what I have written, including with another learner."},
+ {s:'W',b:'O',k:'Description',src:'2024',t:"To use a variety of different techniques to write descriptively."},
+ {s:'W',b:'O',k:'Editing',src:'2024',t:"To independently edit my writing – especially checking sense, commas and apostrophes."},
+ {s:'W',b:'O',k:'Editing',src:'2024',t:"To independently edit my writing – especially checking sense and spelling."},
+ {s:'W',b:'O',k:'Composition',src:'2024',t:"To write my ideas on a whiteboard and check they are accurate and high quality before writing into my book."},
+ {s:'W',b:'O',k:'Handwriting',src:'2024',t:"To use the correct letter formation and size and have consistently high expectations as a writer."},
+ {s:'W',b:'O',k:'Spelling',src:'2024',t:"To carefully check my spelling, including with another learner."},
+ {s:'W',b:'OD',k:'Vocabulary',src:'2024',t:"To be precise with my choice of language in each sentence (less writing, higher quality)."},
+ {s:'W',b:'O',k:'Sentences',t:"To use relative clauses to add detail to my sentences."},
+ {s:'W',b:'O',k:'Punctuation',t:"To use brackets, dashes or commas to add extra information (parenthesis)."},
+ {s:'W',b:'O',k:'Grammar',t:"To use modal verbs and adverbs to show how likely something is."},
+ {s:'W',b:'O',k:'Structure',t:"To link ideas across paragraphs using adverbials of time, place and number."},
+ {s:'W',b:'O',k:'Handwriting',t:"To write in a joined, fluent and legible style, even when writing at speed."},
+ {s:'W',b:'O',k:'Spelling',t:"To spell words with Year 5 endings correctly (e.g. -cious, -tious, -ant, -ent, -ible, -able)."},
+ {s:'W',b:'D',k:'Sentences',t:"To deliberately vary the structure and length of my sentences for effect on the reader."},
+ {s:'W',b:'D',k:'Audience',t:"To adapt the level of formality in my writing to suit the purpose and audience."},
+ {s:'W',b:'D',k:'Structure',t:"To use a range of cohesive devices to guide the reader through my writing."},
+ {s:'W',b:'D',k:'Editing',t:"To evaluate and edit my own writing, explaining how my changes improve the effect on the reader."},
+ {s:'W',b:'D',k:'Punctuation',t:"To use semi-colons, colons and dashes accurately to mark the boundaries between clauses."},
+ {s:'W',b:'D',k:'Description',t:"To build atmosphere and develop characters through a balance of dialogue, action and description."},
+
+ // ---------- MATHS ----------
+ {s:'M',b:'AYO',k:'Times tables',src:'2024',t:"To know and rapidly recall all times tables up to 12 x 12."},
+ {s:'M',b:'A',k:'Number facts',t:"To know number bonds to 10, 20 and 100 and use them to calculate mentally."},
+ {s:'M',b:'A',k:'Place value',t:"To understand the value of each digit in numbers up to 10,000."},
+ {s:'M',b:'A',k:'Calculation',t:"To use column addition and subtraction accurately, including exchanging."},
+ {s:'M',b:'AY',k:'Problem solving',t:"To use objects and drawings to help me understand and solve a problem."},
+ {s:'M',b:'Y',k:'Place value',t:"To read, write, order and compare numbers up to 1,000,000 and know the value of each digit."},
+ {s:'M',b:'Y',k:'Checking',t:"To use known facts and inverse operations to check my answers."},
+ {s:'M',b:'Y',k:'Fractions',t:"To recognise and find equivalent fractions, using diagrams to help me."},
+ {s:'M',b:'YO',k:'Presentation',src:'2024',t:"To record workings in a clear and organised manner. This is also to support you carefully checking your learning."},
+ {s:'M',b:'O',k:'Problem solving',src:'2024',t:"To accurately select and use the most appropriate method to solve problems."},
+ {s:'M',b:'OD',k:'Calculation',src:'2024',t:"To find efficient methods for calculating that do not always require a formal written method."},
+ {s:'M',b:'O',k:'Independence',src:'2024',t:"To quickly and accurately complete independent learning so you can access the challenges in every lesson."},
+ {s:'M',b:'O',k:'Calculation',t:"To use the formal written methods for long multiplication and short division accurately."},
+ {s:'M',b:'O',k:'Number',t:"To identify multiples, factors, prime numbers, square numbers and cube numbers."},
+ {s:'M',b:'O',k:'Fractions',t:"To compare, order, add and subtract fractions where the denominators are multiples of the same number."},
+ {s:'M',b:'O',k:'Reasoning',t:"To explain my reasoning using precise mathematical vocabulary."},
+ {s:'M',b:'O',k:'Checking',t:"To estimate before calculating, and use my estimate to check whether my answer is sensible."},
+ {s:'M',b:'O',k:'Problem solving',t:"To solve multi-step problems, deciding which operations to use and why."},
+ {s:'M',b:'D',k:'Problem solving',src:'2024',t:"To identify the most efficient strategy for calculation. To solve puzzles and problems with different structures."},
+ {s:'M',b:'D',k:'Reasoning',t:"To prove my reasoning, using examples and counter-examples to test whether a statement is always, sometimes or never true."},
+ {s:'M',b:'D',k:'Problem solving',t:"To work systematically to find all the possible solutions to a problem."},
+ {s:'M',b:'D',k:'Fractions',t:"To apply my knowledge of fractions, decimals and percentages to solve unfamiliar problems."},
+ {s:'M',b:'D',k:'Reasoning',t:"To spot patterns, make generalisations and explain why they work."},
+ {s:'M',b:'D',k:'Problem solving',t:"To create my own problems for others to solve, explaining what makes them challenging."},
+];
+
+/* ================= STATE ================= */
+let state=load()||{setup:defaultSetup(),pupils:[],sel:null};
+let customBank=loadBank();
+function defaultSetup(){const d=new Date();const m=d.getMonth();
+  // Term 2 conference in November; Term 4 in April
+  const month=(m>=8||m<=0)?"November":"April";
+  const year=(m===0&&month==="November")?d.getFullYear()-1:d.getFullYear();
+  return {month,year,zone:"Hazel"};}
+function load(){try{return JSON.parse(localStorage.getItem(STORE))}catch(e){return null}}
+function loadBank(){try{return JSON.parse(localStorage.getItem(BANK_STORE))||[]}catch(e){return []}}
+let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){toast("Couldn't autosave — use Save work to a file")}},250)}
+function saveBank(){try{localStorage.setItem(BANK_STORE,JSON.stringify(customBank))}catch(e){}}
+function allBank(){return customBank.map(x=>({...x,custom:true})).concat(BANK)}
+
+/* ================= HELPERS ================= */
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2600)}
+function uid(){return Math.random().toString(36).slice(2,10)}
+function band(v){v=String(v||"").trim().toUpperCase();if(!v)return"";if(v.startsWith("GD")||v[0]==="D")return"D";if(v[0]==="O")return"O";if(v[0]==="Y")return"Y";if(v[0]==="A")return"A";return""}
+function gradeLabel(v){v=String(v||"").trim();if(!v)return"";const b=band(v);if(b==="A"){const n=v.match(/\d/);return n?"A Y"+n[0]:"A"}return b==="D"&&/^gd/i.test(v)?"GD":v.toUpperCase().slice(0,2).trim()}
+function normName(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z\s'-]/g," ").replace(/\s+/g," ").trim()}
+function attBand(a){if(a===""||a==null||isNaN(a))return null;a=+a;if(a>=99)return"exc";if(a>=96)return"exp";if(a<90)return"con";return"bel"}
+function lateBand(l){if(l===""||l==null||isNaN(l))return null;l=+l;if(l===0)return"exc";if(l<=2)return"exp";if(l<=7)return"bel";return"con"}
+function code(i){return"P"+String(i+1).padStart(2,"0")}
+function cur(){return state.pupils.find(p=>p.id===state.sel)}
+
+/* ================= TABLE PARSING ================= */
+function parseTable(txt){
+  txt=txt.replace(/\r/g,"").replace(/\n+$/,"");
+  if(!txt.trim())return[];
+  const tab=txt.includes("\t");
+  if(tab){ // Excel paste — handles quoted multi-line cells
+    const rows=[];let row=[],cell="",q=false;
+    for(let i=0;i<txt.length;i++){const c=txt[i];
+      if(q){if(c==='"'&&txt[i+1]==='"'){cell+='"';i++}else if(c==='"'){q=false}else cell+=c}
+      else if(c==='"'&&cell===""){q=true}
+      else if(c==="\t"){row.push(cell);cell=""}
+      else if(c==="\n"){row.push(cell);rows.push(row);row=[];cell=""}
+      else cell+=c}
+    row.push(cell);rows.push(row);return rows.filter(r=>r.some(c=>c.trim()));
+  }
+  // CSV
+  const rows=[];let row=[],cell="",q=false;
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'&&txt[i+1]==='"'){cell+='"';i++}else if(c==='"')q=false;else cell+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(cell);cell=""}
+    else if(c==="\n"){row.push(cell);rows.push(row);row=[];cell=""}else cell+=c}
+  row.push(cell);rows.push(row);return rows.filter(r=>r.some(c=>c.trim()));
+}
+function findCol(h,tests){return h.findIndex(x=>tests.some(t=>t(x)))}
+
+/* ================= IMPORT CLASS ================= */
+function importClass(){
+  const rows=parseTable($("classPaste").value);
+  if(!rows.length){toast("Nothing pasted");return}
+  // header may not be the first row (e.g. the FLC Data tab has a "DOOYA / ATTENDANCE" row above it)
+  const hi=rows.slice(0,3).findIndex(r=>r.some(x=>/name/i.test(x)));
+  if(hi>0)rows.splice(0,hi);
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const has=h.some(x=>/name|^r$|reading|attend/.test(x));
+  let ci;
+  if(has){
+    ci={
+      full:findCol(h,[x=>x==="full name",x=>x==="name",x=>x==="pupil",x=>x==="pupil name",x=>x==="child"]),
+      first:findCol(h,[x=>/^first|forename|given/.test(x)]),
+      last:findCol(h,[x=>/^last|surname|family/.test(x)]),
+      R:findCol(h,[x=>x==="r",x=>/^read/.test(x)&&!/target/.test(x)]),
+      W:findCol(h,[x=>x==="w",x=>/^writ/.test(x)&&!/target/.test(x)]),
+      M:findCol(h,[x=>x==="m",x=>/^math/.test(x)&&!/target/.test(x)]),
+      att:findCol(h,[x=>/^attend/.test(x)]),
+      late:findCol(h,[x=>/late|punct/.test(x)]),
+      tR:findCol(h,[x=>/read.*target/.test(x)]),tW:findCol(h,[x=>/writ.*target/.test(x)]),tM:findCol(h,[x=>/math.*target/.test(x)]),
+      voice:findCol(h,[x=>/voice/.test(x)])};
+    rows.shift();
+  } else ci={full:0,first:-1,last:-1,R:1,W:2,M:3,att:4,late:5,tR:-1,tW:-1,tM:-1,voice:-1};
+  if(ci.full<0&&ci.first<0){toast("Couldn't find a Name column");return}
+  if($("classReplace").checked)state.pupils=[];
+  let added=0,updated=0;
+  const g=(r,i)=>i>=0&&r[i]!=null?String(r[i]).trim():"";
+  rows.forEach(r=>{
+    let name=ci.full>=0?g(r,ci.full):"";
+    if((!name||name.startsWith("="))&&ci.first>=0)name=(g(r,ci.first)+" "+g(r,ci.last)).trim();
+    name=name.replace(/\s+/g," ");if(!name)return;
+    let p=state.pupils.find(x=>normName(x.name)===normName(name));
+    if(!p){p={id:uid(),name,R:"",W:"",M:"",att:"",late:"",tR:"",tW:"",tM:"",voiceRaw:"",voice:"",notes:""};state.pupils.push(p);added++}else updated++;
+    for(const k of["R","W","M"])if(g(r,ci[k]))p[k]=g(r,ci[k]);
+    const a=g(r,ci.att).replace("%","");if(a!=="")p.att=+a<=1&&a.includes(".")?Math.round(+a*10000)/100:+a;
+    const l=g(r,ci.late);if(l!=="")p.late=+l||0;
+    for(const k of["tR","tW","tM"])if(g(r,ci[k]))p[k]=g(r,ci[k]);
+    if(g(r,ci.voice)){p.voiceRaw=g(r,ci.voice);if(!p.voice)p.voice=p.voiceRaw}
+  });
+  state.pupils.sort((a,b)=>a.name.localeCompare(b.name));
+  if(!state.sel&&state.pupils[0])state.sel=state.pupils[0].id;
+  save();closeModal();renderAll();toast(`${added} added, ${updated} updated`);
+}
+
+/* ================= IMPORT VOICE ================= */
+function matchPupil(name){
+  name=String(name||"").trim();
+  const cm=name.match(/^([^,]+),\s*(.+)$/);if(cm)name=cm[2]+" "+cm[1]; // "Surname, First"
+  const n=normName(name);if(!n)return null;
+  let p=state.pupils.find(x=>normName(x.name)===n);if(p)return p;
+  const parts=n.split(" ");
+  // first + last name match (ignoring middle names)
+  p=state.pupils.filter(x=>{const q=normName(x.name).split(" ");return q[0]===parts[0]&&q[q.length-1]===parts[parts.length-1]});
+  if(p.length===1)return p[0];
+  // unique first name
+  p=state.pupils.filter(x=>normName(x.name).split(" ")[0]===parts[0]);
+  if(p.length===1)return p[0];
+  return null;
+}
+function importVoice(){
+  const rows=parseTable($("voicePaste").value);
+  if(rows.length<2){toast("Paste the header row and at least one child");return}
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  let nameI=findCol(h,[x=>x==="name",x=>x==="full name",x=>/pupil.*name|your name|child/.test(x)]);
+  if(nameI<0)nameI=0;
+  // Microsoft Forms adds ID/time/email columns — skip them
+  const skip=x=>/^(id|start time|completion time|email|last modified time|name)$/.test(x)||/time$/.test(x)||/email/.test(x);
+  const ans=h.map((x,i)=>i).filter(i=>i!==nameI&&!skip(h[i]));
+  let ok=0;const miss=[];
+  rows.slice(1).forEach(r=>{
+    const nm=(r[nameI]||"").trim();if(!nm)return;
+    const p=matchPupil(nm);
+    const parts=ans.map(i=>(r[i]||"").trim()).filter(Boolean);
+    if(!parts.length)return;
+    if(!p){miss.push(nm);return}
+    p.voiceParts=parts;p.voiceRaw=parts.join("\n");p.voice=parts.map(tidy).join(" ");p.voiceTidied=true;ok++;
+  });
+  save();renderAll();
+  $("voiceResult").innerHTML=`<p><b>${ok}</b> comments matched and quick-tidied.</p>`+
+    (miss.length?`<p style="color:var(--bad)">Not matched (check spelling of name, or paste into that child's page by hand): ${miss.map(esc).join(", ")}</p>`:"");
+}
+
+/* ================= TIDY (rule-based) ================= */
+const FIX={"becuase":"because","becase":"because","beacuse":"because","becaus":"because","becuz":"because","cuz":"because","coz":"because","bcause":"because","beause":"because","becouse":"because","becasue":"because",
+"realy":"really","relly":"really","reely":"really","alot":"a lot","allot":"a lot","freind":"friend","freinds":"friends","frend":"friend","frends":"friends",
+"beleive":"believe","belive":"believe","wich":"which","whitch":"which","thier":"their","probaly":"probably","probly":"probably","intresting":"interesting","intristing":"interesting","interisting":"interesting",
+"diffrent":"different","diferent":"different","experament":"experiment","expirement":"experiment","experimant":"experiment","sience":"science","scince":"science","sciance":"science","libary":"library",
+"untill":"until","tommorow":"tomorrow","tomorow":"tomorrow","lerning":"learning","lerned":"learned","lern":"learn","confedent":"confident","confidant":"confident","confodent":"confident","confidint":"confident",
+"multiplacation":"multiplication","multipication":"multiplication","multiplycation":"multiplication","devision":"division","divison":"division","dividing":"dividing","fractons":"fractions","fracsions":"fractions",
+"handwritting":"handwriting","hand-writing":"handwriting","writting":"writing","writeing":"writing","riting":"writing","speling":"spelling","spellings":"spellings","punctuaion":"punctuation","punctuasion":"punctuation","puncuation":"punctuation",
+"favorite":"favourite","favourate":"favourite","faverite":"favourite","favrite":"favourite","favirite":"favourite","colour":"colour","color":"colour","practis":"practise","pratice":"practise","practic":"practise",
+"math":"maths","mathes":"maths","maths":"maths","enjoied":"enjoyed","enjoyd":"enjoyed","enjoed":"enjoyed","enjoi":"enjoy","injoy":"enjoy","injoyed":"enjoyed","enjoing":"enjoying",
+"improove":"improve","imporve":"improve","inprove":"improve","improv":"improve","impove":"improve","beter":"better","bettter":"better","harder":"harder","hardder":"harder",
+"definately":"definitely","definatly":"definitely","definetly":"definitely","acctually":"actually","actualy":"actually","basicly":"basically","usualy":"usually","finaly":"finally","especialy":"especially","specialy":"specially",
+"tryed":"tried","trys":"tries","stoped":"stopped","planed":"planned","droped":"dropped","runing":"running","swiming":"swimming","geting":"getting","siting":"sitting","writen":"written","forgoten":"forgotten",
+"wanna":"want to","gonna":"going to","gotta":"have to","dunno":"don't know","kinda":"kind of","sorta":"sort of","lots":"lots",
+"dont":"don't","cant":"can't","wont":"won't","didnt":"didn't","doesnt":"doesn't","isnt":"isn't","wasnt":"wasn't","werent":"weren't","couldnt":"couldn't","wouldnt":"wouldn't","shouldnt":"shouldn't","havent":"haven't","hasnt":"hasn't","arent":"aren't","thats":"that's","theres":"there's","whats":"what's","its'":"its",
+"im":"I'm","ive":"I've","i'm":"I'm","i've":"I've","i'd":"I'd","i'll":"I'll","iam":"I am",
+"wen":"when","wot":"what","wat":"what","whant":"want","becum":"become","sumthing":"something","somthing":"something","somethink":"something","everythink":"everything","nothink":"nothing","anythink":"anything",
+"evrything":"everything","evryone":"everyone","everyone":"everyone","evry":"every","evrey":"every","verry":"very","allways":"always","alwase":"always","allso":"also","aswell":"as well","infact":"in fact",
+"togther":"together","togeather":"together","becaues":"because","beautifull":"beautiful","beutiful":"beautiful","wonderfull":"wonderful","usefull":"useful","helpfull":"helpful","carefull":"careful","successfull":"successful","peacefull":"peaceful",
+"rember":"remember","remeber":"remember","rememer":"remember","memorise":"memorise","quetions":"questions","qestions":"questions","questons":"questions","anser":"answer","ansers":"answers","awnser":"answer","awnsers":"answers",
+"teached":"taught","brang":"brought","brung":"brought","catched":"caught","thinked":"thought","buyed":"bought","goed":"went","runned":"ran","writed":"wrote","maked":"made","comed":"came",
+"bisuits":"biscuits","biscits":"biscuits","bisciuts":"biscuits","biskits":"biscuits","bisquits":"biscuits","choclate":"chocolate","chocolat":"chocolate","resilliance":"resilience","resiliance":"resilience",
+"sentances":"sentences","sentance":"sentence","senteces":"sentences","paragragh":"paragraph","paragraf":"paragraph","descripton":"description","discription":"description","dicription":"description",
+"tables":"tables","timetables":"times tables","timestables":"times tables","times-tables":"times tables","ttrs":"TTRS","ttrockstars":"TT Rock Stars","sats":"SATs","pe":"PE","ict":"ICT","dt":"DT","ks2":"KS2",
+"english":"English","french":"French","spanish":"Spanish","monday":"Monday","tuesday":"Tuesday","wednesday":"Wednesday","thursday":"Thursday","friday":"Friday","saturday":"Saturday","sunday":"Sunday","christmas":"Christmas","easter":"Easter"};
+// two-word fixes where the meaning is clear from the words around them
+const PHRASE=[[/\bi what to\b/gi,"I want to"],[/\bnever new\b/gi,"never knew"],[/\bhand writing\b/gi,"handwriting"],[/\bwould of\b/gi,"would have"],[/\bcould of\b/gi,"could have"],[/\bshould of\b/gi,"should have"],[/\bmust of\b/gi,"must have"],[/\ba lot of of\b/gi,"a lot of"],[/\btime tables\b/gi,"times tables"],[/\btimes table's\b/gi,"times tables"],[/\bthat is why\b/gi,"that is why"],[/\bto practice\b/gi,"to practise"],[/\bwill practice\b/gi,"will practise"],[/\bcan practice\b/gi,"can practise"]];
+function matchCase(src,rep){if(/^[A-Z]/.test(src)&&/^[a-z]/.test(rep))return rep[0].toUpperCase()+rep.slice(1);return rep}
+function tidy(s){
+  let t=String(s||"").replace(/\r/g,"").replace(/([.!?])?\s*\n+\s*/g,(m,p)=>(p||".")+" ").replace(/[ \t ]+/g," ").trim();
+  if(!t)return"";
+  t=t.replace(/[’‘]/g,"'").replace(/\be\.\s?g\.?(?=\s)/gi,"e.g.\u200b").replace(/\bi\.\s?e\.?(?=\s)/gi,"i.e.\u200b");
+  t=t.replace(/[A-Za-z']+/g,(w,off,str)=>{const lw=w.toLowerCase();
+    if(lw==="i"||lw==="l")return str[off+1]==="."&&/[a-z]/i.test(str[off+2]||"")?w:"I"; // leave "i.e."
+    if(FIX[lw]!==undefined){const r=FIX[lw];return /^[A-Z]/.test(r)?r:matchCase(w,r)}
+    if(/^i'/.test(lw))return"I"+w.slice(1);
+    return w});
+  PHRASE.forEach(([re,rep])=>{t=t.replace(re,m=>matchCase(m,rep))});
+  t=t.replace(/\b(\w+)(\s+\1\b)+/gi,"$1");          // doubled words
+  t=t.replace(/\s+([,.!?;:])/g,"$1");               // no space before punctuation
+  t=t.replace(/([!?])[!?]+/g,"$1").replace(/\.{4,}/g,"...").replace(/([^.])\.\.(?!\.)/g,"$1."); // !!! -> !
+  t=t.replace(/,\./g,".").replace(/\.\s+\./g,".");
+  t=t.replace(/([,;:!?]|(?<!\b[A-Za-z])\.(?!\.))(?=[A-Za-z])/g,"$1 ");     // space after punctuation
+  t=t.replace(/(^|[^\u200b][.!?]\s+)([a-z])/g,(m,p,c)=>p+c.toUpperCase());
+  t=t.replace(/^\W+/,"");
+  t=t.charAt(0).toUpperCase()+t.slice(1);
+  if(!/[.!?]["')]?$/.test(t))t+=".";
+  return t.replace(/ {2,}/g," ").replace(/\u200b/g,"").trim();
+}
+function tidyAll(force){
+  let n=0;state.pupils.forEach(p=>{if(!p.voiceRaw)return;if(force||!p.voiceTidied||p.voice===p.voiceRaw){p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;n++}});
+  save();renderAll();toast(n+" comments tidied");
+}
+/* word diff for showing what changed */
+function diffWords(a,b){
+  const A=a.split(/(\s+)/).filter(x=>x&&!/^\s+$/.test(x)),B=b.split(/(\s+)/).filter(x=>x&&!/^\s+$/.test(x));
+  const n=A.length,m=B.length;if(n*m>40000)return esc(b);
+  const L=Array.from({length:n+1},()=>new Int16Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+  let i=0,j=0,out=[];
+  while(i<n&&j<m){if(A[i]===B[j]){out.push(esc(B[j]));i++;j++}else if(L[i+1][j]>=L[i][j+1]){out.push("<del>"+esc(A[i])+"</del>");i++}else{out.push("<ins>"+esc(B[j])+"</ins>");j++}}
+  while(i<n)out.push("<del>"+esc(A[i++])+"</del>");while(j<m)out.push("<ins>"+esc(B[j++])+"</ins>");
+  return out.join(" ");
+}
+
+/* ================= AI ROUND-TRIP ================= */
+function copyAiPrompt(){
+  const list=state.pupils.map((p,i)=>p.voiceRaw?`${code(i)}: ${p.voiceRaw.replace(/\s*\n+\s*/g," / ")}`:null).filter(Boolean);
+  if(!list.length){toast("No pupil voice comments yet");return}
+  const prompt=`These are comments written by Year 5 children (age 9-10) for their Family Learning Conference with parents. Tidy each one up so it can be printed for parents.
+
+Rules:
+- Correct spelling, grammar and punctuation only. Use UK spelling.
+- Keep the child's own words, ideas, meaning and voice. Keep it in the first person. It should still sound like a 10-year-old wrote it.
+- Do not add new ideas, details, praise or feelings. Do not remove anything the child said.
+- Split long run-on sentences into separate sentences where needed. A " / " shows where the child started a new answer.
+- Keep each comment roughly the same length.
+- Reply with ONLY one line per child, starting with the same code, like this:
+P01: tidied comment
+
+${list.join("\n")}`;
+  navigator.clipboard.writeText(prompt).then(()=>toast(list.length+" comments copied — paste into Claude"),()=>{$("aiPaste").value=prompt;openModal("aiPaste");toast("Copy the text in the box")});
+}
+function applyAi(){
+  const txt=$("aiPaste").value;let n=0;
+  txt.split(/\n/).forEach(line=>{const m=line.match(/^\s*\**\s*(P\d{1,3})\s*\**\s*[:\-–—]\s*(.+)$/i);if(!m)return;
+    const i=parseInt(m[1].slice(1),10)-1;const p=state.pupils[i];if(!p||!p.voiceRaw)return;
+    p.voice=m[2].trim().replace(/^"|"$/g,"");p.voiceTidied=true;n++});
+  save();renderAll();$("aiResult").innerHTML=`<p><b>${n}</b> comments updated.</p>`;if(n)setTimeout(closeModal,900);
+}
+
+/* ================= TARGETS ================= */
+function suggestions(subj,b){
+  const all=allBank().filter(x=>x.s===subj);
+  return{match:all.filter(x=>b&&x.b.includes(b)),other:all.filter(x=>!b||!x.b.includes(b))};
+}
+function suggestAll(){
+  if(!state.pupils.length){toast("Add your class first");return}
+  const counters={};let n=0,nb=0;
+  state.pupils.forEach(p=>{["R","W","M"].forEach(s=>{
+    if(p["t"+s])return;const b=band(p[s]);if(!b){nb++;return}
+    const m=suggestions(s,b).match;if(!m.length)return;
+    const key=s+b;counters[key]=(counters[key]||0);
+    // rotate through the first few matches so the class doesn't all get the same target
+    p["t"+s]=m[counters[key]%Math.min(m.length,4)].t;counters[key]++;n++;})});
+  save();renderAll();toast(`${n} targets suggested`+(nb?` · ${nb} skipped (no DOOYA)`:""));
+}
+function addBank(){
+  const t=$("newText").value.trim();if(!t){toast("Type a target first");return}
+  const b=[...document.querySelectorAll(".nb:checked")].map(x=>x.value).join("");if(!b){toast("Tick at least one band");return}
+  customBank.unshift({s:$("newSubj").value,b,k:"Your own",t,id:uid()});saveBank();$("newText").value="";renderBank();toast("Added to bank");
+}
+function delBank(id){customBank=customBank.filter(x=>x.id!==id);saveBank();renderBank()}
+function saveToBank(subj){const p=cur();const t=p["t"+subj].trim();const b=band(p[subj])||"O";if(!t)return;
+  if(allBank().some(x=>x.t===t)){toast("Already in the bank");return}
+  customBank.unshift({s:subj,b,k:"Your own",t,id:uid()});saveBank();renderEditor();toast("Saved to your bank");}
+
+/* ================= RENDER: pupil list + editor ================= */
+function renderAll(){renderList();renderEditor();renderBank();renderVoiceList();
+  $("empty").style.display=state.pupils.length?"none":"block";$("split").style.display=state.pupils.length?"grid":"none";}
+function status(p){return{V:!!p.voice,R:!!p.tR,W:!!p.tW,M:!!p.tM}}
+function renderList(){
+  const done=state.pupils.filter(p=>{const s=status(p);return s.V&&s.R&&s.W&&s.M}).length;
+  $("plist").innerHTML=`<div class="sum">${state.pupils.length} pupils · ${done} complete<br><button class="small" onclick="addPupil()">+ Add a pupil</button></div>`+
+  state.pupils.map(p=>{const s=status(p);return`<div class="p ${p.id===state.sel?"on":""}" onclick="selectP('${p.id}')"><span>${esc(p.name)}</span><span class="dots">${["V","R","W","M"].map(k=>`<span class="dot ${s[k]?"done":""}" title="${{V:"Pupil voice",R:"Reading target",W:"Writing target",M:"Maths target"}[k]}">${k}</span>`).join("")}</span></div>`}).join("");
+}
+function selectP(id){state.sel=id;save();renderList();renderEditor();window.scrollTo({top:0})}
+function addPupil(){const name=prompt("Child's full name");if(!name)return;const p={id:uid(),name:name.trim(),R:"",W:"",M:"",att:"",late:"",tR:"",tW:"",tM:"",voiceRaw:"",voice:"",notes:""};state.pupils.push(p);state.pupils.sort((a,b)=>a.name.localeCompare(b.name));state.sel=p.id;save();renderAll()}
+function delPupil(){const p=cur();if(!p||!confirm("Remove "+p.name+" from this list?"))return;const i=state.pupils.indexOf(p);state.pupils.splice(i,1);state.sel=(state.pupils[i]||state.pupils[i-1]||{}).id||null;save();renderAll()}
+function setF(k,v){const p=cur();if(!p)return;p[k]=v;save();renderList();renderPreview();if(["R","W","M"].includes(k))renderEditor()}
+function useTarget(s,i){const p=cur();const {match,other}=suggestions(s,band(p[s]));const t=(i<0?other[-i-1]:match[i]).t;p["t"+s]=t;save();renderEditor();renderList()}
+function navP(d){const i=state.pupils.findIndex(p=>p.id===state.sel);const n=state.pupils[i+d];if(n)selectP(n.id)}
+function renderEditor(){
+  const p=cur();const ed=$("editor");if(!p){ed.innerHTML="";return}
+  const idx=state.pupils.indexOf(p);
+  const subjHtml=["R","W","M"].map(s=>{
+    const b=band(p[s]);const {match,other}=suggestions(s,b);const t=p["t"+s];
+    const btn=(x,i)=>`<button class="${x.t===t?"cur":""}" onclick="useTarget('${s}',${i})">${esc(x.t)}<span class="tag">${x.custom?"yours":x.src==="2024"?"Nov 2024":esc(x.k)}</span></button>`;
+    return`<div class="subj"><div class="hd"><img src="${IMG[s]}" alt=""><b>${SUBJ[s]}</b>
+      <span class="band ${b||"none"}">${esc(gradeLabel(p[s])||"—")}</span></div>
+      <textarea rows="2" oninput="setF('t${s}',this.value)" placeholder="Pick a target below or type your own">${esc(t)}</textarea>
+      <div class="row" style="justify-content:space-between"><span class="hint">${b?`Suggested for <b>${b}</b>:`:"Set a DOOYA grade to see matched targets."}</span>${t&&!allBank().some(x=>x.t===t)?`<button class="small" onclick="saveToBank('${s}')">Save this wording to my bank</button>`:""}</div>
+      <div class="sugg">${match.map(btn).join("")}</div>
+      <details><summary>Other ${SUBJ_SHORT[s].toLowerCase()} targets (${other.length})</summary><div class="sugg">${other.map((x,i)=>btn(x,-i-1)).join("")}</div></details></div>`}).join("");
+  ed.innerHTML=`<div class="card">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.name)} <span class="hint">(${code(idx)})</span></h2>
+      <div class="row"><button class="small" onclick="navP(-1)">◀ Previous</button><button class="small" onclick="navP(1)">Next ▶</button><button class="small" onclick="printOne()">Print this child</button><button class="small danger" onclick="delPupil()">Remove</button></div></div>
+    <div class="grid4" style="margin-top:10px">
+      <label>Name<input type="text" value="${esc(p.name)}" onchange="setF('name',this.value.trim());renderList()"></label>
+      <label>Reading<input type="text" value="${esc(p.R)}" onchange="setF('R',this.value.trim())" placeholder="D/O/Y/A"></label>
+      <label>Writing<input type="text" value="${esc(p.W)}" onchange="setF('W',this.value.trim())"></label>
+      <label>Maths<input type="text" value="${esc(p.M)}" onchange="setF('M',this.value.trim())"></label>
+      <label>Attendance %<input type="number" step="0.01" value="${esc(p.att)}" oninput="setF('att',this.value===''?'':+this.value)"></label>
+      <label>Lates<input type="number" value="${esc(p.late)}" oninput="setF('late',this.value===''?'':+this.value)"></label>
+    </div>
+    <h3>Pupil voice</h3>
+    <div class="voicebox">
+      <div><div class="lab">What the child wrote</div><textarea rows="5" oninput="setF('voiceRaw',this.value)">${esc(p.voiceRaw)}</textarea></div>
+      <div><div class="lab">Printed version (edit freely) <button class="small" onclick="retidy()">Quick tidy</button></div><textarea rows="5" oninput="setF('voice',this.value);p_changed()">${esc(p.voice)}</textarea></div>
+    </div>
+    ${p.voiceRaw&&p.voice&&p.voiceRaw!==p.voice?`<div class="lab hint" style="margin-top:6px">Changes: <span class="diff">${diffWords(p.voiceRaw.replace(/\n/g," "),p.voice)}</span></div>`:""}
+    <h3>Targets</h3>${subjHtml}
+    <h3>Notes for me (not printed)</h3>
+    <textarea rows="2" oninput="setF('notes',this.value)" placeholder="e.g. ask about choir">${esc(p.notes)}</textarea>
+  </div>
+  <div class="card"><h2>Preview</h2><div class="preview-wrap"><div id="preview"></div></div></div>`;
+  renderPreview();
+}
+function p_changed(){}
+function retidy(){const p=cur();p.voice=p.voiceParts?p.voiceParts.map(tidy).join(" "):tidy(p.voiceRaw);p.voiceTidied=true;save();renderEditor();renderList()}
+function renderPreview(){
+  const p=cur(),el=$("preview");if(!p||!el)return;
+  el.innerHTML=`<div class="preview-scale">${sheetHtml(p)}</div>`;
+  const w=el.parentElement.clientWidth-28;const full=el.firstChild.offsetWidth;const sc=Math.min(1,w/full);
+  el.firstChild.style.transform=`scale(${sc})`;el.style.height=(el.firstChild.offsetHeight*sc)+"px";
+}
+
+/* ================= THE PRINTED SHEET ================= */
+function sheetHtml(p){
+  const S=state.setup;const ab=attBand(p.att),lb=lateBand(p.late);
+  const rows=[["exc","Exceptional","Attendance is 99% or higher","Always in school on time"],["exp","Expected","Attendance is 96% or higher","Very rarely late to school"],["bel","Below Expected","Attendance falls below 96%","Frequently late to school"],["con","Cause for Concern","Attendance is below 90%","Persistently late to school"]];
+  const subj=["R","W","M"].map(s=>{const g=gradeLabel(p[s]);return`<tr><td class="ic"><img src="${IMG[s]}" alt=""></td><td class="lb">${SUBJ[s]}</td><td class="gr ${g.length>2?"long":""}">${esc(g)}</td><td class="tg">${esc(p["t"+s])}</td></tr>`}).join("");
+  return`<div class="sheet"><div class="frame">
+  <img class="logo" src="${IMG.logo}" alt="Wallscourt Farm Academy">
+  <div class="t1">Family Learning Conference - ${esc(S.month)} ${esc(S.year)}</div>
+  <div class="t2">${esc(p.name)} - ${esc(S.zone)} Learning Zone</div>
+  <div class="bubble">${esc(p.voice)}</div>
+  <table class="subjects">${subj}</table>
+  <table class="key">
+    <tr class="tint"><td>GD - Greater Depth</td><td>Learners who have achieved the age-related standard for their year group and in some aspects have been learning at greater depth.</td></tr>
+    <tr><td>O - On Track</td><td>Learners who have achieved the age-related standard.</td></tr>
+    <tr class="tint"><td>Y - Yet to be on track</td><td>Learners who have not yet achieved the age-related standard and are having additional support and provision to develop their skills.</td></tr>
+    <tr><td>A - At an earlier stage<br>(A - Year Group)</td><td>Learners who are below the age-related standard for their year group and still have gaps within the curriculum from a previous year group. For example, A-2 means the learner is working within the Year 2 curriculum.</td></tr>
+  </table>
+  <div class="charter-hd"><b>Wallscourt Farm Academy Charter</b><div class="imgs"><img src="${IMG.cur}" alt="Curiosity and Imagination"><img src="${IMG.res}" alt="Resilience"><img src="${IMG.ind}" alt="Independence"><img src="${IMG.col}" alt="Collaboration"></div></div>
+  <div class="charter">
+    <p><span class="bl">We have the right to</span> <b>be heard.</b><br><span class="bl">We have the responsibility to</span> listen to other people.<br>When we move around school we do so in silence, and we use our quietest voices during learning time.<br>We are ready to listen in silence when asked and indicate we wish to speak by ‘flashing our lightbulb’ or using our ‘philosopher’s finger.’</p>
+    <p><span class="bl">We have the right to</span> <b>be safe and healthy.</b><br><span class="bl">We have the responsibility to</span> respect each other and think about how our behaviour affects others.<br>Kind hands, kind feet, kind words.<br>We look after our learning environment to keep it safe.<br>We have the responsibility to make healthy choices and consider our own and others’ well-being.</p>
+    <p><span class="bl">We have the right to</span> <b>learn</b> and be the best we can.<br><span class="bl">We have the responsibility to</span> try our hardest.<br>We value our learning and our learning resources and take pride in everything we do. We use our 21st Century Learning Skills to help us – Curiosity and Imagination, Resilience, Independence and Collaboration.</p>
+  </div>
+  <table class="att"><tr><th></th><th>Attendance</th><th>Punctuality</th></tr>
+    ${rows.map(r=>`<tr><td class="l ${r[0]}">${r[1]}</td><td class="${ab===r[0]?r[0]:""}">${r[2]}</td><td class="${lb===r[0]?r[0]:""}">${r[3]}</td></tr>`).join("")}
+  </table>
+  </div></div>`;
+}
+function printAll(){if(!state.pupils.length){toast("Add your class first");return}
+  const missing=state.pupils.filter(p=>{const s=status(p);return!(s.V&&s.R&&s.W&&s.M)});
+  if(missing.length&&!confirm(`${missing.length} pupil(s) still have gaps (${missing.slice(0,5).map(p=>p.name).join(", ")}${missing.length>5?"…":""}). Print anyway?`))return;
+  doPrint(state.pupils)}
+function printOne(){doPrint([cur()])}
+function doPrint(list){$("print-area").innerHTML=list.map(sheetHtml).join("");
+  const imgs=[...$("print-area").querySelectorAll("img")];Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r}))).then(()=>window.print())}
+window.addEventListener("afterprint",()=>{$("print-area").innerHTML=""});
+
+/* ================= BANK + VOICE VIEWS ================= */
+function renderBank(){
+  $("bankCols").innerHTML=["R","W","M"].map(s=>{
+    const items=allBank().filter(x=>x.s===s);
+    const sec=b=>items.filter(x=>x.b.includes(b)).map(x=>`<div class="bank-item"><span class="bands">${[..."DOYA"].map(c=>x.b.includes(c)?`<span class="band ${c}">${c}</span>`:"").join("")}</span><span class="txt">${esc(x.t)} <small>· ${x.custom?"yours":x.src==="2024"?"Nov 2024":esc(x.k)}</small></span>${x.custom?`<button class="small danger" onclick="delBank('${x.id}')">✕</button>`:""}</div>`).join("");
+    return`<div class="card"><h2><img src="${IMG[s]}" style="width:20px;vertical-align:-4px"> ${SUBJ_SHORT[s]}</h2>
+      ${[["D","Greater depth"],["O","On track"],["Y","Yet to be on track"],["A","Earlier stage"]].map(([b,l])=>`<div class="bank-sec">${l}</div>${sec(b)}`).join("")}</div>`}).join("");
+}
+function renderVoiceList(){
+  const el=$("voiceList");const list=state.pupils.filter(p=>p.voiceRaw||p.voice);
+  if(!list.length){el.innerHTML=`<p class="hint">No comments yet. Use <b>2. Add pupil voice</b>.</p>`;return}
+  el.innerHTML=`<table class="mini"><tr><th style="width:150px">Pupil</th><th>Changes (red = removed, green = added)</th><th style="width:60px"></th></tr>`+
+    list.map(p=>`<tr><td>${esc(p.name)}<br><span class="hint">${code(state.pupils.indexOf(p))}</span></td><td class="diff">${p.voiceRaw?diffWords(p.voiceRaw.replace(/\n/g," "),p.voice||""):esc(p.voice)}</td><td><button class="small" onclick="selectP('${p.id}');showView('pupils')">Edit</button></td></tr>`).join("")+`</table>`;
+}
+
+/* ================= FILE ================= */
+function saveFile(){const blob=new Blob([JSON.stringify({app:"flc-builder",version:VERSION,state,customBank},null,1)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FLC ${state.setup.month} ${state.setup.year}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function openFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.app!=="flc-builder")throw 0;
+  if(state.pupils.length&&!confirm("Replace the current work with this file?"))return;
+  state=d.state;if(d.customBank){const ids=new Set(customBank.map(x=>x.t));d.customBank.forEach(x=>{if(!ids.has(x.t))customBank.push(x)});saveBank()}
+  save();syncSetup();renderAll();toast("Opened")}catch(e){toast("That isn't an FLC Builder file")}};r.readAsText(f);inp.value=""}
+function copyExport(){
+  const cell=v=>{v=String(v??"");return/[\t\n"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  // same columns as the Data tab (B to P), formulas included so pasting doesn't break them
+  const lines=state.pupils.map((p,i)=>{const parts=p.name.split(" "),r=i+3;
+    const J=`=IF(I${r}>='Set up'!$B$32,"A",IF(I${r}>='Set up'!$B$33,"B",IF(I${r}<'Set up'!$B$35,"D","C")))`;
+    const L=`=IF(AND(K${r}='Set up'!$C$32),"A",IF(AND(K${r}<='Set up'!$C$33),"B",IF(AND(K${r}<='Set up'!$C$34),"C",IF(AND(K${r}>'Set up'!$C$34),"D"))))`;
+    return["ch"+String(i+1).padStart(2,"0"),parts[0],parts.slice(1).join(" "),`=C${r}&" "&D${r}`,p.R,p.W,p.M,p.att,J,p.late,L,p.tR,p.tW,p.tM,p.voice].map(cell).join("\t")});
+  navigator.clipboard.writeText(lines.join("\n")).then(()=>toast("Copied — paste into cell B3 of the Data tab"),()=>toast("Couldn't copy"));
+}
+function clearAll(){if(!confirm("Clear all pupils, comments and targets from this browser?"))return;state={setup:state.setup,pupils:[],sel:null};save();renderAll();toast("Cleared")}
+
+/* ================= DEMO (made-up pupils) ================= */
+function loadDemo(){
+  state.pupils=[
+    {id:uid(),name:"Alex Example",R:"O",W:"Y",M:"O",att:97.5,late:1,tR:"",tW:"",tM:"",voiceRaw:"i really enjoyed the biscuit experament becuase it was realy fun and we worked in groups\ni want to get better at my hand writing i will practice at home every day",voice:"",notes:""},
+    {id:uid(),name:"Sam Sample",R:"D",W:"D",M:"D",att:100,late:0,tR:"",tW:"",tM:"",voiceRaw:"My favorite thing was writing the letter as stanley from holes. I would like to improve my long division so I can do it faster, I will go on TTRS and practise.",voice:"",notes:""},
+    {id:uid(),name:"Jordan Test",R:"Y",W:"A Y3",M:"A Y3",att:91,late:5,tR:"",tW:"",tM:"",voiceRaw:"l liked art becase l loved the printing . l what to improve my math so l will go on ttrs",voice:"",notes:"ask about reading at home"},
+    {id:uid(),name:"Riley Demo",R:"A Y4",W:"O",M:"Y",att:88,late:9,tR:"",tW:"",tM:"",voiceRaw:"",voice:"",notes:""}];
+  state.pupils.forEach(p=>{if(p.voiceRaw){p.voice=tidy(p.voiceRaw);p.voiceTidied=true}});
+  state.sel=state.pupils[0].id;save();renderAll();toast("Made-up pupils loaded — try 3. Suggest targets");
+}
+
+/* ================= MODALS / TABS / SETUP ================= */
+function openModal(id){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"));$("m-"+id).classList.add("on");
+  $("voiceResult").innerHTML="";$("aiResult").innerHTML="";
+  if(id==="importVoice"&&!state.pupils.length){closeModal();toast("Add your class data first");}}
+function closeModal(){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"))}
+document.querySelectorAll(".modal-bg").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal()}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+function showView(v){document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="view-"+v));if(v==="pupils")renderPreview()}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+function syncSetup(){const S=state.setup;$("setMonth").value=S.month;$("setYear").value=S.year;$("setZone").value=S.zone}
+["setMonth","setYear","setZone"].forEach(id=>$(id).addEventListener("change",()=>{state.setup={month:$("setMonth").value,year:$("setYear").value,zone:$("setZone").value};save();renderPreview()}));
+window.addEventListener("resize",()=>renderPreview());
+syncSetup();renderAll();
+</script>
+</body>
+</html>
