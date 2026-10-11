@@ -263,6 +263,7 @@ table.mini td,table.mini th{border:1px solid var(--line);padding:4px 6px;text-al
   <p class="hint">Open the attendance spreadsheet (.xlsx or .csv) or paste it from Excel. The tool finds the columns for the child's name, attendance % and number of lates, and matches names to your class.
   Only your class is updated — other children in the file are ignored. Title rows above the table are fine.</p>
   <div class="row" style="margin-bottom:8px"><button onclick="$('attFile').click()">Open the attendance file…</button><input id="attFile" type="file" accept=".xlsx,.csv,.tsv,.txt" style="display:none" onchange="loadIntoBox(this,'attPaste','att',()=>importAtt())"><span class="hint">or paste below</span></div>
+  <div class="row" id="attSheetRow" style="margin-bottom:8px;display:none"><label class="hint">Tab <select id="attSheet" onchange="pickAttSheet(this.value)"></select></label><span class="hint">Your class's tab is chosen automatically (5H2 → H2). Change it here if needed.</span></div>
   <textarea id="attPaste" rows="8" placeholder="Name&#9;Attendance %&#9;Lates"></textarea>
   <div id="attResult" class="hint"></div>
   <div class="row" style="margin-top:10px;justify-content:flex-end"><button onclick="closeModal()">Close</button><button class="primary" onclick="importAtt()">Add</button></div>
@@ -407,8 +408,9 @@ function gradeLabel(v){v=String(v||"").trim();if(!v)return"";const b=band(v);
   if(b==="A"){if(/\bEY|EYFS|reception|\bR\b/i.test(v.slice(1)))return"A EY";const n=v.match(/\d/);return n?"A Y"+n[0]:"A"}
   if(b==="D")return/^gd/i.test(v)?"GD":"D";return b}
 function normName(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z\s'-]/g," ").replace(/\s+/g," ").trim()}
-function attBand(a){if(a===""||a==null||isNaN(a))return null;a=+a;if(a>=99)return"exc";if(a>=96)return"exp";if(a<90)return"con";return"bel"}
-function lateBand(l){if(l===""||l==null||isNaN(l))return null;l=+l;if(l===0)return"exc";if(l<=2)return"exp";if(l<=7)return"bel";return"con"}
+// Same rules as the formulas in the school's FLC attendance lists (Term 4, March 2026)
+function attBand(a){if(a===""||a==null||isNaN(a))return null;a=+a;if(a>98.9)return"exc";if(a>95.99)return"exp";if(a<90)return"con";return"bel"}
+function lateBand(l){if(l===""||l==null||isNaN(l))return null;l=+l;if(l===0)return"exc";if(l<6)return"exp";if(l<40)return"bel";return"con"}
 function code(i){return"P"+String(i+1).padStart(2,"0")}
 function cur(){return state.pupils.find(p=>p.id===state.sel)}
 
@@ -479,9 +481,29 @@ async function readXlsx(buf){
 // which sheet in a workbook looks like the right one for this step
 const SHEET_WORDS={class:/dooya|reading|writing|maths|class/i,att:/attend|late|present|%/i,voice:/enjoy|improve|name/i};
 function rowsToTSV(rows){return rows.map(r=>r.map(c=>{c=String(c??"");return/[\t\n"]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join("\t")).join("\n")}
+let attSheets=null;
+// "5H2" -> tab "H2" (the attendance lists have one tab per class: R1, B1 … H1, H2, E1, E2)
+function classTab(sheets){const c=String(state.setup.cls||"").trim().toUpperCase();if(!c)return null;
+  return sheets.find(sh=>sh.name.trim().toUpperCase()===c)||sheets.find(sh=>sh.name.trim().toUpperCase()===c.replace(/^\d+/,""))||null}
+function showAttSheets(sheets,chosen){
+  const row=$("attSheetRow");if(!sheets||sheets.length<2){row.style.display="none";return}
+  $("attSheet").innerHTML=sheets.map((sh,i)=>`<option value="${i}" ${sh===chosen?"selected":""}>${esc(sh.name)}</option>`).join("");
+  row.style.display="flex";
+}
+function sheetMatches(sh){const hi=headerIndex(sh.rows);if(hi<0)return 0;const h=sh.rows[hi].map(x=>String(x).trim().toLowerCase());
+  const full=findCol(h,[x=>x==="name",x=>x==="full name",x=>x==="pupil",x=>x==="student",x=>x==="pupil name",x=>x==="student name"]),
+    first=findCol(h,[x=>/forename|first/.test(x)]),last=findCol(h,[x=>/surname|last name/.test(x)]);
+  let n=0;sh.rows.slice(hi+1).forEach(r=>{const nm=full>=0?String(r[full]||""):((r[first]||"")+" "+(r[last]||""));if(nm.trim()&&matchPupil(nm).p)n++});return n}
+function pickAttSheet(i){const sh=attSheets&&attSheets[+i];if(!sh)return;$("attPaste").value=rowsToTSV(sh.rows);importAtt()}
 async function readAnyFile(f,kind){
   if(/\.xlsx$/i.test(f.name)){
     const sheets=await readXlsx(await f.arrayBuffer());
+    if(kind==="att"){attSheets=sheets;
+      // prefer the tab named after the class; otherwise the tab holding most of this class's children
+      const found=sheets.map(sh=>({sh,n:sheetMatches(sh)}));const tab=classTab(sheets);
+      const most=found.slice().sort((a,b)=>b.n-a.n)[0];
+      const best=(tab&&found.find(f=>f.sh===tab).n>0)?tab:(most&&most.n>0?most.sh:tab||sheets[0]);showAttSheets(sheets,best);
+      if(!best||!best.rows.length)throw new Error("empty");return rowsToTSV(best.rows)}
     const score=sh=>{const hi=Math.max(0,headerIndex(sh.rows));const h=(sh.rows[hi]||[]).join(" ");return(headerIndex(sh.rows)>=0?10:0)+(h.match(new RegExp(SHEET_WORDS[kind].source,"gi"))||[]).length};
     const best=sheets.slice().sort((a,b)=>score(b)-score(a))[0];
     if(!best||!best.rows.length)throw new Error("empty");
@@ -495,6 +517,11 @@ async function loadIntoBox(inp,boxId,kind,then){const f=inp.files[0];inp.value="
   catch(e){toast(String(e.message).includes(".xls")?"Please save it as .xlsx (Excel Workbook) first":"Couldn't read that file — try copying and pasting instead")}}
 
 /* ===== ATTENDANCE ===== */
+function numCol(h,body,tests){
+  for(const t of tests)for(let i=0;i<h.length;i++){if(!t(h[i]))continue;
+    const vals=body.map(r=>String(r[i]??"").trim()).filter(Boolean);
+    if(!vals.length||vals.filter(v=>!isNaN(parseFloat(v.replace("%","")))).length/vals.length>=0.5)return i}
+  return -1}
 function importAtt(){
   let rows=parseTable($("attPaste").value);const hi=headerIndex(rows);
   if(hi<0||rows.length<2){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find a header row with the children's names.</p>`;return}
@@ -503,8 +530,9 @@ function importAtt(){
     full:findCol(h,[x=>x==="name",x=>x==="full name",x=>x==="pupil",x=>x==="pupil name",x=>x==="student",x=>x==="student name",x=>x==="learner",x=>x==="child",x=>/^(legal |preferred )?name$/.test(x)]),
     first:findCol(h,[x=>/^(preferred |legal )?(first ?name|forename)s?$/.test(x),x=>/forename|first/.test(x)]),
     last:findCol(h,[x=>/^(legal |preferred )?(last ?name|surname|family name)$/.test(x),x=>/surname|last name/.test(x)]),
-    att:findCol(h,[x=>/^attendance ?%$|^% ?attendance$|^% ?present$|^present ?%$/.test(x),x=>/attendance/.test(x)&&!/late|unauth|auth|absen|possible|session|mark/.test(x),x=>/^%$|percent/.test(x)&&!/late|absen/.test(x),x=>/present/.test(x)&&/%/.test(x)]),
-    late:findCol(h,[x=>/^(no\.? of |number of |total )?lates?( count| marks?| sessions)?$/.test(x),x=>/^l$/.test(x),x=>/late/.test(x)&&!/%|percent/.test(x)]),
+    // the school's lists have both "%" (a number) and "Attendance" (a word like "Expected") — only take columns holding numbers
+    att:numCol(h,rows.slice(1),[x=>/^attendance ?%$|^% ?attendance$|^% ?present$|^present ?%$|^%$/.test(x),x=>/attendance/.test(x)&&!/late|unauth|auth|absen|possible|session|mark/.test(x),x=>/percent/.test(x)&&!/late|absen/.test(x),x=>/present/.test(x)&&/%/.test(x)]),
+    late:numCol(h,rows.slice(1),[x=>/^(no\.? of |number of |total )?lates?( count| marks?| sessions)?$/.test(x),x=>/^l$/.test(x),x=>/late/.test(x)&&!/%|percent/.test(x)]),
     cls:findCol(h,[x=>x==="class",x=>x==="form",x=>x==="reg group",x=>x==="registration group",x=>x==="tutor group"])};
   if(ci.full<0&&ci.first<0&&ci.last<0){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find a name column.</p>`;return}
   if(ci.att<0&&ci.late<0){$("attResult").innerHTML=`<p style="color:var(--bad)">Couldn't find attendance or lates columns. Headers found: ${h.filter(Boolean).map(esc).join(", ")}</p>`;return}
@@ -526,7 +554,8 @@ function importAtt(){
     done.add(p.id);n++});
   save();renderAll();
   const missing=state.pupils.filter(p=>!done.has(p.id));
-  $("attResult").innerHTML=`<p><b>${n}</b> children updated${ci.att<0?" (no attendance column found — lates only)":""}${ci.late<0?" (no lates column found — attendance only)":""}.</p>`+
+  const upto=(parseTable($("attPaste").value).flat().find(x=>/^(up until|as at|as of|data to)\b/i.test(String(x).trim()))||"").trim();
+  $("attResult").innerHTML=`<p><b>${n}</b> children updated${upto?` (${esc(upto)})`:""}${ci.att<0?" (no attendance column found — lates only)":""}${ci.late<0?" (no lates column found — attendance only)":""}.</p>`+
     (missing.length?`<p style="color:var(--bad)">Not found in the file: ${missing.map(p=>esc(p.name)).join(", ")}</p>`:"")+
     (other.length?`<details><summary>${other.length} names in the file not in your class (ignored)</summary><p>${other.map(esc).join(", ")}</p></details>`:"");
 }
@@ -916,8 +945,8 @@ function p_changed(){}
 const BAND_NAME={exc:"Exceptional",exp:"Expected",bel:"Below Expected",con:"Cause for Concern"};
 function attNote(p){const a=attBand(p.att),l=lateBand(p.late);
   return`Attendance: <b>${a?BAND_NAME[a]:"—"}</b> · Punctuality: <b>${l?BAND_NAME[l]:"—"}</b><br>
-  <span style="font-size:12px">Attendance: 99%+ Exceptional · 96%+ Expected · 90–95.9% Below Expected · under 90% Cause for Concern.
-  Lates: 0 Exceptional · 1–2 Expected · 3–7 Below Expected · 8+ Cause for Concern. (Same rules as the FLC spreadsheet.)</span>`}
+  <span style="font-size:12px">Attendance: over 98.9% Exceptional · 96%+ Expected · 90–95.99% Below Expected · under 90% Cause for Concern.
+  Lates: 0 Always on time · 1–5 Very rarely late · 6–39 Frequently late · 40+ Persistently late. (Same rules as the school's FLC attendance lists.)</span>`}
 function retidy(){const p=cur();p.voice=voiceFromParts(p);p.voiceTidied=true;save();renderEditor();renderList()}
 function renderPreview(){
   const p=cur(),el=$("preview");if(!p||!el)return;
@@ -1009,7 +1038,7 @@ function loadDemo(){
 
 /* ================= MODALS / TABS / SETUP ================= */
 function openModal(id){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"));$("m-"+id).classList.add("on");
-  $("voiceResult").innerHTML="";$("aiResult").innerHTML="";$("attResult").innerHTML="";
+  $("voiceResult").innerHTML="";$("aiResult").innerHTML="";$("attResult").innerHTML="";if(id==="importAtt")$("attSheetRow").style.display="none";
   if(id==="importAtt"&&!state.pupils.length){closeModal();toast("Add your class first");return}
   if(id==="importVoice"&&!state.pupils.length){closeModal();toast("Add your class data first");}}
 function closeModal(){document.querySelectorAll(".modal-bg").forEach(m=>m.classList.remove("on"))}
