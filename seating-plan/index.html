@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seating Plan — IM</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23e57d24'/%3E%3Crect x='10' y='14' width='20' height='14' fill='white'/%3E%3Crect x='34' y='14' width='20' height='14' fill='white'/%3E%3Crect x='10' y='36' width='20' height='14' fill='white'/%3E%3Crect x='34' y='36' width='20' height='14' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F7; --surface:#fff; --border:#DDE1EB; --text:#1A2030; --muted:#7A8499;
+  --accent:#2E5F8A; --accent-lo:#EBF1F8; --danger:#c62828; --yc:#e57d24;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0F1520; --surface:#192030; --border:#242E42; --text:#DEE5F2; --muted:#7A8AA8; --accent:#5090C0; --accent-lo:#152030; --danger:#ef7a7a; }
+}
+:root[data-theme="dark"]{ --bg:#0F1520; --surface:#192030; --border:#242E42; --text:#DEE5F2; --muted:#7A8AA8; --accent:#5090C0; --accent-lo:#152030; --danger:#ef7a7a; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Figtree',system-ui,sans-serif;line-height:1.45;min-height:100vh}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1500px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:1.3rem}
+h1 a{color:var(--muted);text-decoration:none;font-weight:400;font-size:.85rem;margin-right:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.9rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:default}
+select,input[type=text],input[type=number],textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
+.tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tabs button{border:0;background:var(--surface);padding:8px 16px;font-weight:500}
+.tabs button.on{background:var(--yc);color:#fff}
+.main{display:grid;grid-template-columns:1fr 330px;gap:14px;align-items:start}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h2{font-size:.95rem;margin-bottom:8px}
+.hint{color:var(--muted);font-size:.82rem}
+#canvasWrap{overflow-x:auto;padding-bottom:4px}
+.frame{border:14px solid var(--yc);background:#fff;padding:24px;display:inline-block;color:#1a1a1a}
+.frame .ptitle{display:none}
+#canvas{position:relative}
+.seat,.item,.cell{position:absolute}
+.seat{border:1px solid #222;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Andika',sans-serif;color:#111;user-select:none;-webkit-user-select:none;overflow:hidden;line-height:1.1}
+.seat[data-has="1"]{cursor:grab;touch-action:none}
+.seat.sel{outline:4px solid #1a73e8;outline-offset:-4px;z-index:3}
+.seat.gsel{outline:4px dashed #1a73e8;outline-offset:-4px;z-index:3}
+.seat.bad{outline:4px solid #d32f2f;outline-offset:-4px;z-index:2}
+.seat.dragsrc{opacity:.35}
+.seat .x{position:absolute;top:1px;right:2px;border:0;background:#c62828;color:#fff;border-radius:50%;width:18px;height:18px;line-height:16px;font-size:12px;padding:0}
+.cell{border:1px dashed #b9bfce;color:#9aa3b8;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;background:transparent}
+.cell:hover{background:#eef3fb}
+.item{display:flex;align-items:center;justify-content:center;font-family:'Andika',sans-serif;z-index:1}
+.item.board{background:#000;color:#fff}
+.item.box{background:#fff;border:1px solid #222}
+.item.layoutmode{cursor:move;touch-action:none;outline:2px dashed #1a73e8}
+.ghost{position:fixed;pointer-events:none;z-index:99;background:#fff;border:2px solid #1a73e8;border-radius:6px;padding:4px 10px;font-family:'Andika',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.25);color:#111}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:42px;padding:6px;border:2px dashed var(--border);border-radius:8px}
+.chips.over{border-color:var(--yc);background:var(--accent-lo)}
+.chip{font-family:'Andika',sans-serif;background:var(--accent-lo);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;color:var(--text)}
+.chip.sel{outline:3px solid #1a73e8}
+.warn{border-left:4px solid var(--danger);padding:6px 10px;background:var(--accent-lo);border-radius:6px;font-size:.88rem;margin-bottom:6px}
+.ok{color:#2e7d32;font-size:.88rem}
+.rule{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:.88rem;padding:4px 0;border-bottom:1px solid var(--border)}
+.rule.bad{color:var(--danger);font-weight:600}
+.rule button{border:0;background:none;color:var(--muted);font-size:1.1rem}
+.f{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.f label{font-size:.85rem;min-width:70px}
+.f input[type=number]{width:70px}
+dialog{border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface);color:var(--text);max-width:420px;width:92%}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog textarea{width:100%;height:340px;margin:8px 0}
+footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;font-family:monospace}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  header,.tabs,.side,footer,.toolbar{display:none!important}
+  .main{display:block}
+  #canvasWrap{overflow:visible}
+  .frame{-webkit-print-color-adjust:exact;print-color-adjust:exact;display:block;border-width:10px;padding:14px}
+  .frame .ptitle{display:block;font-family:'Andika',sans-serif;font-size:14pt;margin-bottom:6px}
+  .seat,.item{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .seat.sel,.seat.gsel,.seat.bad{outline:none}
+  .cell{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><a href="../">← Tools</a>Seating Plan</h1>
+    <div class="row">
+      <select id="planSel" aria-label="Plan"></select>
+      <button class="btn" id="bNew" title="New plan using the default layout">New</button>
+      <button class="btn" id="bDup" title="Copy this plan, to try a different arrangement">Duplicate</button>
+      <button class="btn" id="bRen">Rename</button>
+      <button class="btn danger" id="bDel">Delete</button>
+    </div>
+  </header>
+
+  <div class="row toolbar" style="margin-bottom:12px;justify-content:space-between">
+    <div class="row">
+      <div class="tabs" id="modeTabs">
+        <button data-m="seat">Seating</button>
+        <button data-m="group">Pairs &amp; trios</button>
+        <button data-m="layout">Room layout</button>
+      </div>
+      <button class="btn" id="bUndo">↶ Undo</button>
+    </div>
+    <div class="row">
+      <label class="hint" for="yearSel">Year group colour</label>
+      <select id="yearSel"></select>
+      <button class="btn" id="bPrint">🖨 Print</button>
+      <button class="btn" id="bExport">Save file</button>
+      <button class="btn" id="bImport">Open file</button>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <div class="main">
+    <div>
+      <div id="canvasWrap"><div class="frame" id="frame"><div class="ptitle" id="ptitle"></div><div id="canvas"></div></div></div>
+    </div>
+    <div class="side" id="side"></div>
+  </div>
+
+  <footer><span>16.10.26a</span><span>Names stay in this browser only</span></footer>
+</div>
+
+<dialog id="listDlg">
+  <h2 style="font-size:1rem">Class list</h2>
+  <p class="hint">One name per line. Every name must be different (add an initial if two children share a first name). Removing a name takes that child off the plan.</p>
+  <textarea id="listTa"></textarea>
+  <div id="listErr" class="warn" style="display:none"></div>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn" id="listCancel">Cancel</button>
+    <button class="btn primary" id="listSave">Save</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+const VERSION='16.10.26a';
+const STORE='wfa.seatingplan.v1';
+// WFA year-group colours (same as wfa_shared/brand.py)
+const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
+const GREY='#d9d9d9';
+const RADII=[[1,'directly beside, in front or behind'],[1.5,'beside, in front, behind or diagonal'],[2.3,'within two seats']];
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+function mix(hex,white){const n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=v=>Math.round(v+(255-v)*white);return `rgb(${m(r)},${m(g)},${m(b)})`}
+const toneColour=(base,t)=>mix(base,t===1?0.6:0.8);   // 0 = light tone, 1 = dark tone
+
+/* ---------- default plan ---------- */
+function defaultPlan(name){
+  const seats=[],groupTone={};let n=0,gi=0;
+  const G=t=>{const id='g'+(++gi);groupTone[id]=t;return id};
+  const add=(c,r,g,f)=>seats.push({id:'s'+(++n),c,r,p:null,g,f:f?1:0});
+  const run=(r,c0,len,t,flagFirst)=>{const g=G(t);for(let i=0;i<len;i++)add(c0+i,r,g,flagFirst&&i===0)};
+  run(1,0,2,0);run(1,2,2,1);run(1,5,2,0);run(1,7,2,1);
+  run(2,0,2,1);run(2,2,2,0);run(2,5,3,1,true);run(2,8,1,0);
+  run(3,0,2,1);run(3,2,2,0);run(3,5,2,1);run(3,7,1,0);
+  run(4,0,3,1);run(4,5,2,1);run(4,7,2,1);
+  return{id:uid(),name:name||'Default layout',year:'Y5',cols:9,rows:5,
+    items:[{id:uid(),kind:'board',label:'',c:2,r:0,w:5},{id:uid(),kind:'box',label:'Mr McLean',c:7,r:0,w:2}],
+    seats,groupTone,pupils:[],rules:[]};
+}
+
+/* ---------- state ---------- */
+let S={cur:null,plans:[]};
+let mode='seat', sel=null, gsel=new Set(), undo=[];
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(STORE));if(d&&d.plans&&d.plans.length){S=d}}catch(e){}
+  if(!S.plans.length){const p=defaultPlan();S={cur:p.id,plans:[p]}}
+  if(!S.plans.find(p=>p.id===S.cur))S.cur=S.plans[0].id;
+  S.plans.forEach(sanitise);
+}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
+const P=()=>S.plans.find(p=>p.id===S.cur);
+// guarantees nobody is seated twice and no duplicate names
+function sanitise(p){
+  const seen=new Set();p.pupils=p.pupils.filter(n=>{const k=n.toLowerCase();if(seen.has(k))return false;seen.add(k);return true});
+  const placed=new Set();
+  p.seats.forEach(s=>{if(s.p&&(!p.pupils.includes(s.p)||placed.has(s.p)))s.p=null;if(s.p)placed.add(s.p)});
+  p.rules=p.rules.filter(r=>p.pupils.includes(r.a)&&p.pupils.includes(r.b)&&r.a!==r.b);
+  const used=new Set(p.seats.map(s=>s.g).filter(Boolean));
+  Object.keys(p.groupTone).forEach(g=>{if(!used.has(g))delete p.groupTone[g]});
+}
+function mutate(fn){
+  undo.push(JSON.stringify(P()));if(undo.length>60)undo.shift();
+  fn(P());sanitise(P());save();renderAll();
+}
+function doUndo(){
+  if(!undo.length)return;const snap=JSON.parse(undo.pop());
+  const i=S.plans.findIndex(p=>p.id===snap.id);if(i<0)return;
+  S.plans[i]=snap;S.cur=snap.id;sel=null;gsel.clear();save();renderAll();
+}
+
+/* ---------- rules / warnings ---------- */
+function dist(a,b){return Math.hypot(a.c-b.c,a.r-b.r)}
+function check(p){
+  const bad=new Set(),list=[];
+  p.rules.forEach(r=>{
+    const a=p.seats.find(s=>s.p===r.a),b=p.seats.find(s=>s.p===r.b);
+    r.bad=false;if(!a||!b)return;
+    const same=a.g&&a.g===b.g;
+    if(same||dist(a,b)<=r.d){r.bad=true;bad.add(a.id);bad.add(b.id);list.push(`${r.a} and ${r.b} are ${same?'in the same group':'too close'}.`)}
+  });
+  return{bad,list};
+}
+
+/* ---------- geometry ---------- */
+let G={cw:120,sh:56,rp:90};
+function geom(p){
+  const avail=$('#canvasWrap').clientWidth-28-48-6;
+  const cw=Math.max(64,Math.min(140,Math.floor(avail/p.cols)));
+  const sh=Math.round(cw*.42);G={cw,sh,rp:Math.round(sh*1.9)};
+}
+
+/* ---------- render ---------- */
+function renderAll(){
+  const p=P();
+  document.documentElement.style.setProperty('--yc',YEARS[p.year][1]);
+  $('#planSel').innerHTML=S.plans.map(x=>`<option value="${x.id}" ${x.id===p.id?'selected':''}>${esc(x.name)}</option>`).join('');
+  $('#yearSel').innerHTML=Object.entries(YEARS).map(([k,v])=>`<option value="${k}" ${k===p.year?'selected':''}>${v[0]}</option>`).join('');
+  document.querySelectorAll('#modeTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+  $('#bUndo').disabled=!undo.length;$('#bDel').disabled=S.plans.length<2;
+  $('#ptitle').textContent=p.name;
+  renderCanvas(p);renderSide(p);
+}
+function renderCanvas(p){
+  geom(p);const{cw,sh,rp}=G,base=YEARS[p.year][1],chk=check(p);
+  const cv=$('#canvas');cv.style.width=p.cols*cw+'px';cv.style.height=p.rows*rp+'px';
+  cv.style.fontSize=Math.max(12,Math.round(cw*.15))+'px';
+  let h='';
+  if(mode==='layout'){
+    for(let r=0;r<p.rows;r++)for(let c=0;c<p.cols;c++)
+      if(!p.seats.some(s=>s.c===c&&s.r===r))h+=`<div class="cell" data-cell="${c},${r}" style="left:${c*cw}px;top:${r*rp}px;width:${cw}px;height:${sh}px" title="Add a seat">+</div>`;
+  }
+  p.items.forEach(it=>{
+    h+=`<div class="item ${it.kind} ${mode==='layout'?'layoutmode':''}" data-item="${it.id}" style="left:${it.c*cw}px;top:${it.r*rp}px;width:${it.w*cw}px;height:${it.kind==='board'?Math.round(sh*.3):sh}px">${esc(it.label)}</div>`;
+  });
+  p.seats.forEach(s=>{
+    const bg=s.f?GREY:(s.g?toneColour(base,p.groupTone[s.g]):toneColour(base,0));
+    const cls=['seat',sel&&sel.seat===s.id?'sel':'',gsel.has(s.id)?'gsel':'',chk.bad.has(s.id)&&mode!=='layout'?'bad':''].join(' ');
+    h+=`<div class="${cls}" data-seat="${s.id}" data-has="${s.p?1:0}" style="left:${s.c*cw}px;top:${s.r*rp}px;width:${cw}px;height:${sh}px;background:${bg}">${s.p?esc(s.p):''}${mode==='layout'?`<button class="x" data-del="${s.id}" title="Remove seat">×</button>`:''}</div>`;
+  });
+  cv.innerHTML=h;
+}
+function renderSide(p){
+  const sd=$('#side');
+  if(mode==='seat')sd.innerHTML=sideSeat(p);
+  else if(mode==='group')sd.innerHTML=sideGroup(p);
+  else sd.innerHTML=sideLayout(p);
+}
+function sideSeat(p){
+  const chk=check(p),seated=new Set(p.seats.map(s=>s.p).filter(Boolean));
+  const pool=p.pupils.filter(n=>!seated.has(n));
+  const nm=p.pupils.map(n=>`<option>${esc(n)}</option>`).join('');
+  return `
+  <div class="card">
+    ${chk.list.length?chk.list.map(w=>`<div class="warn">⚠ ${esc(w)}</div>`).join(''):`<div class="ok">✓ No separation rules broken${p.rules.length?'':' (none set)'}</div>`}
+  </div>
+  <div class="card"><h2>Not seated (${pool.length}) · ${seated.size} of ${p.pupils.length} seated</h2>
+    <div class="chips" id="pool">${pool.map(n=>`<span class="chip ${sel&&sel.chip===n?'sel':''}" data-chip="${esc(n)}">${esc(n)}</span>`).join('')||'<span class="hint">Everyone is seated. Drag a child here to take them off the plan.</span>'}</div>
+    <div class="f" style="margin-top:8px"><input type="text" id="newName" placeholder="Add a child" style="flex:1"><button class="btn" id="bAddName">Add</button></div>
+    <div class="row"><button class="btn" id="bList">Edit class list…</button><button class="btn" id="bFill" title="Fill empty seats in reading order from the not-seated list">Seat in order</button><button class="btn danger" id="bClear">Clear seats</button></div>
+    <p class="hint" style="margin-top:6px">Drag a child onto another seat to swap them, or tap one child then another seat. Double-click a name to rename.</p>
+  </div>
+  <div class="card"><h2>Keep apart</h2>
+    ${p.pupils.length<2?'<p class="hint">Add at least two children first.</p>':`
+    <div class="f"><select id="rA"><option value="">Child…</option>${nm}</select><span class="hint">not near</span><select id="rB"><option value="">Child…</option>${nm}</select></div>
+    <div class="f"><select id="rD" style="flex:1">${RADII.map(([d,t])=>`<option value="${d}" ${d===1.5?'selected':''}>${t}</option>`).join('')}</select><button class="btn" id="bRule">Add</button></div>`}
+    ${p.rules.map((r,i)=>`<div class="rule ${r.bad?'bad':''}"><span>${esc(r.a)} ⇄ ${esc(r.b)} <span class="hint">(${esc(RADII.find(x=>x[0]===r.d)?.[1]||r.d)})</span></span><button data-rdel="${i}" title="Remove rule">×</button></div>`).join('')}
+    <p class="hint" style="margin-top:6px">Children in the same pair/trio always count as too close.</p>
+  </div>`;
+}
+function sideGroup(p){
+  const n=gsel.size;
+  return `<div class="card"><h2>Pairs &amp; trios</h2>
+    <p class="hint">Tap seats to select them, then group them. Each group gets one tone of ${esc(YEARS[p.year][0].split(' · ')[1])}; neighbouring groups should be different tones.</p>
+    <p style="margin:8px 0"><b>${n}</b> seat${n===1?'':'s'} selected</p>
+    <div class="row" style="margin-bottom:8px"><button class="btn primary" id="gMake" ${n?'':'disabled'}>Group selected</button><button class="btn" id="gUn" ${n?'':'disabled'}>Ungroup</button></div>
+    <div class="row" style="margin-bottom:8px"><button class="btn" id="gLight" ${n?'':'disabled'}>Light tone</button><button class="btn" id="gDark" ${n?'':'disabled'}>Dark tone</button><button class="btn" id="gGrey" ${n?'':'disabled'} title="Grey highlight for a seat, e.g. a child who needs flagging">Grey on/off</button></div>
+    <button class="btn" id="gNone" ${n?'':'disabled'}>Clear selection</button>
+  </div>`;
+}
+function sideLayout(p){
+  return `<div class="card"><h2>Room layout</h2>
+    <p class="hint">Click a <b>+</b> to add a seat, × to remove one, and drag seats or the board/desk to move them. Children travel with their seat.</p>
+    <div class="f" style="margin-top:8px"><label>Columns</label><input type="number" id="lCols" min="1" max="16" value="${p.cols}"><label style="min-width:40px">Rows</label><input type="number" id="lRows" min="1" max="12" value="${p.rows}"></div>
+  </div>
+  <div class="card"><h2>Board, desk &amp; labels</h2>
+    ${p.items.map(it=>`<div class="f"><select data-ik="${it.id}"><option value="board" ${it.kind==='board'?'selected':''}>Black bar</option><option value="box" ${it.kind==='box'?'selected':''}>Box</option></select><input type="text" data-il="${it.id}" value="${esc(it.label)}" placeholder="Label" style="flex:1;min-width:80px"><input type="number" data-iw="${it.id}" min="1" max="16" value="${it.w}" title="Width in seats" style="width:56px"><button class="btn danger" data-idel="${it.id}">×</button></div>`).join('')}
+    <button class="btn" id="iAdd">+ Add item</button>
+  </div>`;
+}
+
+/* ---------- actions ---------- */
+function seatAt(id){return P().seats.find(s=>s.id===id)}
+function moveTo(src,dstId){            // src = {seat} | {chip}
+  mutate(p=>{
+    const dst=p.seats.find(s=>s.id===dstId);if(!dst)return;
+    if(src.chip){dst.p=src.chip}
+    else{const from=p.seats.find(s=>s.id===src.seat);if(!from||from===dst)return;const q=dst.p;dst.p=from.p;from.p=q}
+  });
+}
+function unseat(src){if(src.seat)mutate(p=>{const s=p.seats.find(x=>x.id===src.seat);if(s)s.p=null})}
+function addNames(text){
+  const names=text.split(/\n/).map(x=>x.trim()).filter(Boolean),p=P(),dups=[];
+  const have=new Set(p.pupils.map(n=>n.toLowerCase()));
+  const fresh=[];names.forEach(n=>{if(have.has(n.toLowerCase()))dups.push(n);else{have.add(n.toLowerCase());fresh.push(n)}});
+  if(fresh.length)mutate(q=>q.pupils.push(...fresh));
+  if(dups.length)alert('Already on the list, so not added twice: '+dups.join(', '));
+}
+function renameChild(old){
+  const nn=(prompt('Rename',old)||'').trim();if(!nn||nn===old)return;
+  if(P().pupils.some(n=>n.toLowerCase()===nn.toLowerCase()&&n!==old)){alert(nn+' is already on the list.');return}
+  mutate(p=>{p.pupils=p.pupils.map(n=>n===old?nn:n);p.seats.forEach(s=>{if(s.p===old)s.p=nn});p.rules.forEach(r=>{if(r.a===old)r.a=nn;if(r.b===old)r.b=nn})});
+}
+
+/* ---------- pointer: click + drag ---------- */
+let drag=null,ghost=null;
+document.addEventListener('pointerdown',e=>{
+  if(e.button!==0&&e.pointerType==='mouse')return;
+  if(e.target.closest('button,input,select,textarea,dialog'))return;
+  const el=e.target.closest('[data-seat],[data-chip],[data-item]');if(!el)return;
+  const r=el.getBoundingClientRect();
+  drag={el,x:e.clientX,y:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,active:false,
+    seat:el.dataset.seat||null,chip:el.dataset.chip||null,item:el.dataset.item||null};
+  if(mode!=='seat'&&drag.chip)drag=null;
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  if(!drag.active){
+    if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<6)return;
+    const canDrag=(mode==='seat'&&(drag.chip||(drag.seat&&seatAt(drag.seat).p)))||(mode==='layout'&&(drag.seat||drag.item));
+    if(!canDrag){drag=null;return}
+    drag.active=true;ghost=document.createElement('div');ghost.className='ghost';
+    ghost.textContent=drag.chip||(drag.seat?(seatAt(drag.seat).p||'Seat'):'Item');document.body.appendChild(ghost);
+    if(mode==='seat'&&drag.seat)drag.el.classList.add('dragsrc');
+  }
+  e.preventDefault();ghost.style.left=(e.clientX+10)+'px';ghost.style.top=(e.clientY+10)+'px';
+  const pool=$('#pool');if(pool){const t=document.elementFromPoint(e.clientX,e.clientY);pool.classList.toggle('over',!!(t&&t.closest('#pool')))}
+},{passive:false});
+document.addEventListener('pointerup',e=>{
+  if(!drag)return;const d=drag;drag=null;
+  if(ghost){ghost.remove();ghost=null}
+  const pool=$('#pool');if(pool)pool.classList.remove('over');
+  if(!d.active){clickOn(d);return}
+  if(mode==='seat'){
+    const t=document.elementFromPoint(e.clientX,e.clientY),src=d.chip?{chip:d.chip}:{seat:d.seat};
+    const ts=t&&t.closest('[data-seat]');
+    if(ts)moveTo(src,ts.dataset.seat);
+    else if(t&&t.closest('#pool'))unseat(src);
+    else renderAll();
+    sel=null;renderAll();
+  }else if(mode==='layout'){
+    const rc=$('#canvas').getBoundingClientRect();
+    let c=Math.round((e.clientX-d.ox-rc.left)/G.cw),r=Math.round((e.clientY-d.oy-rc.top)/G.rp);
+    const p=P(),it=d.item?p.items.find(x=>x.id===d.item):null,w=it?it.w:1;
+    c=Math.max(0,Math.min(p.cols-w,c));r=Math.max(0,Math.min(p.rows-1,r));
+    if(d.seat){if(p.seats.some(s=>s.id!==d.seat&&s.c===c&&s.r===r)){renderAll();return}
+      mutate(q=>{const s=q.seats.find(x=>x.id===d.seat);s.c=c;s.r=r})}
+    else mutate(q=>{const x=q.items.find(i=>i.id===d.item);x.c=c;x.r=r});
+  }
+});
+function clickOn(d){
+  if(mode==='seat'){
+    const cur=d.chip?{chip:d.chip}:{seat:d.seat};
+    if(sel){
+      const same=(sel.chip&&sel.chip===cur.chip)||(sel.seat&&sel.seat===cur.seat);
+      if(same){sel=null;renderAll();return}
+      if(cur.seat){const s=sel;sel=null;moveTo(s,cur.seat);return}
+      if(cur.chip&&sel.seat){const s=sel;sel=null;unseat(s);return}
+      sel=cur;renderAll();return
+    }
+    if(d.chip||(d.seat&&seatAt(d.seat).p)){sel=cur;renderAll()}
+  }else if(mode==='group'&&d.seat){
+    gsel.has(d.seat)?gsel.delete(d.seat):gsel.add(d.seat);renderAll();
+  }
+}
+document.addEventListener('dblclick',e=>{
+  if(mode!=='seat')return;const el=e.target.closest('[data-seat]');
+  if(el){const s=seatAt(el.dataset.seat);if(s&&s.p)renderRename(s.p)}
+});
+function renderRename(n){sel=null;renderAll();renameChild(n)}
+
+/* ---------- clicks on buttons / controls ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target,p=P();
+  const cell=t.closest('[data-cell]');
+  if(cell&&mode==='layout'){const[c,r]=cell.dataset.cell.split(',').map(Number);mutate(q=>q.seats.push({id:'s'+uid(),c,r,p:null,g:null,f:0}));return}
+  if(t.dataset.del){mutate(q=>q.seats=q.seats.filter(s=>s.id!==t.dataset.del));return}
+  if(t.dataset.rdel){mutate(q=>q.rules.splice(+t.dataset.rdel,1));return}
+  if(t.dataset.idel){mutate(q=>q.items=q.items.filter(i=>i.id!==t.dataset.idel));return}
+  switch(t.id){
+    case'bAddName':{const i=$('#newName');addNames(i.value);i.value='';const n=$('#newName');n&&n.focus();break}
+    case'bList':openList();break;
+    case'bFill':mutate(q=>{const seated=new Set(q.seats.map(s=>s.p).filter(Boolean));
+      const pool=q.pupils.filter(n=>!seated.has(n));
+      q.seats.filter(s=>!s.p).sort((a,b)=>a.r-b.r||a.c-b.c).forEach(s=>{s.p=pool.shift()||null})});break;
+    case'bClear':if(confirm('Take every child off their seat?'))mutate(q=>q.seats.forEach(s=>s.p=null));break;
+    case'bRule':{const a=$('#rA').value,b=$('#rB').value,d=+$('#rD').value;
+      if(!a||!b){alert('Choose two children.');break}
+      if(a===b){alert('Choose two different children.');break}
+      if(p.rules.some(r=>(r.a===a&&r.b===b)||(r.a===b&&r.b===a))){alert('That pair is already listed.');break}
+      mutate(q=>q.rules.push({a,b,d}));break}
+    case'gMake':if(gsel.size){mutate(q=>{
+        const ids=[...gsel],ss=q.seats.filter(s=>gsel.has(s.id)).sort((a,b)=>a.c-b.c);
+        const left=q.seats.find(s=>s.r===ss[0].r&&s.c===ss[0].c-1&&!gsel.has(s.id)&&s.g);
+        const tone=left?1-q.groupTone[left.g]:0,g='g'+uid();q.groupTone[g]=tone;
+        ss.forEach(s=>s.g=g);});gsel.clear();renderAll()}break;
+    case'gUn':mutate(q=>q.seats.forEach(s=>{if(gsel.has(s.id))s.g=null}));gsel.clear();renderAll();break;
+    case'gLight':case'gDark':mutate(q=>{const tone=t.id==='gDark'?1:0;
+        q.seats.forEach(s=>{if(gsel.has(s.id)){if(s.g)q.groupTone[s.g]=tone;else{s.g='g'+uid();q.groupTone[s.g]=tone}}});
+        // make sure a selection that splits an existing group still gets one consistent tone
+      });break;
+    case'gGrey':mutate(q=>q.seats.forEach(s=>{if(gsel.has(s.id))s.f=s.f?0:1}));break;
+    case'gNone':gsel.clear();renderAll();break;
+    case'iAdd':mutate(q=>q.items.push({id:uid(),kind:'box',label:'Label',c:0,r:0,w:2}));break;
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target,p=P();
+  if(t.id==='lCols'||t.id==='lRows'){
+    const cols=Math.max(1,Math.min(16,+$('#lCols').value||p.cols)),rows=Math.max(1,Math.min(12,+$('#lRows').value||p.rows));
+    if(p.seats.some(s=>s.c>=cols||s.r>=rows)||p.items.some(i=>i.c+i.w>cols||i.r>=rows)){
+      alert('Move or remove the seats and items outside the smaller grid first.');renderAll();return}
+    mutate(q=>{q.cols=cols;q.rows=rows});return}
+  if(t.dataset.ik)mutate(q=>q.items.find(i=>i.id===t.dataset.ik).kind=t.value);
+  if(t.dataset.il)mutate(q=>q.items.find(i=>i.id===t.dataset.il).label=t.value);
+  if(t.dataset.iw)mutate(q=>{const i=q.items.find(x=>x.id===t.dataset.iw);i.w=Math.max(1,Math.min(q.cols-i.c,+t.value||1))});
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='newName'&&e.key==='Enter'){$('#bAddName').click();return}
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'&&!e.target.closest('input,textarea')){e.preventDefault();doUndo()}
+  if(e.key==='Escape'){sel=null;gsel.clear();renderAll()}
+});
+
+/* ---------- class list dialog ---------- */
+function openList(){$('#listTa').value=P().pupils.join('\n');$('#listErr').style.display='none';$('#listDlg').showModal()}
+$('#listCancel').onclick=()=>$('#listDlg').close();
+$('#listSave').onclick=()=>{
+  const names=$('#listTa').value.split('\n').map(x=>x.trim()).filter(Boolean),seen=new Map(),dups=[];
+  names.forEach(n=>{const k=n.toLowerCase();if(seen.has(k))dups.push(n);seen.set(k,1)});
+  if(dups.length){const e=$('#listErr');e.textContent='Listed more than once: '+[...new Set(dups)].join(', ');e.style.display='block';return}
+  mutate(p=>{p.pupils=names});$('#listDlg').close();
+};
+
+/* ---------- header controls ---------- */
+$('#planSel').onchange=e=>{S.cur=e.target.value;undo=[];sel=null;gsel.clear();save();renderAll()};
+$('#yearSel').onchange=e=>mutate(p=>p.year=e.target.value);
+document.querySelectorAll('#modeTabs button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;sel=null;gsel.clear();renderAll()});
+$('#bUndo').onclick=doUndo;
+$('#bPrint').onclick=()=>{sel=null;gsel.clear();renderAll();window.print()};
+$('#bNew').onclick=()=>{const n=prompt('Name for the new plan (starts from the default layout, with the same class list)','New plan');if(!n)return;
+  const p=defaultPlan(n.trim()),cur=P();p.year=cur.year;p.pupils=[...cur.pupils];S.plans.push(p);S.cur=p.id;undo=[];save();renderAll()};
+$('#bDup').onclick=()=>{const n=prompt('Name for the copy',P().name+' (copy)');if(!n)return;
+  const c=JSON.parse(JSON.stringify(P()));c.id=uid();c.name=n.trim();S.plans.push(c);S.cur=c.id;undo=[];save();renderAll()};
+$('#bRen').onclick=()=>{const n=prompt('Rename plan',P().name);if(n&&n.trim()){mutate(p=>p.name=n.trim())}};
+$('#bDel').onclick=()=>{if(S.plans.length<2||!confirm('Delete the plan "'+P().name+'"?'))return;
+  S.plans=S.plans.filter(p=>p.id!==S.cur);S.cur=S.plans[0].id;undo=[];save();renderAll()};
+$('#bExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify({app:'seating-plan',version:VERSION,plan:P()},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='seating-plan-'+P().name.replace(/[^\w-]+/g,'_')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+$('#bImport').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result),p=d.plan;
+      if(!p||!Array.isArray(p.seats)||!Array.isArray(p.pupils))throw 0;
+      p.id=uid();p.rules=p.rules||[];p.items=p.items||[];p.groupTone=p.groupTone||{};p.year=YEARS[p.year]?p.year:'Y5';
+      S.plans.push(p);S.cur=p.id;sanitise(p);undo=[];save();renderAll()}catch(err){alert('That file is not a seating plan.')}};
+  r.readAsText(f);e.target.value='';
+};
+window.addEventListener('resize',()=>renderAll());
+load();renderAll();
+</script>
+</body>
+</html>
