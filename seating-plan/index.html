@@ -129,7 +129,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
     <div class="side" id="side"></div>
   </div>
 
-  <footer><span>16.10.26a</span><span>Names stay in this browser only</span></footer>
+  <footer><span>16.10.26b</span><span>Names stay in this browser only</span></footer>
 </div>
 
 <dialog id="listDlg">
@@ -145,7 +145,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
 
 <script>
 'use strict';
-const VERSION='16.10.26a';
+const VERSION='16.10.26b';
 const STORE='wfa.seatingplan.v1';
 // WFA year-group colours (same as wfa_shared/brand.py)
 const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
@@ -166,7 +166,7 @@ function defaultPlan(name){
   const add=(c,r,g,f)=>seats.push({id:'s'+(++n),c,r,p:null,g,f:f?1:0});
   const run=(r,c0,len,t,flagFirst)=>{const g=G(t);for(let i=0;i<len;i++)add(c0+i,r,g,flagFirst&&i===0)};
   run(1,0,2,0);run(1,2,2,1);run(1,5,2,0);run(1,7,2,1);
-  run(2,0,2,1);run(2,2,2,0);run(2,5,3,1,true);run(2,8,1,0);
+  run(2,0,2,1);run(2,2,2,0);run(2,5,3,1);run(2,8,1,0);
   run(3,0,2,1);run(3,2,2,0);run(3,5,2,1);run(3,7,1,0);
   run(4,0,3,1);run(4,5,2,1);run(4,7,2,1);
   return{id:uid(),name:name||'Default layout',year:'Y5',cols:9,rows:5,
@@ -189,7 +189,7 @@ const P=()=>S.plans.find(p=>p.id===S.cur);
 function sanitise(p){
   const seen=new Set();p.pupils=p.pupils.filter(n=>{const k=n.toLowerCase();if(seen.has(k))return false;seen.add(k);return true});
   const placed=new Set();
-  p.seats.forEach(s=>{if(s.p&&(!p.pupils.includes(s.p)||placed.has(s.p)))s.p=null;if(s.p)placed.add(s.p)});
+  p.seats.forEach(s=>{s.f=0;if(s.p&&(!p.pupils.includes(s.p)||placed.has(s.p)))s.p=null;if(s.p)placed.add(s.p)});
   p.rules=p.rules.filter(r=>p.pupils.includes(r.a)&&p.pupils.includes(r.b)&&r.a!==r.b);
   const used=new Set(p.seats.map(s=>s.g).filter(Boolean));
   Object.keys(p.groupTone).forEach(g=>{if(!used.has(g))delete p.groupTone[g]});
@@ -249,7 +249,7 @@ function renderCanvas(p){
     h+=`<div class="item ${it.kind} ${mode==='layout'?'layoutmode':''}" data-item="${it.id}" style="left:${it.c*cw}px;top:${it.r*rp}px;width:${it.w*cw}px;height:${it.kind==='board'?Math.round(sh*.3):sh}px">${esc(it.label)}</div>`;
   });
   p.seats.forEach(s=>{
-    const bg=s.f?GREY:(s.g?toneColour(base,p.groupTone[s.g]):toneColour(base,0));
+    const bg=(s.g?toneColour(base,p.groupTone[s.g]):toneColour(base,0));
     const cls=['seat',sel&&sel.seat===s.id?'sel':'',gsel.has(s.id)?'gsel':'',chk.bad.has(s.id)&&mode!=='layout'?'bad':''].join(' ');
     h+=`<div class="${cls}" data-seat="${s.id}" data-has="${s.p?1:0}" style="left:${s.c*cw}px;top:${s.r*rp}px;width:${cw}px;height:${sh}px;background:${bg}">${s.p?esc(s.p):''}${mode==='layout'?`<button class="x" data-del="${s.id}" title="Remove seat">×</button>`:''}</div>`;
   });
@@ -286,10 +286,10 @@ function sideSeat(p){
 function sideGroup(p){
   const n=gsel.size;
   return `<div class="card"><h2>Pairs &amp; trios</h2>
-    <p class="hint">Tap seats to select them, then group them. Each group gets one tone of ${esc(YEARS[p.year][0].split(' · ')[1])}; neighbouring groups should be different tones.</p>
+    <p class="hint">Tap seats to select them, then group them. Every seat is the light or the dark tone of ${esc(YEARS[p.year][0].split(' · ')[1])}; neighbouring groups should be different tones.</p>
     <p style="margin:8px 0"><b>${n}</b> seat${n===1?'':'s'} selected</p>
     <div class="row" style="margin-bottom:8px"><button class="btn primary" id="gMake" ${n?'':'disabled'}>Group selected</button><button class="btn" id="gUn" ${n?'':'disabled'}>Ungroup</button></div>
-    <div class="row" style="margin-bottom:8px"><button class="btn" id="gLight" ${n?'':'disabled'}>Light tone</button><button class="btn" id="gDark" ${n?'':'disabled'}>Dark tone</button><button class="btn" id="gGrey" ${n?'':'disabled'} title="Grey highlight for a seat, e.g. a child who needs flagging">Grey on/off</button></div>
+    <div class="row" style="margin-bottom:8px"><button class="btn" id="gLight" ${n?'':'disabled'}>Make light</button><button class="btn" id="gDark" ${n?'':'disabled'}>Make dark</button></div>
     <button class="btn" id="gNone" ${n?'':'disabled'}>Clear selection</button>
   </div>`;
 }
@@ -424,7 +424,6 @@ document.addEventListener('click',e=>{
         q.seats.forEach(s=>{if(gsel.has(s.id)){if(s.g)q.groupTone[s.g]=tone;else{s.g='g'+uid();q.groupTone[s.g]=tone}}});
         // make sure a selection that splits an existing group still gets one consistent tone
       });break;
-    case'gGrey':mutate(q=>q.seats.forEach(s=>{if(gsel.has(s.id))s.f=s.f?0:1}));break;
     case'gNone':gsel.clear();renderAll();break;
     case'iAdd':mutate(q=>q.items.push({id:uid(),kind:'box',label:'Label',c:0,r:0,w:2}));break;
   }
