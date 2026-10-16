@@ -129,7 +129,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
     <div class="side" id="side"></div>
   </div>
 
-  <footer><span>16.10.26b</span><span>Names stay in this browser only</span></footer>
+  <footer><span>16.10.26c</span><span>Names stay in this browser only</span></footer>
 </div>
 
 <dialog id="listDlg">
@@ -145,7 +145,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
 
 <script>
 'use strict';
-const VERSION='16.10.26b';
+const VERSION='16.10.26c';
 const STORE='wfa.seatingplan.v1';
 // WFA year-group colours (same as wfa_shared/brand.py)
 const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
@@ -249,7 +249,7 @@ function renderCanvas(p){
     h+=`<div class="item ${it.kind} ${mode==='layout'?'layoutmode':''}" data-item="${it.id}" style="left:${it.c*cw}px;top:${it.r*rp}px;width:${it.w*cw}px;height:${it.kind==='board'?Math.round(sh*.3):sh}px">${esc(it.label)}</div>`;
   });
   p.seats.forEach(s=>{
-    const bg=(s.g?toneColour(base,p.groupTone[s.g]):toneColour(base,0));
+    const bg=toneColour(base,s.t!==undefined?s.t:(s.g?p.groupTone[s.g]:0));
     const cls=['seat',sel&&sel.seat===s.id?'sel':'',gsel.has(s.id)?'gsel':'',chk.bad.has(s.id)&&mode!=='layout'?'bad':''].join(' ');
     h+=`<div class="${cls}" data-seat="${s.id}" data-has="${s.p?1:0}" style="left:${s.c*cw}px;top:${s.r*rp}px;width:${cw}px;height:${sh}px;background:${bg}">${s.p?esc(s.p):''}${mode==='layout'?`<button class="x" data-del="${s.id}" title="Remove seat">×</button>`:''}</div>`;
   });
@@ -418,12 +418,9 @@ document.addEventListener('click',e=>{
         const ids=[...gsel],ss=q.seats.filter(s=>gsel.has(s.id)).sort((a,b)=>a.c-b.c);
         const left=q.seats.find(s=>s.r===ss[0].r&&s.c===ss[0].c-1&&!gsel.has(s.id)&&s.g);
         const tone=left?1-q.groupTone[left.g]:0,g='g'+uid();q.groupTone[g]=tone;
-        ss.forEach(s=>s.g=g);});gsel.clear();renderAll()}break;
+        ss.forEach(s=>{s.g=g;s.t=tone});});gsel.clear();renderAll()}break;
     case'gUn':mutate(q=>q.seats.forEach(s=>{if(gsel.has(s.id))s.g=null}));gsel.clear();renderAll();break;
-    case'gLight':case'gDark':mutate(q=>{const tone=t.id==='gDark'?1:0;
-        q.seats.forEach(s=>{if(gsel.has(s.id)){if(s.g)q.groupTone[s.g]=tone;else{s.g='g'+uid();q.groupTone[s.g]=tone}}});
-        // make sure a selection that splits an existing group still gets one consistent tone
-      });break;
+    case'gLight':case'gDark':mutate(q=>{const tone=t.id==='gDark'?1:0;q.seats.forEach(s=>{if(gsel.has(s.id))s.t=tone})});break;
     case'gNone':gsel.clear();renderAll();break;
     case'iAdd':mutate(q=>q.items.push({id:uid(),kind:'box',label:'Label',c:0,r:0,w:2}));break;
   }
