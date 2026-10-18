@@ -165,7 +165,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
       gap: 16px;
     }
 
@@ -175,7 +175,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 22px 22px 18px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -198,7 +198,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .icon {
       width: 40px; height: 40px;
@@ -218,38 +218,24 @@
     .card-name {
       font-family: 'Fraunces', Georgia, serif;
       font-weight: 600;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       line-height: 1.25;
       letter-spacing: -0.005em;
-      margin-bottom: 8px;
       text-wrap: balance;
+      padding-right: 28px;
     }
-    .card-desc {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.6;
-      flex: 1;
-    }
-    .card-foot {
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .note { font-size: 0.75rem; color: var(--faint); }
     .card-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.86rem;
-      font-weight: 600;
-      color: var(--c);
-      transition: gap 0.15s;
+      position: absolute;
+      top: 20px; right: 20px;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      color: var(--faint);
+      transition: color 0.15s, background 0.15s, transform 0.15s;
     }
-    .card-link::before { content: ''; position: absolute; inset: 0; } /* whole card clickable */
-    .card:hover .card-link { gap: 9px; }
+    .card-link::before { content: ''; position: absolute; inset: -400px; } /* whole card clickable */
+    .card { overflow: hidden; }
+    .card:hover .card-link { color: var(--c); background: var(--t); transform: translateX(2px); }
     .card-link:focus-visible { outline: none; }
     .card-link svg { width: 14px; height: 14px; }
 
@@ -305,11 +291,7 @@
           <span class="tag">Classroom</span>
         </div>
         <div class="card-name">Seating Plan</div>
-        <p class="card-desc">Drag children between seats (no one can be seated twice), set up pairs and trios in two tones of your year-group colour, add "keep apart" rules that flag clashes, and reshape the room whenever it changes.</p>
-        <div class="card-foot">
-          <span class="note">Names stay in this browser</span>
-          <a class="card-link" href="seating-plan/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open Seating Plan" href="seating-plan/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
       <div class="card teal">
@@ -318,11 +300,7 @@
           <span class="tag">Conferences</span>
         </div>
         <div class="card-name">FLC Builder</div>
-        <p class="card-desc">Make every child's Family Learning Conference page in one go. Paste in grades, attendance and pupil voice, tidy the children's comments, pick targets matched to each child's DOOYA, then print one A4 page per child.</p>
-        <div class="card-foot">
-          <span class="note">No pupil names sent</span>
-          <a class="card-link" href="flc-builder/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open FLC Builder" href="flc-builder/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
       <div class="card rose">
@@ -331,11 +309,7 @@
           <span class="tag">Certificates</span>
         </div>
         <div class="card-name">CG &amp; Hot Chocolate Friday Certificates</div>
-        <p class="card-desc">Schedule Celebration Gathering certificates by term and week, shift everything along when a week is missed, and download a week's certificates as a PowerPoint. A second tab prints Hot Chocolate Friday A7 certificates, four to an A4 sheet.</p>
-        <div class="card-foot">
-          <span class="note">PowerPoint &amp; print</span>
-          <a class="card-link" href="cg-certificate/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open CG &amp; Hot Chocolate Friday Certificates" href="cg-certificate/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
     </div>
@@ -352,11 +326,7 @@
           <span class="tag">Enquiry Builder</span>
         </div>
         <div class="card-name">Enquiry Briefing Tool</div>
-        <p class="card-desc">Fill in the details of a new enquiry — subject, key question, outcomes, schedule and logistics. Generates a structured brief to hand to Claude for the full MTP and deliverables.</p>
-        <div class="card-foot">
-          <span class="note">Makes a brief for Claude</span>
-          <a class="card-link" href="enquiry-form/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open Enquiry Briefing Tool" href="enquiry-form/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
       <div class="card plum">
@@ -365,11 +335,7 @@
           <span class="tag">AI images</span>
         </div>
         <div class="card-name">Image Prompt Builder</div>
-        <p class="card-desc">Assemble prompts for DALL-E, Higgsfield and Excalidraw. Pick options with pill selectors and get a ready-to-copy prompt or Claude instruction — including a diversity clause builder.</p>
-        <div class="card-foot">
-          <span class="note">Copy-ready prompts</span>
-          <a class="card-link" href="prompt-builder/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open Image Prompt Builder" href="prompt-builder/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
     </div>
@@ -386,11 +352,7 @@
           <span class="tag">Print</span>
         </div>
         <div class="card-name">PDF Tiler</div>
-        <p class="card-desc">Tile any A4 PDF across 2 or 4 A3 sheets to print it at up to 2.8× its original size. Set the glue overlap, add alignment marks, and get an assembly instructions page.</p>
-        <div class="card-foot">
-          <span class="note">Runs in the browser</span>
-          <a class="card-link" href="pdf-tiler/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open PDF Tiler" href="pdf-tiler/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
       <div class="card">
@@ -399,11 +361,7 @@
           <span class="tag">Folders</span>
         </div>
         <div class="card-name">Folder Creator</div>
-        <p class="card-desc">Build nested folder structures with numbered or named levels. Set different subjects at different depths — then create everything in one go or download a shell script.</p>
-        <div class="card-foot">
-          <span class="note">Create or download script</span>
-          <a class="card-link" href="folder-creator/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </div>
+        <a class="card-link" aria-label="Open Folder Creator" href="folder-creator/"><svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
     </div>
@@ -411,7 +369,7 @@
 
   <footer>
     <span>Personal use only</span>
-    <span>18.10.26a</span>
+    <span>18.10.26b</span>
   </footer>
 
 </div>
