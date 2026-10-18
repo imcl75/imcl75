@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230065BD'/%3E%3Cpath d='M32 14v36M14 32h36' stroke='white' stroke-width='10'/%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maths Briefing Tool — WFA</title>
+  <style>
+    :root {
+      --wfa-blue: #DEECF8;
+      --wfa-gold: #FFC000;
+      --wfa-dark: #1a3a5c;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warn: #b45309;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #1e293b; min-height: 100vh; }
+
+    header { background: var(--wfa-dark); border-bottom: 4px solid var(--wfa-gold); padding: 1rem 2rem; }
+    header h1 { font-size: 1.2rem; font-weight: 700; color: white; }
+    header p { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 0.2rem; }
+
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem 4rem; }
+
+    .steps { display: flex; align-items: center; margin-bottom: 2rem; }
+    .step-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); flex-shrink: 0; cursor: pointer; }
+    .step-item.active { color: var(--accent); font-weight: 700; }
+    .step-item.done { color: var(--success); }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+    .step-item.done .step-num { background: var(--success); border-color: var(--success); color: white; }
+    .step-item.active .step-num { background: var(--accent); border-color: var(--accent); color: white; }
+    .step-conn { flex: 1; height: 2px; background: var(--border); margin: 0 0.4rem; min-width: 10px; }
+    .step-conn.done { background: var(--success); }
+
+    .card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 1.75rem; margin-bottom: 1.25rem; }
+    .card h2 { font-size: 1.1rem; font-weight: 700; color: var(--wfa-dark); margin-bottom: 0.25rem; }
+    .card .subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+    .field { margin-bottom: 1.2rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+    .hint { display: block; font-size: 0.78rem; font-weight: 400; color: var(--muted); margin-top: 0.1rem; }
+    .optional { font-size: 0.78rem; font-weight: 400; color: var(--muted); }
+
+    input[type="text"], input[type="date"], input[type="number"], select, textarea {
+      width: 100%; padding: 0.55rem 0.75rem; border: 1.5px solid var(--border);
+      border-radius: 7px; font-size: 16px; font-family: inherit; color: #1e293b;
+      background: white; transition: border-color 0.15s;
+    }
+    @media (min-width: 700px) { input[type="text"], input[type="date"], input[type="number"], select, textarea { font-size: 0.875rem; } }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    input.err, select.err, textarea.err { border-color: var(--danger); }
+    textarea { resize: vertical; line-height: 1.55; }
+
+    .pill-group { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .pill { display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; border: 1.5px solid var(--border); border-radius: 7px; cursor: pointer; font-size: 0.85rem; transition: all 0.12s; user-select: none; background: white; }
+    .pill:hover { border-color: var(--accent); background: #eff6ff; }
+    .pill.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+    .errmsg { font-size: 0.78rem; color: var(--danger); margin-top: 0.3rem; display: none; }
+    .errmsg.show { display: block; }
+    .warnmsg { font-size: 0.8rem; color: var(--warn); background: #fffbeb; border: 1.5px solid #f3d9a8; border-radius: 7px; padding: 0.55rem 0.8rem; margin-top: 0.6rem; }
+    .okmsg { font-size: 0.8rem; color: #166534; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 7px; padding: 0.55rem 0.8rem; margin-top: 0.6rem; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
+    button { padding: 0.6rem 1.4rem; border-radius: 7px; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.12s; font-family: inherit; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-sec { background: white; color: #374151; border: 1.5px solid var(--border); }
+    .btn-sec:hover { border-color: #9ca3af; }
+    .btn-gold { background: var(--wfa-gold); color: var(--wfa-dark); }
+    .btn-gold:hover { background: #e6ac00; }
+    .btn-small { font-size: 0.76rem; padding: 0.32rem 0.75rem; }
+    .btn-add { background: none; border: 1.5px dashed var(--accent); color: var(--accent); }
+    .btn-add:hover { background: #eff6ff; }
+    .btn-rm { background: none; border: none; color: var(--muted); font-size: 1.05rem; padding: 0.1rem 0.4rem; }
+    .btn-rm:hover { color: var(--danger); }
+
+    #draftBanner { display: none; background: #fff7e6; border: 1.5px solid var(--wfa-gold); border-radius: 8px; padding: 0.9rem 1.1rem; margin: 0 0 1.25rem; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    #draftBanner.show { display: flex; }
+    #draftBanner p { margin: 0; font-size: 0.85rem; color: #374151; }
+    #draftBanner strong { color: var(--wfa-dark); }
+
+    .info-box { background: var(--wfa-blue); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.8rem 1rem; font-size: 0.82rem; line-height: 1.5; margin-bottom: 1rem; }
+    .info-box strong { display: block; margin-bottom: 0.25rem; }
+
+    /* Blocks */
+    .block { border: 1.5px solid var(--border); border-radius: 9px; padding: 1.1rem; margin-bottom: 1rem; background: #fcfdff; }
+    .block-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; }
+    .block-title { font-weight: 700; color: var(--wfa-dark); font-size: 0.95rem; }
+    .block-head .btn-rm { margin-left: auto; }
+    .obj-list { max-height: 300px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 7px; padding: 0.4rem 0.6rem; background: white; }
+    .obj-domain { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0.5rem 0 0.25rem; }
+    .obj { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.8rem; line-height: 1.4; padding: 0.28rem 0; cursor: pointer; }
+    .obj input { margin-top: 0.15rem; flex-shrink: 0; width: 16px; height: 16px; }
+    .obj.on { color: var(--accent); font-weight: 600; }
+    .row-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.4rem 0; align-items: center; font-size: 0.78rem; color: var(--muted); }
+
+    /* Levels */
+    .band { border-left: 3px solid #d97706; background: #fffdf7; border-radius: 0 8px 8px 0; padding: 0.8rem 0.9rem; margin-top: 0.8rem; }
+    .band-title { font-size: 0.82rem; font-weight: 700; color: #92400e; margin-bottom: 0.5rem; }
+    .ovr-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
+    .ovr-row input { width: 6.5rem; text-transform: uppercase; }
+    .ovr-row select { width: 9rem; }
+
+    /* Week grid */
+    .week { border: 1.5px solid var(--border); border-radius: 9px; margin-bottom: 1.1rem; overflow: hidden; background: white; }
+    .week-head { background: var(--wfa-blue); padding: 0.7rem 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline; }
+    .week-title { font-weight: 700; color: var(--wfa-dark); }
+    .week-sub { font-size: 0.8rem; color: var(--muted); }
+    .week-body { padding: 0.9rem 1rem; }
+    .day-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.7rem; }
+    .day-chip { border: 1.5px solid var(--border); border-radius: 7px; padding: 0.35rem 0.6rem; font-size: 0.78rem; cursor: pointer; user-select: none; text-align: center; min-width: 4.6rem; background: white; }
+    .day-chip small { display: block; color: var(--muted); font-size: 0.7rem; }
+    .day-chip.on { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+    .day-chip.lost { border-style: dashed; color: var(--muted); text-decoration: line-through; }
+    .reason-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.4rem; }
+    .reason-row input { flex: 1; }
+    .lesson { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-top: 0.7rem; }
+    .lesson-head { display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; margin-bottom: 0.55rem; }
+    .lesson-num { font-weight: 700; color: var(--wfa-dark); font-size: 0.88rem; }
+    .lesson-date { font-size: 0.8rem; color: var(--muted); }
+    .lesson-tag { font-size: 0.7rem; font-weight: 700; padding: 0.12rem 0.5rem; border-radius: 20px; background: #f3f4f6; color: #374151; }
+    .lesson-grid { display: grid; grid-template-columns: 1.1fr 2fr; gap: 0.6rem; }
+    .lesson-grid .full { grid-column: 1 / -1; }
+    .mini-label { font-size: 0.72rem; font-weight: 600; color: #4b5563; display: block; margin-bottom: 0.2rem; }
+    .toggle { display: inline-flex; border: 1.5px solid var(--border); border-radius: 7px; overflow: hidden; }
+    .toggle button { border-radius: 0; padding: 0.42rem 0.7rem; font-size: 0.78rem; background: white; color: var(--muted); font-weight: 600; }
+    .toggle button + button { border-left: 1.5px solid var(--border); }
+    .toggle button.on { background: #eff6ff; color: var(--accent); }
+
+    /* Review / output */
+    .rv-section { margin-bottom: 1.1rem; }
+    .rv-section h3 { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+    .rv-row { display: flex; gap: 0.75rem; margin-bottom: 0.3rem; font-size: 0.85rem; }
+    .rv-lbl { width: 150px; flex-shrink: 0; color: var(--muted); }
+    .rv-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .rv-table th, .rv-table td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+    .rv-table th { color: var(--muted); font-weight: 700; }
+    .rv-wrap { overflow-x: auto; }
+    .output-box { background: #0f172a; color: #cbd5e1; border-radius: 8px; padding: 1.1rem; font-family: 'Menlo','Monaco',monospace; font-size: 0.75rem; line-height: 1.65; max-height: 320px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+
+    section { display: none; }
+    section.active { display: block; }
+
+    @media (max-width: 620px) {
+      .container { padding: 0 16px 4rem; margin-top: 1.25rem; }
+      .card { padding: 1.1rem; }
+      .g2, .g3, .lesson-grid { grid-template-columns: 1fr; }
+      .steps { flex-wrap: wrap; row-gap: 0.5rem; }
+      .step-item span { display: none; }
+      .step-item.active span { display: inline; }
+      header { padding: 1rem; }
+      .rv-row { flex-direction: column; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v18.10.26a</span></p>
+</header>
+
+<div class="container">
+  <div id="draftBanner">
+    <p>You have a saved draft: <strong id="draftBannerLabel"></strong>. Resume it, or start a new brief?</p>
+    <div class="btn-row" style="margin:0">
+      <button class="btn-sec" type="button" onclick="discardDraft()">Start fresh</button>
+      <button class="btn-primary" type="button" onclick="resumeDraft()">Resume draft</button>
+    </div>
+  </div>
+  <div class="steps" id="stepBar"></div>
+
+  <!-- ── Step 1: Basics ──────────────────────────────────────────────── -->
+  <section id="s1" class="active">
+    <div class="card">
+      <h2>Maths basics</h2>
+      <p class="subtitle">Which year group, which weeks, and which days have maths.</p>
+
+      <div class="field">
+        <span class="field-label">Year group</span>
+        <div class="pill-group" id="yearPills"></div>
+        <div class="errmsg" id="e_year">Choose a year group.</div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Classes <span class="optional">(both classes in the year group, unless one is planned separately)</span></span>
+        <div class="pill-group" id="classPills"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f_title">Title <span class="optional">(optional)</span></label>
+        <input type="text" id="f_title" placeholder="e.g. Year 5 Maths, Term 2: place value and fractions">
+        <span class="hint">Left blank, the title is made from the year group, start week and block topics.</span>
+      </div>
+
+      <div class="g3">
+        <div class="field">
+          <label class="field-label" for="f_term">Start term</label>
+          <select id="f_term"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f_week">Start week</label>
+          <select id="f_week"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="f_weeks">Number of weeks</label>
+          <input type="number" id="f_weeks" min="1" max="14" value="1">
+        </div>
+      </div>
+      <div class="errmsg" id="e_when">Choose the start term and week, and how many weeks.</div>
+      <div id="calendarStatus" class="hint" style="margin:-0.4rem 0 1rem"></div>
+
+      <div class="field">
+        <span class="field-label">Usual maths days</span>
+        <div class="pill-group" id="dayPills"></div>
+        <span class="hint">Monday, Tuesday, Wednesday and Friday unless the timetable changes. You can drop a day in any single week (INSET, a trip) on the Weeks step.</span>
+      </div>
+    </div>
+    <div class="nav"><span></span><button class="btn-primary" onclick="next(1)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 2: Blocks ──────────────────────────────────────────────── -->
+  <section id="s2">
+    <div class="card">
+      <h2>Blocks</h2>
+      <p class="subtitle">A block is one topic taught over a run of lessons. Add them in teaching order.</p>
+      <div id="blocksContainer"></div>
+      <button class="btn-add btn-small" type="button" onclick="addBlock()">+ Add a block</button>
+      <div id="lessonCountMsg"></div>
+      <div class="errmsg" id="e_blocks">Every block needs a topic and at least one lesson.</div>
+    </div>
+    <div class="nav"><button class="btn-sec" onclick="prev(2)">← Back</button><button class="btn-primary" onclick="next(2)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 3: Levels ──────────────────────────────────────────────── -->
+  <section id="s3">
+    <div class="card">
+      <h2>Levels</h2>
+      <p class="subtitle">Who needs a different learning paper in each block.</p>
+      <div class="info-box">
+        <strong>No names on this page</strong>
+        Each child's usual maths level (S, A, or working at an earlier year) is kept in the private class list the builders read. Here you say which earlier-year levels each block needs, what each level works on, and any child whose level is different for this block only, by initials.
+      </div>
+      <div id="levelsContainer"></div>
+    </div>
+    <div class="nav"><button class="btn-sec" onclick="prev(3)">← Back</button><button class="btn-primary" onclick="next(3)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 4: Weeks ───────────────────────────────────────────────── -->
+  <section id="s4">
+    <div class="card">
+      <h2>Weeks and lessons</h2>
+      <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson starts from its block's next small step; change anything.</p>
+      <div id="weeksContainer"></div>
+    </div>
+    <div class="nav"><button class="btn-sec" onclick="prev(4)">← Back</button><button class="btn-primary" onclick="next(4)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 5: Notes ───────────────────────────────────────────────── -->
+  <section id="s5">
+    <div class="card">
+      <h2>Additional notes for Claude</h2>
+      <p class="subtitle">Anything else that should shape the plan.</p>
+      <div class="field">
+        <label class="field-label" for="f_notes">Notes <span class="optional">(optional)</span></label>
+        <textarea id="f_notes" rows="7" placeholder="e.g. assessment week after block 2; the colleague's planning used bar models heavily for fractions; avoid money contexts in week 1"></textarea>
+      </div>
+    </div>
+    <div class="nav"><button class="btn-sec" onclick="prev(5)">← Back</button><button class="btn-primary" onclick="next(5)">Next →</button></div>
+  </section>
+
+  <!-- ── Step 6: Export ──────────────────────────────────────────────── -->
+  <section id="s6">
+    <div class="card">
+      <h2>Review</h2>
+      <p class="subtitle">Check everything looks right before exporting.</p>
+      <div id="reviewContent"></div>
+    </div>
+    <div class="card">
+      <h2>Export</h2>
+      <p class="subtitle">Download the brief, then paste the Claude prompt into a Claude Code session in the maths builder.</p>
+      <div class="info-box">
+        <strong>What happens next</strong>
+        1. Save the brief JSON into <code>~/projects/maths-builder/plan/briefs/</code> (or attach it). &nbsp;2. Claude writes a plan summary, lesson by lesson, for you to check. &nbsp;3. Only after you approve it does Claude write <code>plan/maths_plan_v4.json</code> and start building.
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="downloadJSON()">⬇ Download brief JSON</button>
+        <button class="btn-gold" onclick="copyPrompt(event)">⎘ Copy Claude prompt</button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem">Preview — Claude prompt:</p>
+      <div class="output-box" id="promptPreview"></div>
+    </div>
+    <div class="nav"><button class="btn-sec" onclick="prev(6)">← Back</button><span></span></div>
+  </section>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const TOOL_VERSION = '18.10.26a';
+const FORM_VERSION = '1.0';
+const LS_KEY = 'wfa_maths_brief_v1';
+
+// Term dates come from the WFA database (the one source of truth), read with
+// the same narrow read-only token CG Certificates uses (it can read TermDates
+// and nothing else). If the API cannot be reached, each week's Monday is typed.
+const TERM_API = 'https://api.wallscourt-farm-academy.co.uk/planning/tab?tab=TermDates&token=ac8f1237baba46f6ff07442ceb9cb22f3ddf0e3ff80a477b';
+
+const YEARS = ['Y1','Y2','Y3','Y4','Y5','Y6'];
+const CLASSES = { Y1:['1ER','1JS'], Y2:['2MY','2JH'], Y3:['3JW','3WU'], Y4:['4CC','4RB'], Y5:['5IM','5LS'], Y6:['6JM','6SD'] };
+const DAYS = [['Mon','Monday'],['Tue','Tuesday'],['Wed','Wednesday'],['Thu','Thursday'],['Fri','Friday']];
+const DEFAULT_DAYS = ['Mon','Tue','Wed','Fri'];
+
+// Exactly the maths builder's labelTopic list (maths-builder/CLAUDE.md, Phase 1).
+const LABEL_TOPICS = ['Addition','Addition and Subtraction','Algebra','Calculation','Division','Fractions',
+  'Fractions / Decimals / Percentages','Fractions and Decimals','Geometry','Geometry - Position and Direction',
+  'Indices','Measurement','Measurement - Time','Multiplication','Multiplicative Reasoning',
+  'Number and Place Value','Ratio and proportion','Revision','Statistics','Subtraction'];
+
+const DOMAIN_NAMES = {
+  NPV:'Number and place value', AS:'Addition and subtraction', MD:'Multiplication and division',
+  C:'Addition, subtraction, multiplication and division', FR:'Fractions (including decimals and percentages)',
+  RP:'Ratio and proportion', AL:'Algebra', ME:'Measurement', GP:'Geometry: properties of shapes',
+  GPD:'Geometry: position and direction', ST:'Statistics',
+};
+// Which NC domains a block's topic draws on (Y6 joins the four operations as C).
+const TOPIC_DOMAINS = {
+  'Addition':['AS','C'], 'Subtraction':['AS','C'], 'Addition and Subtraction':['AS','C'],
+  'Algebra':['AL'], 'Calculation':['AS','MD','C'], 'Division':['MD','C'], 'Multiplication':['MD','C'],
+  'Multiplicative Reasoning':['MD','C','RP'], 'Indices':['MD','C'],
+  'Fractions':['FR'], 'Fractions and Decimals':['FR'], 'Fractions / Decimals / Percentages':['FR','RP'],
+  'Geometry':['GP'], 'Geometry - Position and Direction':['GPD'],
+  'Measurement':['ME'], 'Measurement - Time':['ME'], 'Number and Place Value':['NPV'],
+  'Ratio and proportion':['RP'], 'Statistics':['ST'], 'Revision':null,
+};
+// Type A (pupils write on the paper) is the usual choice for these topics; the rest default to Type B (books).
+const TYPE_A_TOPICS = ['Geometry','Geometry - Position and Direction','Statistics'];
+
+// National Curriculum (2014) mathematics programmes of study, statutory requirements, Y1-Y6.
+const NC = {
+  Y1: {
+    NPV: ['count to and across 100, forwards and backwards, beginning with 0 or 1, or from any given number',
+      'count, read and write numbers to 100 in numerals; count in multiples of 2s, 5s and 10s',
+      'given a number, identify one more and one less',
+      'identify and represent numbers using objects and pictorial representations including the number line, and use the language of: equal to, more than, less than (fewer), most, least',
+      'read and write numbers from 1 to 20 in numerals and words'],
+    AS: ['read, write and interpret mathematical statements involving addition (+), subtraction (−) and equals (=) signs',
+      'represent and use number bonds and related subtraction facts within 20',
+      'add and subtract one-digit and two-digit numbers to 20, including 0',
+      'solve one-step problems that involve addition and subtraction, using concrete objects and pictorial representations, and missing number problems such as 7 = ? − 9'],
+    MD: ['solve one-step problems involving multiplication and division, by calculating the answer using concrete objects, pictorial representations and arrays with the support of the teacher'],
+    FR: ['recognise, find and name a half as one of two equal parts of an object, shape or quantity',
+      'recognise, find and name a quarter as one of four equal parts of an object, shape or quantity'],
+    ME: ['compare, describe and solve practical problems for lengths and heights, mass/weight, capacity and volume, and time',
+      'measure and begin to record lengths and heights, mass/weight, capacity and volume, and time (hours, minutes, seconds)',
+      'recognise and know the value of different denominations of coins and notes',
+      'sequence events in chronological order using language',
+      'recognise and use language relating to dates, including days of the week, weeks, months and years',
+      'tell the time to the hour and half past the hour and draw the hands on a clock face to show these times'],
+    GP: ['recognise and name common 2-D shapes (rectangles including squares, circles and triangles) and 3-D shapes (cuboids including cubes, pyramids and spheres)'],
+    GPD: ['describe position, direction and movement, including whole, half, quarter and three-quarter turns'],
+  },
+  Y2: {
+    NPV: ['count in steps of 2, 3 and 5 from 0, and in 10s from any number, forward and backward',
+      'recognise the place value of each digit in a two-digit number (10s, 1s)',
+      'identify, represent and estimate numbers using different representations, including the number line',
+      'compare and order numbers from 0 up to 100; use <, > and = signs',
+      'read and write numbers to at least 100 in numerals and in words',
+      'use place value and number facts to solve problems'],
+    AS: ['solve problems with addition and subtraction using concrete objects and pictorial representations, including those involving numbers, quantities and measures, and applying their increasing knowledge of mental and written methods',
+      'recall and use addition and subtraction facts to 20 fluently, and derive and use related facts up to 100',
+      'add and subtract numbers using concrete objects, pictorial representations, and mentally, including a two-digit number and 1s, a two-digit number and 10s, two two-digit numbers, and adding three one-digit numbers',
+      'show that addition of two numbers can be done in any order (commutative) and subtraction of one number from another cannot',
+      'recognise and use the inverse relationship between addition and subtraction and use this to check calculations and solve missing number problems'],
+    MD: ['recall and use multiplication and division facts for the 2, 5 and 10 multiplication tables, including recognising odd and even numbers',
+      'calculate mathematical statements for multiplication and division within the multiplication tables and write them using the multiplication (×), division (÷) and equals (=) signs',
+      'show that multiplication of two numbers can be done in any order (commutative) and division of one number by another cannot',
+      'solve problems involving multiplication and division, using materials, arrays, repeated addition, mental methods, and multiplication and division facts, including problems in contexts'],
+    FR: ['recognise, find, name and write fractions 1/3, 1/4, 2/4 and 3/4 of a length, shape, set of objects or quantity',
+      'write simple fractions, for example 1/2 of 6 = 3, and recognise the equivalence of 2/4 and 1/2'],
+    ME: ['choose and use appropriate standard units to estimate and measure length/height (m/cm), mass (kg/g), temperature (°C) and capacity (litres/ml) to the nearest appropriate unit, using rulers, scales, thermometers and measuring vessels',
+      'compare and order lengths, mass, volume/capacity and record the results using >, < and =',
+      'recognise and use symbols for pounds (£) and pence (p); combine amounts to make a particular value',
+      'find different combinations of coins that equal the same amounts of money',
+      'solve simple problems in a practical context involving addition and subtraction of money of the same unit, including giving change',
+      'compare and sequence intervals of time',
+      'tell and write the time to five minutes, including quarter past/to the hour, and draw the hands on a clock face to show these times',
+      'know the number of minutes in an hour and the number of hours in a day'],
+    GP: ['identify and describe the properties of 2-D shapes, including the number of sides and line symmetry in a vertical line',
+      'identify and describe the properties of 3-D shapes, including the number of edges, vertices and faces',
+      'identify 2-D shapes on the surface of 3-D shapes, for example a circle on a cylinder and a triangle on a pyramid',
+      'compare and sort common 2-D and 3-D shapes and everyday objects'],
+    GPD: ['order and arrange combinations of mathematical objects in patterns and sequences',
+      'use mathematical vocabulary to describe position, direction and movement, including movement in a straight line and distinguishing between rotation as a turn and in terms of right angles for quarter, half and three-quarter turns (clockwise and anticlockwise)'],
+    ST: ['interpret and construct simple pictograms, tally charts, block diagrams and tables',
+      'ask and answer simple questions by counting the number of objects in each category and sorting the categories by quantity',
+      'ask and answer questions about totalling and comparing categorical data'],
+  },
+  Y3: {
+    NPV: ['count from 0 in multiples of 4, 8, 50 and 100; find 10 or 100 more or less than a given number',
+      'recognise the place value of each digit in a three-digit number (100s, 10s, 1s)',
+      'compare and order numbers up to 1,000',
+      'identify, represent and estimate numbers using different representations',
+      'read and write numbers up to 1,000 in numerals and in words',
+      'solve number problems and practical problems involving these ideas'],
+    AS: ['add and subtract numbers mentally, including a three-digit number and 1s, a three-digit number and 10s, and a three-digit number and 100s',
+      'add and subtract numbers with up to 3 digits, using formal written methods of columnar addition and subtraction',
+      'estimate the answer to a calculation and use inverse operations to check answers',
+      'solve problems, including missing number problems, using number facts, place value, and more complex addition and subtraction'],
+    MD: ['recall and use multiplication and division facts for the 3, 4 and 8 multiplication tables',
+      'write and calculate mathematical statements for multiplication and division using the multiplication tables that they know, including for two-digit numbers times one-digit numbers, using mental and progressing to formal written methods',
+      'solve problems, including missing number problems, involving multiplication and division, including positive integer scaling problems and correspondence problems in which n objects are connected to m objects'],
+    FR: ['count up and down in tenths; recognise that tenths arise from dividing an object into 10 equal parts and in dividing one-digit numbers or quantities by 10',
+      'recognise, find and write fractions of a discrete set of objects: unit fractions and non-unit fractions with small denominators',
+      'recognise and use fractions as numbers: unit fractions and non-unit fractions with small denominators',
+      'recognise and show, using diagrams, equivalent fractions with small denominators',
+      'add and subtract fractions with the same denominator within one whole, for example 5/7 + 1/7 = 6/7',
+      'compare and order unit fractions, and fractions with the same denominators',
+      'solve problems that involve all of the above'],
+    ME: ['measure, compare, add and subtract lengths (m/cm/mm), mass (kg/g) and volume/capacity (l/ml)',
+      'measure the perimeter of simple 2-D shapes',
+      'add and subtract amounts of money to give change, using both £ and p in practical contexts',
+      'tell and write the time from an analogue clock, including using Roman numerals from I to XII, and 12-hour and 24-hour clocks',
+      'estimate and read time with increasing accuracy to the nearest minute; record and compare time in terms of seconds, minutes and hours; use vocabulary such as o’clock, am/pm, morning, afternoon, noon and midnight',
+      'know the number of seconds in a minute and the number of days in each month, year and leap year',
+      'compare durations of events, for example to calculate the time taken by particular events or tasks'],
+    GP: ['draw 2-D shapes and make 3-D shapes using modelling materials; recognise 3-D shapes in different orientations and describe them',
+      'recognise angles as a property of shape or a description of a turn',
+      'identify right angles, recognise that two right angles make a half-turn, three make three quarters of a turn and four a complete turn; identify whether angles are greater than or less than a right angle',
+      'identify horizontal and vertical lines and pairs of perpendicular and parallel lines'],
+    ST: ['interpret and present data using bar charts, pictograms and tables',
+      'solve one-step and two-step questions (for example, ‘How many more?’ and ‘How many fewer?’) using information presented in scaled bar charts and pictograms and tables'],
+  },
+  Y4: {
+    NPV: ['count in multiples of 6, 7, 9, 25 and 1,000',
+      'find 1,000 more or less than a given number',
+      'count backwards through 0 to include negative numbers',
+      'recognise the place value of each digit in a four-digit number (1,000s, 100s, 10s, and 1s)',
+      'order and compare numbers beyond 1,000',
+      'identify, represent and estimate numbers using different representations',
+      'round any number to the nearest 10, 100 or 1,000',
+      'solve number and practical problems that involve all of the above and with increasingly large positive numbers',
+      'read Roman numerals to 100 (I to C) and know that over time, the numeral system changed to include the concept of 0 and place value'],
+    AS: ['add and subtract numbers with up to 4 digits using the formal written methods of columnar addition and subtraction where appropriate',
+      'estimate and use inverse operations to check answers to a calculation',
+      'solve addition and subtraction two-step problems in contexts, deciding which operations and methods to use and why'],
+    MD: ['recall multiplication and division facts for multiplication tables up to 12 × 12',
+      'use place value, known and derived facts to multiply and divide mentally, including multiplying by 0 and 1, dividing by 1, and multiplying together 3 numbers',
+      'recognise and use factor pairs and commutativity in mental calculations',
+      'multiply two-digit and three-digit numbers by a one-digit number using formal written layout',
+      'solve problems involving multiplying and adding, including using the distributive law to multiply two-digit numbers by 1 digit, integer scaling problems and harder correspondence problems such as n objects are connected to m objects'],
+    FR: ['recognise and show, using diagrams, families of common equivalent fractions',
+      'count up and down in hundredths; recognise that hundredths arise when dividing an object by 100 and dividing tenths by 10',
+      'solve problems involving increasingly harder fractions to calculate quantities, and fractions to divide quantities, including non-unit fractions where the answer is a whole number',
+      'add and subtract fractions with the same denominator',
+      'recognise and write decimal equivalents of any number of tenths or hundredths',
+      'recognise and write decimal equivalents to 1/4, 1/2, 3/4',
+      'find the effect of dividing a one- or two-digit number by 10 and 100, identifying the value of the digits in the answer as 1s, tenths and hundredths',
+      'round decimals with 1 decimal place to the nearest whole number',
+      'compare numbers with the same number of decimal places up to 2 decimal places',
+      'solve simple measure and money problems involving fractions and decimals to 2 decimal places'],
+    ME: ['convert between different units of measure, for example kilometre to metre, hour to minute',
+      'measure and calculate the perimeter of a rectilinear figure (including squares) in centimetres and metres',
+      'find the area of rectilinear shapes by counting squares',
+      'estimate, compare and calculate different measures, including money in pounds and pence',
+      'read, write and convert time between analogue and digital 12- and 24-hour clocks',
+      'solve problems involving converting from hours to minutes, minutes to seconds, years to months, weeks to days'],
+    GP: ['compare and classify geometric shapes, including quadrilaterals and triangles, based on their properties and sizes',
+      'identify acute and obtuse angles and compare and order angles up to 2 right angles by size',
+      'identify lines of symmetry in 2-D shapes presented in different orientations',
+      'complete a simple symmetric figure with respect to a specific line of symmetry'],
+    GPD: ['describe positions on a 2-D grid as coordinates in the first quadrant',
+      'describe movements between positions as translations of a given unit to the left/right and up/down',
+      'plot specified points and draw sides to complete a given polygon'],
+    ST: ['interpret and present discrete and continuous data using appropriate graphical methods, including bar charts and time graphs',
+      'solve comparison, sum and difference problems using information presented in bar charts, pictograms, tables and other graphs'],
+  },
+  Y5: {
+    NPV: ['read, write, order and compare numbers to at least 1,000,000 and determine the value of each digit',
+      'count forwards or backwards in steps of powers of 10 for any given number up to 1,000,000',
+      'interpret negative numbers in context, count forwards and backwards with positive and negative whole numbers, including through 0',
+      'round any number up to 1,000,000 to the nearest 10, 100, 1,000, 10,000 and 100,000',
+      'solve number problems and practical problems that involve all of the above',
+      'read Roman numerals to 1,000 (M) and recognise years written in Roman numerals'],
+    AS: ['add and subtract whole numbers with more than 4 digits, including using formal written methods (columnar addition and subtraction)',
+      'add and subtract numbers mentally with increasingly large numbers',
+      'use rounding to check answers to calculations and determine, in the context of a problem, levels of accuracy',
+      'solve addition and subtraction multi-step problems in contexts, deciding which operations and methods to use and why'],
+    MD: ['identify multiples and factors, including finding all factor pairs of a number, and common factors of 2 numbers',
+      'know and use the vocabulary of prime numbers, prime factors and composite (non-prime) numbers',
+      'establish whether a number up to 100 is prime and recall prime numbers up to 19',
+      'multiply numbers up to 4 digits by a one- or two-digit number using a formal written method, including long multiplication for two-digit numbers',
+      'multiply and divide numbers mentally, drawing upon known facts',
+      'divide numbers up to 4 digits by a one-digit number using the formal written method of short division and interpret remainders appropriately for the context',
+      'multiply and divide whole numbers and those involving decimals by 10, 100 and 1,000',
+      'recognise and use square numbers and cube numbers, and the notation for squared (²) and cubed (³)',
+      'solve problems involving multiplication and division, including using their knowledge of factors and multiples, squares and cubes',
+      'solve problems involving addition, subtraction, multiplication and division and a combination of these, including understanding the meaning of the equals sign',
+      'solve problems involving multiplication and division, including scaling by simple fractions and problems involving simple rates'],
+    FR: ['compare and order fractions whose denominators are all multiples of the same number',
+      'identify, name and write equivalent fractions of a given fraction, represented visually, including tenths and hundredths',
+      'recognise mixed numbers and improper fractions and convert from one form to the other and write mathematical statements > 1 as a mixed number, for example 2/5 + 4/5 = 6/5 = 1 1/5',
+      'add and subtract fractions with the same denominator, and denominators that are multiples of the same number',
+      'multiply proper fractions and mixed numbers by whole numbers, supported by materials and diagrams',
+      'read and write decimal numbers as fractions, for example 0.71 = 71/100',
+      'recognise and use thousandths and relate them to tenths, hundredths and decimal equivalents',
+      'round decimals with 2 decimal places to the nearest whole number and to 1 decimal place',
+      'read, write, order and compare numbers with up to 3 decimal places',
+      'solve problems involving number up to 3 decimal places',
+      'recognise the per cent symbol (%) and understand that per cent relates to ‘number of parts per 100’, and write percentages as a fraction with denominator 100, and as a decimal fraction',
+      'solve problems which require knowing percentage and decimal equivalents of 1/2, 1/4, 1/5, 2/5, 4/5 and those fractions with a denominator of a multiple of 10 or 25'],
+    ME: ['convert between different units of metric measure, for example kilometre and metre, centimetre and metre, centimetre and millimetre, gram and kilogram, litre and millilitre',
+      'understand and use approximate equivalences between metric units and common imperial units such as inches, pounds and pints',
+      'measure and calculate the perimeter of composite rectilinear shapes in centimetres and metres',
+      'calculate and compare the area of rectangles (including squares), including using standard units, square centimetres (cm²) and square metres (m²), and estimate the area of irregular shapes',
+      'estimate volume (for example, using 1 cm³ blocks to build cuboids, including cubes) and capacity (for example, using water)',
+      'solve problems involving converting between units of time',
+      'use all 4 operations to solve problems involving measure (for example, length, mass, volume, money) using decimal notation, including scaling'],
+    GP: ['identify 3-D shapes, including cubes and other cuboids, from 2-D representations',
+      'know angles are measured in degrees: estimate and compare acute, obtuse and reflex angles',
+      'draw given angles, and measure them in degrees (°)',
+      'identify angles at a point and 1 whole turn (total 360°), angles at a point on a straight line and half a turn (total 180°), and other multiples of 90°',
+      'use the properties of rectangles to deduce related facts and find missing lengths and angles',
+      'distinguish between regular and irregular polygons based on reasoning about equal sides and angles'],
+    GPD: ['identify, describe and represent the position of a shape following a reflection or translation, using the appropriate language, and know that the shape has not changed'],
+    ST: ['solve comparison, sum and difference problems using information presented in a line graph',
+      'complete, read and interpret information in tables, including timetables'],
+  },
+  Y6: {
+    NPV: ['read, write, order and compare numbers up to 10,000,000 and determine the value of each digit',
+      'round any whole number to a required degree of accuracy',
+      'use negative numbers in context, and calculate intervals across 0',
+      'solve number and practical problems that involve all of the above'],
+    C: ['multiply multi-digit numbers up to 4 digits by a two-digit whole number using the formal written method of long multiplication',
+      'divide numbers up to 4 digits by a two-digit whole number using the formal written method of long division, and interpret remainders as whole number remainders, fractions, or by rounding, as appropriate for the context',
+      'divide numbers up to 4 digits by a two-digit number using the formal written method of short division where appropriate, interpreting remainders according to the context',
+      'perform mental calculations, including with mixed operations and large numbers',
+      'identify common factors, common multiples and prime numbers',
+      'use their knowledge of the order of operations to carry out calculations involving the 4 operations',
+      'solve addition and subtraction multi-step problems in contexts, deciding which operations and methods to use and why',
+      'solve problems involving addition, subtraction, multiplication and division',
+      'use estimation to check answers to calculations and determine, in the context of a problem, an appropriate degree of accuracy'],
+    FR: ['use common factors to simplify fractions; use common multiples to express fractions in the same denomination',
+      'compare and order fractions, including fractions > 1',
+      'add and subtract fractions with different denominators and mixed numbers, using the concept of equivalent fractions',
+      'multiply simple pairs of proper fractions, writing the answer in its simplest form, for example 1/4 × 1/2 = 1/8',
+      'divide proper fractions by whole numbers, for example 1/3 ÷ 2 = 1/6',
+      'associate a fraction with division and calculate decimal fraction equivalents, for example 0.375 for 3/8',
+      'identify the value of each digit in numbers given to 3 decimal places and multiply and divide numbers by 10, 100 and 1,000 giving answers up to 3 decimal places',
+      'multiply one-digit numbers with up to 2 decimal places by whole numbers',
+      'use written division methods in cases where the answer has up to 2 decimal places',
+      'solve problems which require answers to be rounded to specified degrees of accuracy',
+      'recall and use equivalences between simple fractions, decimals and percentages, including in different contexts'],
+    RP: ['solve problems involving the relative sizes of 2 quantities where missing values can be found by using integer multiplication and division facts',
+      'solve problems involving the calculation of percentages (for example, of measures, and such as 15% of 360) and the use of percentages for comparison',
+      'solve problems involving similar shapes where the scale factor is known or can be found',
+      'solve problems involving unequal sharing and grouping using knowledge of fractions and multiples'],
+    AL: ['use simple formulae', 'generate and describe linear number sequences', 'express missing number problems algebraically',
+      'find pairs of numbers that satisfy an equation with 2 unknowns', 'enumerate possibilities of combinations of 2 variables'],
+    ME: ['solve problems involving the calculation and conversion of units of measure, using decimal notation up to 3 decimal places where appropriate',
+      'use, read, write and convert between standard units, converting measurements of length, mass, volume and time from a smaller unit of measure to a larger unit, and vice versa, using decimal notation to up to 3 decimal places',
+      'convert between miles and kilometres',
+      'recognise that shapes with the same areas can have different perimeters and vice versa',
+      'recognise when it is possible to use formulae for area and volume of shapes',
+      'calculate the area of parallelograms and triangles',
+      'calculate, estimate and compare volume of cubes and cuboids using standard units, including cubic centimetres (cm³) and cubic metres (m³), and extending to other units, for example mm³ and km³'],
+    GP: ['draw 2-D shapes using given dimensions and angles',
+      'recognise, describe and build simple 3-D shapes, including making nets',
+      'compare and classify geometric shapes based on their properties and sizes and find unknown angles in any triangles, quadrilaterals, and regular polygons',
+      'illustrate and name parts of circles, including radius, diameter and circumference and know that the diameter is twice the radius',
+      'recognise angles where they meet at a point, are on a straight line, or are vertically opposite, and find missing angles'],
+    GPD: ['describe positions on the full coordinate grid (all 4 quadrants)',
+      'draw and translate simple shapes on the coordinate plane, and reflect them in the axes'],
+    ST: ['interpret and construct pie charts and line graphs and use these to solve problems',
+      'calculate and interpret the mean as an average'],
+  },
+};
+function objId(year, dom, i) { return `${year}-${dom}-${i + 1}`; }
+function objText(id) {
+  const [y, d, n] = id.split('-');
+  return (NC[y] && NC[y][d] && NC[y][d][parseInt(n) - 1]) || '';
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let S = freshState();
+let termRows = null;      // [{term, week, label, monday: Date}] from the API
+let termSource = 'loading';
+let current = 1;
+let blockSeq = 1;
+
+function freshState() {
+  return {
+    year: 'Y5', classes: ['5IM','5LS'], title: '', term: '', week: '', weeks: 1,
+    days: DEFAULT_DAYS.slice(), blocks: [], weekDays: {}, weekReasons: {}, manualMondays: {},
+    rapid: {}, lessonEdits: {}, notes: '',
+  };
+}
+function newBlock() {
+  return { id: 'B' + (blockSeq++), topic: '', title: '', lessons: 4, objectives: [], showAll: false,
+    steps: '', prior: '', misconceptions: '', bands: {}, adaptedNote: '', overrides: [] };
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function lines(s) { return String(s || '').split('\n').map(x => x.trim()).filter(Boolean); }
+function iso(d) { return d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : null; }
+function ukDate(d) { return d ? d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) : ''; }
+function parseUK(s) { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || ''); return m ? new Date(+m[3], +m[2]-1, +m[1]) : null; }
+function parseISO(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function yearNum(y) { return parseInt(String(y).replace('Y','')); }
+function lowerYears(y) { const n = yearNum(y); return YEARS.filter(x => yearNum(x) < n); }
+function domainsFor(year, topic, showAll) {
+  const have = Object.keys(NC[year] || {});
+  const want = TOPIC_DOMAINS[topic];
+  if (showAll || !topic || !want) return have;
+  const picked = have.filter(d => want.includes(d));
+  return picked.length ? picked : have;
+}
+function blockLabel(b, i) { return `Block ${i + 1}${b.topic ? ': ' + (b.title || b.topic) : ''}`; }
+
+// ── Term dates ─────────────────────────────────────────────────────────────
+async function loadTermDates() {
+  try {
+    const r = await fetch(TERM_API);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const rows = (j.rows || []).map(x => ({ term: parseInt(x.Term), week: parseInt(x.Week), label: x.Label, monday: parseUK(x.StartDate) }))
+      .filter(x => x.term && x.week && x.monday);
+    if (!rows.length) throw new Error('no rows');
+    termRows = rows; termSource = 'api';
+  } catch (e) {
+    termRows = null; termSource = 'manual';
+  }
+  renderTermSelects();
+  renderCalendarStatus();
+}
+function renderCalendarStatus() {
+  const el = $('calendarStatus');
+  if (termSource === 'loading') el.textContent = 'Reading term dates from the WFA database…';
+  else if (termSource === 'api') el.innerHTML = '✓ Term dates read from the WFA database.';
+  else el.innerHTML = '<span style="color:var(--warn)">Term dates could not be read (no connection?). You will be asked for each week\'s Monday on the Weeks step.</span>';
+}
+function renderTermSelects() {
+  const tSel = $('f_term'), wSel = $('f_week');
+  const terms = termRows ? [...new Set(termRows.map(r => r.term))] : [1,2,3,4,5,6];
+  tSel.innerHTML = '<option value="">Term…</option>' + terms.map(t => `<option value="${t}">Term ${t}</option>`).join('');
+  tSel.value = S.term;
+  const weeks = termRows ? termRows.filter(r => r.term === parseInt(S.term)).map(r => r.week) : [1,2,3,4,5,6,7];
+  wSel.innerHTML = '<option value="">Week…</option>' + (S.term ? weeks : []).map(w => `<option value="${w}">Week ${w}</option>`).join('');
+  wSel.value = S.week;
+}
+// The run of school weeks from the start week, following TermDates order across term boundaries.
+function weekList() {
+  if (!S.term || !S.week || !(S.weeks > 0)) return [];
+  const out = [];
+  if (termRows) {
+    const start = termRows.findIndex(r => r.term === parseInt(S.term) && r.week === parseInt(S.week));
+    if (start < 0) return [];
+    for (let i = 0; i < S.weeks && start + i < termRows.length; i++) {
+      const r = termRows[start + i];
+      out.push({ index: i + 1, txwy: r.label || `T${r.term}W${r.week}`, term: r.term, week: r.week, monday: r.monday });
+    }
+  } else {
+    let t = parseInt(S.term), w = parseInt(S.week);
+    for (let i = 0; i < S.weeks; i++) {
+      const txwy = `T${t}W${w}`;
+      out.push({ index: i + 1, txwy, term: t, week: w, monday: parseISO(S.manualMondays[txwy]), manual: true });
+      w++; if (w > 7) { w = 1; t++; }
+    }
+  }
+  return out;
+}
+function daysFor(txwy) { return S.weekDays[txwy] || S.days; }
+
+// The lesson slots, in order, with block and small-step defaults; edits keyed by week+day survive changes.
+function lessonSlots() {
+  const slots = [];
+  weekList().forEach(wk => {
+    DAYS.forEach(([d, full], di) => {
+      if (!daysFor(wk.txwy).includes(d)) return;
+      slots.push({ key: `${wk.txwy}-${d}`, txwy: wk.txwy, weekIndex: wk.index, day: full, dayShort: d,
+        date: wk.monday ? addDays(wk.monday, di) : null });
+    });
+  });
+  // default block assignment in order, by each block's lesson count
+  const plan = [];
+  S.blocks.forEach(b => { for (let k = 0; k < (parseInt(b.lessons) || 0); k++) plan.push({ block: b.id, step: k }); });
+  slots.forEach((s, i) => {
+    const def = plan[i] || { block: S.blocks.length ? S.blocks[S.blocks.length - 1].id : '', step: null };
+    const e = S.lessonEdits[s.key] || {};
+    s.lesson = i + 1;
+    s.block = e.block || def.block;
+    const b = S.blocks.find(x => x.id === s.block);
+    // small step: the position of this lesson within its block
+    const posInBlock = slots.slice(0, i).filter(x => x.block === s.block).length;
+    const steps = b ? lines(b.steps) : [];
+    s.stepIndex = posInBlock;
+    s.focusDefault = steps[posInBlock] || '';
+    s.focus = e.focus != null ? e.focus : s.focusDefault;
+    s.topic = b ? b.topic : '';
+    s.lp = e.lp || (TYPE_A_TOPICS.includes(s.topic) ? 'A' : 'B');
+    s.stats = e.stats != null ? e.stats : s.topic === 'Statistics';
+    s.manip = e.manip || '';
+    s.notes = e.notes || '';
+  });
+  return slots;
+}
+function editLesson(key, field, value) {
+  S.lessonEdits[key] = S.lessonEdits[key] || {};
+  S.lessonEdits[key][field] = value;
+  saveState();
+}
+
+// ── Step bar / navigation ──────────────────────────────────────────────────
+const STEPS = [{n:1,lbl:'Basics'},{n:2,lbl:'Blocks'},{n:3,lbl:'Levels'},{n:4,lbl:'Weeks'},{n:5,lbl:'Notes'},{n:6,lbl:'Export'}];
+function renderBar() {
+  const bar = $('stepBar'); bar.innerHTML = '';
+  STEPS.forEach((s, i) => {
+    if (i > 0) { const c = document.createElement('div'); c.className = 'step-conn' + (current > s.n ? ' done' : ''); bar.appendChild(c); }
+    const el = document.createElement('div');
+    el.className = 'step-item ' + (current === s.n ? 'active' : current > s.n ? 'done' : '');
+    el.innerHTML = `<div class="step-num">${current > s.n ? '✓' : s.n}</div><span>${s.lbl}</span>`;
+    el.onclick = () => { if (s.n < current) go(s.n); };
+    bar.appendChild(el);
+  });
+}
+function go(n) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  $('s' + n).classList.add('active');
+  current = n; renderBar();
+  if (n === 2) renderBlocks();
+  if (n === 3) renderLevels();
+  if (n === 4) renderWeeks();
+  if (n === 6) { renderReview(); $('promptPreview').textContent = buildPrompt(collect()); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function validate(n) {
+  let ok = true;
+  const show = (id, bad) => { $(id).classList.toggle('show', bad); if (bad) ok = false; };
+  if (n === 1) {
+    show('e_year', !S.year);
+    show('e_when', !S.term || !S.week || !(S.weeks > 0));
+  }
+  if (n === 2) show('e_blocks', !S.blocks.length || S.blocks.some(b => !b.topic || !(parseInt(b.lessons) > 0)));
+  return ok;
+}
+function next(n) { if (validate(n)) go(n + 1); }
+function prev(n) { go(n - 1); }
+
+// ── Step 1 ─────────────────────────────────────────────────────────────────
+function renderBasics() {
+  $('yearPills').innerHTML = YEARS.map(y => `<div class="pill${S.year === y ? ' on' : ''}" onclick="setYear('${y}')">${y}</div>`).join('');
+  $('classPills').innerHTML = (CLASSES[S.year] || []).map(c => `<div class="pill${S.classes.includes(c) ? ' on' : ''}" onclick="toggleClass('${c}')">${c}</div>`).join('');
+  $('dayPills').innerHTML = DAYS.map(([d, full]) => `<div class="pill${S.days.includes(d) ? ' on' : ''}" onclick="toggleDay('${d}')">${full}</div>`).join('');
+  $('f_title').value = S.title;
+  $('f_weeks').value = S.weeks;
+  $('f_notes').value = S.notes;
+  renderTermSelects();
+}
+function setYear(y) {
+  if (S.year !== y) { S.year = y; S.classes = (CLASSES[y] || []).slice(); S.blocks.forEach(b => { b.objectives = []; b.bands = {}; }); }
+  renderBasics(); saveState();
+}
+function toggleClass(c) { S.classes = S.classes.includes(c) ? S.classes.filter(x => x !== c) : [...S.classes, c]; renderBasics(); saveState(); }
+function toggleDay(d) {
+  S.days = S.days.includes(d) ? S.days.filter(x => x !== d) : DAYS.map(x => x[0]).filter(x => x === d || S.days.includes(x));
+  renderBasics(); saveState();
+}
+$('f_term').addEventListener('change', e => { S.term = e.target.value; S.week = ''; renderTermSelects(); saveState(); });
+$('f_week').addEventListener('change', e => { S.week = e.target.value; saveState(); });
+$('f_weeks').addEventListener('input', e => { S.weeks = Math.max(0, Math.min(14, parseInt(e.target.value) || 0)); saveState(); });
+$('f_title').addEventListener('input', e => { S.title = e.target.value; saveState(); });
+$('f_notes').addEventListener('input', e => { S.notes = e.target.value; saveState(); });
+
+// ── Step 2: blocks ─────────────────────────────────────────────────────────
+function addBlock() { S.blocks.push(newBlock()); renderBlocks(); saveState(); }
+function removeBlock(id) {
+  const b = S.blocks.find(x => x.id === id);
+  if (b && (b.steps || b.objectives.length) && !confirm('Remove this block and everything typed in it?')) return;
+  S.blocks = S.blocks.filter(x => x.id !== id); renderBlocks(); saveState();
+}
+function moveBlock(id, dir) {
+  const i = S.blocks.findIndex(x => x.id === id), j = i + dir;
+  if (j < 0 || j >= S.blocks.length) return;
+  [S.blocks[i], S.blocks[j]] = [S.blocks[j], S.blocks[i]]; renderBlocks(); saveState();
+}
+function setBlock(id, field, value, rerender) {
+  const b = S.blocks.find(x => x.id === id); if (!b) return;
+  b[field] = value;
+  if (field === 'topic') b.showAll = false;
+  saveState();
+  if (rerender) renderBlocks(); else renderLessonCount();
+}
+function toggleObjective(id, oid) {
+  const b = S.blocks.find(x => x.id === id); if (!b) return;
+  b.objectives = b.objectives.includes(oid) ? b.objectives.filter(x => x !== oid) : [...b.objectives, oid];
+  saveState(); renderBlocks();
+}
+function objectiveList(year, domains, chosen, onToggle) {
+  return domains.map(d => `<div class="obj-domain">${esc(DOMAIN_NAMES[d])}</div>` +
+    NC[year][d].map((t, i) => {
+      const oid = objId(year, d, i), on = chosen.includes(oid);
+      return `<label class="obj${on ? ' on' : ''}"><input type="checkbox" ${on ? 'checked' : ''} onchange="${onToggle}('${oid}')"><span>${esc(t)}</span></label>`;
+    }).join('')).join('');
+}
+function renderBlocks() {
+  const c = $('blocksContainer');
+  if (!S.blocks.length) { c.innerHTML = '<p class="hint" style="margin-bottom:0.8rem">No blocks yet.</p>'; renderLessonCount(); return; }
+  c.innerHTML = S.blocks.map((b, i) => {
+    const doms = domainsFor(S.year, b.topic, b.showAll);
+    const hidden = Object.keys(NC[S.year]).length - doms.length;
+    const chosenOutside = b.objectives.filter(o => !doms.includes(o.split('-')[1]));
+    return `<div class="block">
+      <div class="block-head">
+        <span class="block-title">${esc(blockLabel(b, i))}</span>
+        <button class="btn-sec btn-small" type="button" onclick="moveBlock('${b.id}',-1)" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+        <button class="btn-sec btn-small" type="button" onclick="moveBlock('${b.id}',1)" ${i === S.blocks.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
+        <button class="btn-rm" type="button" onclick="removeBlock('${b.id}')" title="Remove block">✕</button>
+      </div>
+      <div class="g3">
+        <div class="field" style="grid-column: span 2">
+          <label class="field-label">Topic <span class="optional">(the learning-label topic)</span></label>
+          <select onchange="setBlock('${b.id}','topic',this.value,true)" class="${!b.topic ? 'err' : ''}">
+            <option value="">Choose…</option>
+            ${LABEL_TOPICS.map(t => `<option ${b.topic === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Lessons</label>
+          <input type="number" min="1" max="40" value="${esc(b.lessons)}" oninput="setBlock('${b.id}','lessons',parseInt(this.value)||0)">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Block name <span class="optional">(optional, e.g. "Fractions: mixed numbers and improper fractions")</span></label>
+        <input type="text" value="${esc(b.title)}" oninput="setBlock('${b.id}','title',this.value)">
+      </div>
+      <div class="field">
+        <span class="field-label">National Curriculum objectives (${esc(S.year)})</span>
+        <div class="row-tools">
+          ${b.objectives.length} chosen
+          ${hidden > 0 ? `<button class="btn-sec btn-small" type="button" onclick="setBlock('${b.id}','showAll',true,true)">Show all ${esc(S.year)} domains</button>` : ''}
+          ${b.showAll && b.topic && TOPIC_DOMAINS[b.topic] ? `<button class="btn-sec btn-small" type="button" onclick="setBlock('${b.id}','showAll',false,true)">Only this topic</button>` : ''}
+        </div>
+        <div class="obj-list">${objectiveList(S.year, doms, b.objectives, `blockObj_${b.id}`)}</div>
+        ${chosenOutside.length ? `<span class="hint">Also chosen from other domains: ${chosenOutside.length}</span>` : ''}
+      </div>
+      <div class="field">
+        <label class="field-label">Small steps, in order <span class="optional">(one per line; one per lesson unless a step takes two)</span></label>
+        <textarea rows="5" oninput="setBlock('${b.id}','steps',this.value)" placeholder="e.g.&#10;Understand improper fractions&#10;Convert improper fractions to mixed numbers&#10;Convert mixed numbers to improper fractions">${esc(b.steps)}</textarea>
+        <span class="hint">${lines(b.steps).length} step${lines(b.steps).length === 1 ? '' : 's'} for ${parseInt(b.lessons) || 0} lesson${b.lessons == 1 ? '' : 's'}. Lessons on the Weeks step take these in order.</span>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label class="field-label">Prior learning</label>
+          <textarea rows="4" oninput="setBlock('${b.id}','prior',this.value)" placeholder="What the class has already been taught that this builds on">${esc(b.prior)}</textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Likely misconceptions <span class="optional">(one per line)</span></label>
+          <textarea rows="4" oninput="setBlock('${b.id}','misconceptions',this.value)" placeholder="e.g. thinks a bigger denominator means a bigger fraction">${esc(b.misconceptions)}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  // one toggle function per block (keeps the inline handler simple)
+  S.blocks.forEach(b => { window[`blockObj_${b.id}`] = oid => toggleObjective(b.id, oid); });
+  renderLessonCount();
+}
+function renderLessonCount() {
+  const slots = weekList().reduce((n, wk) => n + DAYS.filter(([d]) => daysFor(wk.txwy).includes(d)).length, 0);
+  const planned = S.blocks.reduce((n, b) => n + (parseInt(b.lessons) || 0), 0);
+  const el = $('lessonCountMsg');
+  if (!S.blocks.length || !slots) { el.innerHTML = ''; return; }
+  if (planned === slots) el.innerHTML = `<div class="okmsg">${planned} lessons planned for ${slots} maths lessons in ${S.weeks} week${S.weeks == 1 ? '' : 's'}.</div>`;
+  else el.innerHTML = `<div class="warnmsg">The blocks add up to ${planned} lessons, but the ${S.weeks} week${S.weeks == 1 ? '' : 's'} ha${S.weeks == 1 ? 's' : 've'} ${slots} maths lessons${termSource === 'api' ? '' : ''} (before any days dropped on the Weeks step). ${planned > slots ? 'The extra lessons will not fit.' : 'The last block fills the spare lessons unless you change them.'}</div>`;
+}
+
+// ── Step 3: levels ─────────────────────────────────────────────────────────
+const LEVEL_OPTIONS = y => ['S','A', ...lowerYears(y)];
+function toggleBand(bid, lvl) {
+  const b = S.blocks.find(x => x.id === bid); if (!b) return;
+  if (b.bands[lvl]) { if ((b.bands[lvl].objectives.length || b.bands[lvl].note) && !confirm(`Remove the ${lvl} level for this block?`)) return; delete b.bands[lvl]; }
+  else b.bands[lvl] = { objectives: [], note: '', showAll: false };
+  saveState(); renderLevels();
+}
+function toggleBandObjective(bid, lvl, oid) {
+  const band = S.blocks.find(x => x.id === bid).bands[lvl];
+  band.objectives = band.objectives.includes(oid) ? band.objectives.filter(x => x !== oid) : [...band.objectives, oid];
+  saveState(); renderLevels();
+}
+function setBand(bid, lvl, field, value, rerender) {
+  S.blocks.find(x => x.id === bid).bands[lvl][field] = value; saveState(); if (rerender) renderLevels();
+}
+function addOverride(bid) { S.blocks.find(x => x.id === bid).overrides.push({ initials: '', level: 'A' }); saveState(); renderLevels(); }
+function setOverride(bid, i, field, value) {
+  const o = S.blocks.find(x => x.id === bid).overrides[i];
+  o[field] = field === 'initials' ? value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4) : value;
+  saveState();
+}
+function removeOverride(bid, i) { S.blocks.find(x => x.id === bid).overrides.splice(i, 1); saveState(); renderLevels(); }
+function renderLevels() {
+  const c = $('levelsContainer');
+  if (!S.blocks.length) { c.innerHTML = '<p class="hint">Add a block first.</p>'; return; }
+  const lower = lowerYears(S.year);
+  c.innerHTML = S.blocks.map((b, i) => `<div class="block">
+    <div class="block-head"><span class="block-title">${esc(blockLabel(b, i))}</span></div>
+    ${lower.length ? `<div class="field">
+      <span class="field-label">Earlier-year levels needed in this block</span>
+      <div class="pill-group">${lower.map(l => `<div class="pill${b.bands[l] ? ' on' : ''}" onclick="toggleBand('${b.id}','${l}')">Working at ${l}</div>`).join('')}</div>
+      <span class="hint">Pick only the levels a child in either class is actually working at for this topic. Each one gets its own learning paper.</span>
+    </div>` : '<p class="hint">Year 1 has no earlier-year levels.</p>'}
+    ${lower.filter(l => b.bands[l]).map(l => {
+      const band = b.bands[l], doms = domainsFor(l, b.topic, band.showAll);
+      window[`bandObj_${b.id}_${l}`] = oid => toggleBandObjective(b.id, l, oid);
+      return `<div class="band">
+        <div class="band-title">Working at ${l}</div>
+        <div class="field">
+          <span class="field-label">${l} objectives this level works on</span>
+          <div class="row-tools">${band.objectives.length} chosen
+            ${doms.length < Object.keys(NC[l]).length ? `<button class="btn-sec btn-small" type="button" onclick="setBand('${b.id}','${l}','showAll',true,true)">Show all ${l} domains</button>` : ''}</div>
+          <div class="obj-list" style="max-height:220px">${objectiveList(l, doms, band.objectives, `bandObj_${b.id}_${l}`)}</div>
+        </div>
+        <div class="field">
+          <label class="field-label">What this level does in the lessons <span class="optional">(optional)</span></label>
+          <textarea rows="2" oninput="setBand('${b.id}','${l}','note',this.value)" placeholder="e.g. same fractions as the class but with halves, quarters and thirds only, with fraction strips">${esc(band.note)}</textarea>
+        </div>
+      </div>`;
+    }).join('')}
+    <div class="field" style="margin-top:1rem">
+      <label class="field-label">Adapted pupils: what they need this block <span class="optional">(optional, no names)</span></label>
+      <textarea rows="2" oninput="setBlock('${b.id}','adaptedNote',this.value)" placeholder="e.g. adapted paper keeps to 3-digit numbers; place value grids and counters on every table">${esc(b.adaptedNote)}</textarea>
+    </div>
+    <div class="field">
+      <span class="field-label">Different level for this block only <span class="optional">(initials only)</span></span>
+      ${b.overrides.map((o, k) => `<div class="ovr-row">
+        <input type="text" value="${esc(o.initials)}" placeholder="e.g. CT" maxlength="4" oninput="setOverride('${b.id}',${k},'initials',this.value);this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')">
+        <select onchange="setOverride('${b.id}',${k},'level',this.value)">${LEVEL_OPTIONS(S.year).map(l => `<option value="${l}" ${o.level === l ? 'selected' : ''}>${l === 'S' ? 'S (standard)' : l === 'A' ? 'A (adapted)' : 'Working at ' + l}</option>`).join('')}</select>
+        <button class="btn-rm" type="button" onclick="removeOverride('${b.id}',${k})">✕</button>
+      </div>`).join('')}
+      <button class="btn-add btn-small" type="button" style="margin-top:0.5rem" onclick="addOverride('${b.id}')">+ Add a child</button>
+      <span class="hint">Everyone else keeps their usual level from the class list.</span>
+    </div>
+  </div>`).join('');
+}
+
+// ── Step 4: weeks ──────────────────────────────────────────────────────────
+function toggleWeekDay(txwy, d) {
+  const cur = daysFor(txwy).slice();
+  S.weekDays[txwy] = cur.includes(d) ? cur.filter(x => x !== d) : DAYS.map(x => x[0]).filter(x => x === d || cur.includes(x));
+  saveState(); renderWeeks();
+}
+function renderWeeks() {
+  const c = $('weeksContainer');
+  const weeks = weekList();
+  if (!weeks.length) { c.innerHTML = '<p class="hint">Set the start week and number of weeks on the Basics step.</p>'; return; }
+  if (!S.blocks.length) { c.innerHTML = '<p class="hint">Add at least one block first.</p>'; return; }
+  const slots = lessonSlots();
+  const planned = S.blocks.reduce((n, b) => n + (parseInt(b.lessons) || 0), 0);
+  let html = '';
+  if (planned !== slots.length) html += `<div class="warnmsg" style="margin:0 0 1rem">${slots.length} maths lessons in these weeks; the blocks add up to ${planned}. ${planned > slots.length ? 'The last ' + (planned - slots.length) + ' planned lesson(s) do not fit: add a week, or shorten a block.' : 'The spare lessons go to the last block unless you change them.'}</div>`;
+  html += weeks.map(wk => {
+    const used = daysFor(wk.txwy);
+    const dropped = S.days.filter(d => !used.includes(d));
+    return `<div class="week">
+      <div class="week-head"><span class="week-title">Week ${wk.index}: ${esc(wk.txwy)}</span>
+        <span class="week-sub">${wk.monday ? 'w/c ' + esc(ukDate(wk.monday)) : 'Monday not set'}</span></div>
+      <div class="week-body">
+        ${wk.manual ? `<div class="field"><label class="field-label">Monday of ${esc(wk.txwy)}</label><input type="date" value="${esc(S.manualMondays[wk.txwy] || '')}" onchange="S.manualMondays['${wk.txwy}']=this.value;saveState();renderWeeks()"></div>` : ''}
+        <div class="day-row">${DAYS.map(([d], di) => {
+          const on = used.includes(d), usual = S.days.includes(d);
+          return `<div class="day-chip${on ? ' on' : ''}${!on && usual ? ' lost' : ''}" onclick="toggleWeekDay('${wk.txwy}','${d}')">${d}<small>${wk.monday ? esc(addDays(wk.monday, di).getDate() + '/' + (addDays(wk.monday, di).getMonth() + 1)) : '&nbsp;'}</small></div>`;
+        }).join('')}</div>
+        ${dropped.length ? `<div class="reason-row">No maths ${dropped.join(', ')} because <input type="text" value="${esc(S.weekReasons[wk.txwy] || '')}" placeholder="e.g. INSET day, Year 5 trip" oninput="S.weekReasons['${wk.txwy}']=this.value;saveState()"></div>` : ''}
+        <div class="field" style="margin-top:0.6rem">
+          <label class="field-label">Rapid Maths fluency focus this week</label>
+          <input type="text" value="${esc(S.rapid[wk.txwy] || '')}" placeholder="e.g. 6, 7 and 9 times tables; number bonds to 1" oninput="S.rapid['${wk.txwy}']=this.value;saveState()">
+        </div>
+        ${slots.filter(s => s.txwy === wk.txwy).map(s => lessonCard(s)).join('') || '<p class="hint" style="margin-top:0.6rem">No maths lessons this week.</p>'}
+      </div>
+    </div>`;
+  }).join('');
+  c.innerHTML = html;
+}
+function lessonCard(s) {
+  const b = S.blocks.find(x => x.id === s.block);
+  const bi = S.blocks.indexOf(b);
+  const steps = b ? lines(b.steps) : [];
+  const listId = `steps_${s.key}`;
+  return `<div class="lesson">
+    <div class="lesson-head"><span class="lesson-num">Lesson ${s.lesson}</span>
+      <span class="lesson-date">${esc(s.day)}${s.date ? ' ' + esc(s.date.toLocaleDateString('en-GB', { day:'numeric', month:'short' })) : ''}</span>
+      ${s.topic ? `<span class="lesson-tag">${esc(s.topic)}</span>` : ''}</div>
+    <div class="lesson-grid">
+      <div><span class="mini-label">Block</span>
+        <select onchange="editLesson('${s.key}','block',this.value);editLesson('${s.key}','focus',null);renderWeeks()">
+          ${S.blocks.map((x, i) => `<option value="${x.id}" ${x.id === s.block ? 'selected' : ''}>${esc(blockLabel(x, i))}</option>`).join('')}
+        </select></div>
+      <div><span class="mini-label">Focus (small step)</span>
+        <input type="text" list="${listId}" value="${esc(s.focus)}" placeholder="${steps.length ? 'Pick or type the small step' : 'Type this lesson\'s focus'}" oninput="editLesson('${s.key}','focus',this.value)">
+        <datalist id="${listId}">${steps.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
+      <div><span class="mini-label">Learning paper</span>
+        <div class="toggle">
+          <button type="button" class="${s.lp === 'A' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','A');renderWeeks()" title="Pupils write on the paper; learning label on the paper">A · paper</button>
+          <button type="button" class="${s.lp === 'B' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','B');renderWeeks()" title="Pupils work in books; sticker labels">B · book</button>
+        </div></div>
+      <div><span class="mini-label">Statistics lesson</span>
+        <div class="toggle">
+          <button type="button" class="${s.stats ? 'on' : ''}" onclick="editLesson('${s.key}','stats',true);renderWeeks()">Yes</button>
+          <button type="button" class="${!s.stats ? 'on' : ''}" onclick="editLesson('${s.key}','stats',false);renderWeeks()">No</button>
+        </div></div>
+      <div class="full"><span class="mini-label">Manipulatives</span>
+        <input type="text" value="${esc(s.manip)}" placeholder="e.g. place value counters, fraction strips, Dienes" oninput="editLesson('${s.key}','manip',this.value)"></div>
+      <div class="full"><span class="mini-label">Notes</span>
+        <input type="text" value="${esc(s.notes)}" placeholder="optional" oninput="editLesson('${s.key}','notes',this.value)"></div>
+    </div>
+  </div>`;
+}
+
+// ── Collect / export ───────────────────────────────────────────────────────
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
+function autoTitle() {
+  const topics = [...new Set(S.blocks.map(b => b.topic).filter(Boolean))];
+  const start = S.term && S.week ? `T${S.term}W${S.week}` : '';
+  return `${S.year ? 'Year ' + yearNum(S.year) : ''} Maths${start ? ', ' + start : ''}${topics.length ? ': ' + topics.join(', ') : ''}`;
+}
+function collect() {
+  const weeks = weekList();
+  const slots = lessonSlots();
+  const title = S.title.trim() || autoTitle();
+  const txwy = S.term && S.week ? `T${S.term}W${S.week}` : null;
+  return {
+    brief_type: 'maths',
+    form_version: FORM_VERSION,
+    tool_version: TOOL_VERSION,
+    created: new Date().toISOString().slice(0, 10),
+    year_group: S.year,
+    classes: S.classes.slice(),
+    title,
+    slug: slugify(S.blocks.map(b => b.topic).filter(Boolean).join(' ') || 'maths'),
+    start_term: S.term ? parseInt(S.term) : null,
+    start_week: S.week ? parseInt(S.week) : null,
+    txwy,
+    weeks: S.weeks,
+    term_dates_source: termSource === 'api' ? 'wfa_api' : 'typed',
+    default_lesson_days: DAYS.filter(([d]) => S.days.includes(d)).map(([, f]) => f),
+    blocks: S.blocks.map((b, i) => ({
+      id: b.id,
+      order: i + 1,
+      label_topic: b.topic,
+      title: b.title.trim() || null,
+      lessons: parseInt(b.lessons) || 0,
+      nc_objectives: b.objectives.map(id => ({ id, text: objText(id) })),
+      small_steps: lines(b.steps),
+      prior_learning: b.prior.trim(),
+      misconceptions: lines(b.misconceptions),
+      levels: {
+        bands: lowerYears(S.year).filter(l => b.bands[l]).map(l => ({
+          level: l,
+          nc_objectives: b.bands[l].objectives.map(id => ({ id, text: objText(id) })),
+          note: b.bands[l].note.trim(),
+        })),
+        adapted_note: b.adaptedNote.trim(),
+        overrides: b.overrides.filter(o => o.initials).map(o => ({ initials: o.initials, level: o.level })),
+      },
+    })),
+    weeks_detail: weeks.map(wk => {
+      const used = daysFor(wk.txwy);
+      return {
+        week_index: wk.index,
+        txwy: wk.txwy,
+        monday: iso(wk.monday),
+        lesson_days: DAYS.filter(([d]) => used.includes(d)).map(([, f]) => f),
+        days_dropped: DAYS.filter(([d]) => S.days.includes(d) && !used.includes(d)).map(([, f]) => f),
+        days_dropped_reason: (S.weekReasons[wk.txwy] || '').trim(),
+        rapid_maths_focus: (S.rapid[wk.txwy] || '').trim(),
+      };
+    }),
+    lessons: slots.map(s => ({
+      lesson: s.lesson,
+      week: s.txwy,
+      weekIndex: s.weekIndex,
+      day: s.day,
+      date: iso(s.date),
+      block: s.block,
+      labelTopic: s.topic,
+      focus: (s.focus || '').trim(),
+      small_step_index: s.focus === s.focusDefault && s.focusDefault ? s.stepIndex : null,
+      lp_type: s.lp,
+      statistics: !!s.stats,
+      manipulatives: s.manip.trim(),
+      notes: s.notes.trim(),
+    })),
+    notes: S.notes.trim(),
+  };
+}
+function renderReview() {
+  const d = collect();
+  const row = (l, v) => `<div class="rv-row"><span class="rv-lbl">${esc(l)}</span><span>${v}</span></div>`;
+  let h = `<div class="rv-section"><h3>Basics</h3>
+    ${row('Title', esc(d.title))}
+    ${row('Year group', esc(d.year_group) + (d.classes.length ? ' · ' + esc(d.classes.join(', ')) : ''))}
+    ${row('Weeks', esc(d.weeks_detail.map(w => w.txwy).join(', ')) || '<em>not set</em>')}
+    ${row('Usual days', esc(d.default_lesson_days.join(', ')))}
+    ${row('Term dates', d.term_dates_source === 'wfa_api' ? 'from the WFA database' : 'typed by hand')}</div>`;
+  h += `<div class="rv-section"><h3>Blocks</h3>${d.blocks.map(b => row(`Block ${b.order}`,
+    `${esc(b.title || b.label_topic)} · ${b.lessons} lessons · ${b.nc_objectives.length} objectives · ${b.small_steps.length} small steps` +
+    (b.levels.bands.length ? ` · levels ${esc(b.levels.bands.map(x => x.level).join(', '))}` : '') +
+    (b.levels.overrides.length ? ` · ${b.levels.overrides.length} change(s) by initials` : ''))).join('') || '<em>none</em>'}</div>`;
+  const missing = d.lessons.filter(l => !l.focus).length;
+  h += `<div class="rv-section"><h3>Lessons (${d.lessons.length})</h3>
+    ${missing ? `<div class="warnmsg" style="margin-bottom:0.6rem">${missing} lesson(s) have no focus yet. Claude will suggest one from the block's objectives.</div>` : ''}
+    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Focus</th><th>LP</th><th>Stats</th></tr>
+    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${esc(l.labelTopic)}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.lp_type}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
+    </table></div></div>`;
+  const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
+  if (dropped.length) h += `<div class="rv-section"><h3>Days dropped</h3>${dropped.map(w => row(w.txwy, esc(w.days_dropped.join(', ')) + (w.days_dropped_reason ? ' (' + esc(w.days_dropped_reason) + ')' : ''))).join('')}</div>`;
+  $('reviewContent').innerHTML = h;
+}
+function buildPrompt(d) {
+  const L = [];
+  L.push(`Maths brief: ${d.title}`);
+  L.push(`Brief file: maths_brief_${d.slug}_${d.txwy || 'undated'}.json (from the Maths Briefing Tool v${TOOL_VERSION})`);
+  L.push('');
+  L.push('Work in ~/projects/maths-builder. Read CLAUDE.md first, then follow "Phase 1: plan the term" from a brief:');
+  L.push('1. Read the brief JSON (I will attach it or it is in plan/briefs/).');
+  L.push('2. Write the plan summary (lesson by lesson) for me to check. Do not write any plan JSON yet.');
+  L.push('3. After I approve the summary, write plan/maths_plan_v4.json in the v3 shape and run setup_env.py with it.');
+  L.push('');
+  L.push(`Year group ${d.year_group}, classes ${d.classes.join(', ') || '(none chosen)'}; ${d.weeks} week(s) from ${d.txwy || '?'}; ${d.lessons.length} lessons.`);
+  d.blocks.forEach(b => {
+    L.push('');
+    L.push(`Block ${b.order}: ${b.title || b.label_topic} (${b.label_topic}, ${b.lessons} lessons)`);
+    if (b.nc_objectives.length) L.push(`  Objectives: ${b.nc_objectives.map(o => o.id).join(', ')}`);
+    if (b.small_steps.length) L.push(`  Small steps: ${b.small_steps.join(' | ')}`);
+    if (b.prior_learning) L.push(`  Prior learning: ${b.prior_learning}`);
+    if (b.misconceptions.length) L.push(`  Misconceptions: ${b.misconceptions.join(' | ')}`);
+    if (b.levels.bands.length) L.push(`  Levels: ${b.levels.bands.map(x => x.level).join(', ')}`);
+  });
+  const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
+  if (dropped.length) { L.push(''); L.push('Days with no maths: ' + dropped.map(w => `${w.txwy} ${w.days_dropped.join('/')}${w.days_dropped_reason ? ' (' + w.days_dropped_reason + ')' : ''}`).join('; ')); }
+  if (d.notes) { L.push(''); L.push('Notes: ' + d.notes); }
+  return L.join('\n');
+}
+function downloadJSON() {
+  const d = collect();
+  const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `maths_brief_${d.slug || 'draft'}_${d.txwy || 'undated'}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function copyPrompt(ev) {
+  const btn = ev.target;
+  navigator.clipboard.writeText(buildPrompt(collect())).then(() => {
+    const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = orig, 2500);
+  });
+}
+
+// ── Persistence ────────────────────────────────────────────────────────────
+let _saveTimer = null, _savedState = null, _draftPending = false;
+function saveState() {
+  if (_draftPending) return;   // never overwrite a draft before the person chooses resume or fresh
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, S, blockSeq })); } catch (e) {}
+    const ind = $('save-indicator');
+    if (ind) { ind.style.opacity = '1'; clearTimeout(ind._t); ind._t = setTimeout(() => { ind.style.opacity = '0'; }, 1800); }
+  }, 500);
+}
+function checkForSavedDraft() {
+  try { _savedState = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { _savedState = null; }
+  if (!_savedState || !_savedState.S) return;
+  const s = _savedState.S;
+  const label = (s.title || [s.year, s.term && s.week ? `T${s.term}W${s.week}` : '', (s.blocks || []).map(b => b.topic).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) || '(untitled)';
+  $('draftBannerLabel').textContent = label;
+  $('draftBanner').classList.add('show');
+  _draftPending = true;
+}
+function resumeDraft() {
+  S = Object.assign(freshState(), _savedState.S);
+  blockSeq = _savedState.blockSeq || (S.blocks.length + 1);
+  _draftPending = false;
+  $('draftBanner').classList.remove('show');
+  renderBasics(); go(1);
+}
+function discardDraft() {
+  try { localStorage.removeItem(LS_KEY); } catch (e) {}
+  _savedState = null; _draftPending = false;
+  $('draftBanner').classList.remove('show');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+checkForSavedDraft();
+renderBar();
+renderBasics();
+renderCalendarStatus();
+loadTermDates();
+</script>
+</body>
+</html>
