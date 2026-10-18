@@ -7,58 +7,66 @@
   <title>Tools — IM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     /* ── Tokens ─────────────────────────────────────────── */
     :root {
-      --bg:        #F4F5F7;
+      --bg:        #F6F5F1;
       --surface:   #FFFFFF;
-      --border:    #DDE1EB;
-      --text:      #1A2030;
-      --muted:     #7A8499;
-      --accent:    #2E5F8A;
-      --accent-lo: #EBF1F8;
-      --chip-bg:   #ECEEF3;
-      --chip-txt:  #5C6880;
-      --shadow:    rgba(26, 32, 48, 0.07);
+      --border:    #E4E2DA;
+      --border-hi: #CFCCC1;
+      --text:      #1C1F26;
+      --muted:     #6B6F78;
+      --faint:     #9A9DA4;
+      --accent:    #1F5A8C;
+      --shadow:    rgba(28, 31, 38, 0.06);
+      --shadow-hi: rgba(28, 31, 38, 0.10);
+
+      /* category colours: ink + tint */
+      --c-blue:   #1F5A8C; --t-blue:   #E6EEF6;
+      --c-green:  #2F6E4F; --t-green:  #E5F0E9;
+      --c-amber:  #9A5B12; --t-amber:  #F7EEDF;
+      --c-plum:   #6B3F7A; --t-plum:   #F0E8F3;
+      --c-teal:   #1D6B70; --t-teal:   #E2F0F0;
+      --c-rose:   #A23E48; --t-rose:   #F7E6E7;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg:        #0F1520;
-        --surface:   #192030;
-        --border:    #242E42;
-        --text:      #DEE5F2;
-        --muted:     #7A8AA8;
-        --accent:    #5090C0;
-        --accent-lo: #152030;
-        --chip-bg:   #1D2840;
-        --chip-txt:  #8099BF;
+      :root:not([data-theme="light"]) {
+        --bg:        #121418;
+        --surface:   #1A1D23;
+        --border:    #2A2E36;
+        --border-hi: #3A3F49;
+        --text:      #E8E9EC;
+        --muted:     #9CA0A9;
+        --faint:     #6E727B;
+        --accent:    #7FB2E0;
         --shadow:    rgba(0, 0, 0, 0.25);
+        --shadow-hi: rgba(0, 0, 0, 0.40);
+        --c-blue:  #8DBBE6; --t-blue:  #1D2A38;
+        --c-green: #8CCBA8; --t-green: #1C2B24;
+        --c-amber: #E2B276; --t-amber: #2E2619;
+        --c-plum:  #C9A3D6; --t-plum:  #2A2130;
+        --c-teal:  #85CBCF; --t-teal:  #1A2B2C;
+        --c-rose:  #E79AA2; --t-rose:  #301E21;
       }
     }
     :root[data-theme="dark"] {
-      --bg:        #0F1520;
-      --surface:   #192030;
-      --border:    #242E42;
-      --text:      #DEE5F2;
-      --muted:     #7A8AA8;
-      --accent:    #5090C0;
-      --accent-lo: #152030;
-      --chip-bg:   #1D2840;
-      --chip-txt:  #8099BF;
+      --bg:        #121418;
+      --surface:   #1A1D23;
+      --border:    #2A2E36;
+      --border-hi: #3A3F49;
+      --text:      #E8E9EC;
+      --muted:     #9CA0A9;
+      --faint:     #6E727B;
+      --accent:    #7FB2E0;
       --shadow:    rgba(0, 0, 0, 0.25);
-    }
-    :root[data-theme="light"] {
-      --bg:        #F4F5F7;
-      --surface:   #FFFFFF;
-      --border:    #DDE1EB;
-      --text:      #1A2030;
-      --muted:     #7A8499;
-      --accent:    #2E5F8A;
-      --accent-lo: #EBF1F8;
-      --chip-bg:   #ECEEF3;
-      --chip-txt:  #5C6880;
-      --shadow:    rgba(26, 32, 48, 0.07);
+      --shadow-hi: rgba(0, 0, 0, 0.40);
+      --c-blue:  #8DBBE6; --t-blue:  #1D2A38;
+      --c-green: #8CCBA8; --t-green: #1C2B24;
+      --c-amber: #E2B276; --t-amber: #2E2619;
+      --c-plum:  #C9A3D6; --t-plum:  #2A2130;
+      --c-teal:  #85CBCF; --t-teal:  #1A2B2C;
+      --c-rose:  #E79AA2; --t-rose:  #301E21;
     }
 
     /* ── Reset ──────────────────────────────────────────── */
@@ -77,267 +85,333 @@
     a { color: inherit; text-decoration: none; }
     button { font-family: inherit; cursor: pointer; }
 
-    /* ── Wrapper ─────────────────────────────────────────── */
     .wrap {
-      max-width: 880px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 0 22px;
+      padding: 0 24px;
       width: 100%;
       flex: 1;
       display: flex;
       flex-direction: column;
     }
 
-    /* ── Header ─────────────────────────────────────────── */
-    header {
-      padding: 52px 0 36px;
+    /* ── Top bar ────────────────────────────────────────── */
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 22px 0;
     }
-    .identity {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+    .identity { display: flex; align-items: center; gap: 10px; }
     .badge {
-      width: 42px;
-      height: 42px;
-      border-radius: 11px;
-      background: var(--accent);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 0.95rem;
-      letter-spacing: -0.01em;
-      flex-shrink: 0;
-    }
-    .id-text { display: flex; flex-direction: column; gap: 1px; }
-    .id-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
-      line-height: 1.2;
-      color: var(--text);
-    }
-    .id-sub {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--muted);
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--text);
+      color: var(--bg);
+      display: grid; place-items: center;
+      font-weight: 600;
+      font-size: 0.8rem;
       letter-spacing: 0.02em;
     }
+    .identity span { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
     .theme-btn {
-      background: none;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 11px;
-      font-size: 1rem;
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
       color: var(--muted);
-      line-height: 1;
-      transition: border-color 0.15s, color 0.15s;
+      transition: color 0.15s, border-color 0.15s;
     }
-    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .theme-btn:hover { color: var(--text); border-color: var(--border-hi); }
     .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .theme-btn svg { width: 17px; height: 17px; }
 
-    /* ── Rule ─────────────────────────────────────────────── */
-    .rule {
-      border: none;
-      border-top: 1.5px solid var(--border);
-      margin-bottom: 36px;
+    /* ── Intro ──────────────────────────────────────────── */
+    .intro { padding: 44px 0 40px; max-width: 620px; }
+    .intro h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      line-height: 1.1;
+      letter-spacing: -0.015em;
+      margin-bottom: 14px;
+    }
+    .intro p { font-size: 1.05rem; color: var(--muted); }
+
+    /* ── Sections ───────────────────────────────────────── */
+    .section { margin-bottom: 44px; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-head h2 {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .section-head::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      transform: translateY(-3px);
     }
 
-    /* ── Grid ─────────────────────────────────────────────── */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
-      gap: 14px;
-      margin-bottom: auto;
-      padding-bottom: 52px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
     }
 
-    /* ── Card ─────────────────────────────────────────────── */
+    /* ── Card ───────────────────────────────────────────── */
     .card {
+      --c: var(--c-blue); --t: var(--t-blue);
       background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 22px 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 22px 18px;
       display: flex;
       flex-direction: column;
-      gap: 9px;
       position: relative;
-      overflow: hidden;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
-    }
-    .card::after {
-      content: '';
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 3px;
-      background: var(--accent);
-      border-radius: 12px 0 0 12px;
-      opacity: 0;
-      transition: opacity 0.15s;
+      box-shadow: 0 1px 2px var(--shadow);
+      transition: border-color 0.15s, box-shadow 0.2s, transform 0.2s;
     }
     .card:hover {
-      border-color: var(--accent);
-      box-shadow: 0 6px 24px var(--shadow);
+      border-color: var(--border-hi);
+      box-shadow: 0 10px 30px -8px var(--shadow-hi);
       transform: translateY(-2px);
     }
-    .card:hover::after { opacity: 1; }
+    .card:focus-within { border-color: var(--c); }
+    .card.green { --c: var(--c-green); --t: var(--t-green); }
+    .card.amber { --c: var(--c-amber); --t: var(--t-amber); }
+    .card.plum  { --c: var(--c-plum);  --t: var(--t-plum);  }
+    .card.teal  { --c: var(--c-teal);  --t: var(--t-teal);  }
+    .card.rose  { --c: var(--c-rose);  --t: var(--t-rose);  }
 
-    .chip {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.67rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--chip-txt);
-      background: var(--chip-bg);
-      border-radius: 5px;
-      padding: 3px 7px;
-      width: fit-content;
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--t);
+      color: var(--c);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .icon svg { width: 20px; height: 20px; }
+    .tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--c);
+      letter-spacing: 0.02em;
     }
     .card-name {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 1.25rem;
       line-height: 1.25;
-      color: var(--text);
+      letter-spacing: -0.005em;
+      margin-bottom: 8px;
       text-wrap: balance;
     }
     .card-desc {
-      font-size: 0.875rem;
+      font-size: 0.9rem;
       color: var(--muted);
-      line-height: 1.58;
+      line-height: 1.6;
       flex: 1;
     }
+    .card-foot {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .note { font-size: 0.75rem; color: var(--faint); }
     .card-link {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.83rem;
+      gap: 6px;
+      font-size: 0.86rem;
       font-weight: 600;
-      color: var(--accent);
-      margin-top: 2px;
+      color: var(--c);
       transition: gap 0.15s;
     }
-    .card-link::before { content: ''; position: absolute; inset: 0; z-index: 1; } /* whole card is clickable */
-    .card { cursor: pointer; }
-    .card-link:hover { gap: 8px; }
-    .card-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+    .card-link::before { content: ''; position: absolute; inset: 0; } /* whole card clickable */
+    .card:hover .card-link { gap: 9px; }
+    .card-link:focus-visible { outline: none; }
+    .card-link svg { width: 14px; height: 14px; }
 
-    /* ── Footer ──────────────────────────────────────────── */
+    /* ── Footer ─────────────────────────────────────────── */
     footer {
-      border-top: 1.5px solid var(--border);
-      padding: 16px 0 24px;
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 18px 0 28px;
       display: flex;
       justify-content: space-between;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      color: var(--muted);
-      letter-spacing: 0.02em;
+      font-size: 0.78rem;
+      color: var(--faint);
     }
 
-    /* ── Responsive ──────────────────────────────────────── */
-    @media (max-width: 500px) {
-      header { flex-direction: column; align-items: flex-start; gap: 14px; padding-top: 36px; }
+    @media (max-width: 560px) {
+      .wrap { padding: 0 16px; }
+      .intro { padding: 24px 0 28px; }
       .grid { grid-template-columns: 1fr; }
+      .section { margin-bottom: 34px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .card, .card-link, .card::after { transition: none; }
+      .card, .card-link { transition: none; }
+      .card:hover { transform: none; }
     }
   </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
+  <div class="topbar">
     <div class="identity">
       <div class="badge">IM</div>
-      <div class="id-text">
-        <span class="id-title">Personal Tools</span>
-        <span class="id-sub">imcl75.github.io</span>
-      </div>
+      <span>Personal tools</span>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle colour scheme">◐</button>
-  </header>
-
-  <hr class="rule">
-
-  <div class="grid">
-
-    <div class="card">
-      <span class="chip">filesystem</span>
-      <div class="card-name">Folder Creator</div>
-      <p class="card-desc">Build nested folder structures with numbered or named levels. Set different subjects at different depths — then create everything in one go or download a shell script.</p>
-      <a class="card-link" href="folder-creator/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="card">
-      <span class="chip">AI tools</span>
-      <div class="card-name">Image Prompt Builder</div>
-      <p class="card-desc">Assemble prompts for DALL-E, Higgsfield and Excalidraw. Pick options with pill selectors, get a ready-to-copy prompt or Claude instruction — including diversity clause builder.</p>
-      <a class="card-link" href="prompt-builder/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="card">
-      <span class="chip">enquiry builder</span>
-      <div class="card-name">Enquiry Briefing Tool</div>
-      <p class="card-desc">Fill in the details of a new enquiry — subject, key question, outcomes, schedule and logistics. Generates a structured brief to hand to Claude for full MTP and deliverable creation.</p>
-      <a class="card-link" href="enquiry-form/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="card">
-      <span class="chip">print</span>
-      <div class="card-name">PDF Tiler</div>
-      <p class="card-desc">Tile any A4 PDF across 2 or 4 A3 sheets to print it at up to 2.8× its original size. Set the glue overlap, add alignment marks, and get an assembly instructions page — all in the browser, nothing uploaded.</p>
-      <a class="card-link" href="pdf-tiler/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-
-    <div class="card">
-      <span class="chip">certificates</span>
-      <div class="card-name">CG &amp; Hot Chocolate Friday Certificates</div>
-      <p class="card-desc">Schedule Celebration Gathering certificates by term and week, shift everything along when a week is missed, and download a week's certificates as a PowerPoint. A second tab prints Hot Chocolate Friday A7 certificates, four to an A4 sheet.</p>
-      <a class="card-link" href="cg-certificate/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="card">
-      <span class="chip">conferences</span>
-      <div class="card-name">FLC Builder</div>
-      <p class="card-desc">Make every child's Family Learning Conference page in one go. Paste in grades, attendance and pupil voice, tidy the children's comments, pick targets from a bank matched to each child's DOOYA, then print one A4 page per child. Nothing leaves this computer.</p>
-      <a class="card-link" href="flc-builder/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="card">
-      <span class="chip">classroom</span>
-      <div class="card-name">Seating Plan</div>
-      <p class="card-desc">Drag children between seats (no one can be seated twice), set up pairs and trios in two tones of your year-group colour, add "keep apart" rules that flag clashes, and reshape the room whenever it changes. Names stay in this browser only.</p>
-      <a class="card-link" href="seating-plan/">
-        Open <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Switch light or dark mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
   </div>
 
+  <header class="intro">
+    <h1>Tools for the classroom</h1>
+    <p>Small, browser-based helpers for planning, printing and running the class.</p>
+  </header>
+
+  <!-- ── Classroom ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head"><h2>Classroom &amp; pupils</h2></div>
+    <div class="grid">
+
+      <div class="card green">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="4" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/></svg></div>
+          <span class="tag">Classroom</span>
+        </div>
+        <div class="card-name">Seating Plan</div>
+        <p class="card-desc">Drag children between seats (no one can be seated twice), set up pairs and trios in two tones of your year-group colour, add "keep apart" rules that flag clashes, and reshape the room whenever it changes.</p>
+        <div class="card-foot">
+          <span class="note">Names stay in this browser</span>
+          <a class="card-link" href="seating-plan/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="card teal">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6M18 19a5 5 0 0 0-2.5-4.3"/></svg></div>
+          <span class="tag">Conferences</span>
+        </div>
+        <div class="card-name">FLC Builder</div>
+        <p class="card-desc">Make every child's Family Learning Conference page in one go. Paste in grades, attendance and pupil voice, tidy the children's comments, pick targets matched to each child's DOOYA, then print one A4 page per child.</p>
+        <div class="card-foot">
+          <span class="note">No pupil names sent</span>
+          <a class="card-link" href="flc-builder/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="card rose">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="M8.8 13 7.5 21l4.5-2.5 4.5 2.5-1.3-8"/></svg></div>
+          <span class="tag">Certificates</span>
+        </div>
+        <div class="card-name">CG &amp; Hot Chocolate Friday Certificates</div>
+        <p class="card-desc">Schedule Celebration Gathering certificates by term and week, shift everything along when a week is missed, and download a week's certificates as a PowerPoint. A second tab prints Hot Chocolate Friday A7 certificates, four to an A4 sheet.</p>
+        <div class="card-foot">
+          <span class="note">PowerPoint &amp; print</span>
+          <a class="card-link" href="cg-certificate/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Planning ────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head"><h2>Planning &amp; AI</h2></div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5h6v2.5H9zM8.5 11h7M8.5 15h4.5"/></svg></div>
+          <span class="tag">Enquiry Builder</span>
+        </div>
+        <div class="card-name">Enquiry Briefing Tool</div>
+        <p class="card-desc">Fill in the details of a new enquiry — subject, key question, outcomes, schedule and logistics. Generates a structured brief to hand to Claude for the full MTP and deliverables.</p>
+        <div class="card-foot">
+          <span class="note">Makes a brief for Claude</span>
+          <a class="card-link" href="enquiry-form/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="card plum">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 15.5-4.5-4.5-8.5 8.5"/></svg></div>
+          <span class="tag">AI images</span>
+        </div>
+        <div class="card-name">Image Prompt Builder</div>
+        <p class="card-desc">Assemble prompts for DALL-E, Higgsfield and Excalidraw. Pick options with pill selectors and get a ready-to-copy prompt or Claude instruction — including a diversity clause builder.</p>
+        <div class="card-foot">
+          <span class="note">Copy-ready prompts</span>
+          <a class="card-link" href="prompt-builder/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Files & print ───────────────────────────────── -->
+  <section class="section">
+    <div class="section-head"><h2>Files &amp; printing</h2></div>
+    <div class="grid">
+
+      <div class="card amber">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/></svg></div>
+          <span class="tag">Print</span>
+        </div>
+        <div class="card-name">PDF Tiler</div>
+        <p class="card-desc">Tile any A4 PDF across 2 or 4 A3 sheets to print it at up to 2.8× its original size. Set the glue overlap, add alignment marks, and get an assembly instructions page.</p>
+        <div class="card-foot">
+          <span class="note">Runs in the browser</span>
+          <a class="card-link" href="pdf-tiler/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/></svg></div>
+          <span class="tag">Folders</span>
+        </div>
+        <div class="card-name">Folder Creator</div>
+        <p class="card-desc">Build nested folder structures with numbered or named levels. Set different subjects at different depths — then create everything in one go or download a shell script.</p>
+        <div class="card-foot">
+          <span class="note">Create or download script</span>
+          <a class="card-link" href="folder-creator/">Open <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5 12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <footer>
-    <span>16.10.26c</span>
-    <span>personal use only</span>
+    <span>Personal use only</span>
+    <span>18.10.26a</span>
   </footer>
 
 </div>
@@ -345,8 +419,9 @@
   function toggleTheme() {
     const root = document.documentElement;
     const current = root.getAttribute('data-theme');
-    const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    root.setAttribute('data-theme', current ? (current === 'dark' ? 'light' : 'dark') : (sys === 'dark' ? 'light' : 'dark'));
+    const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = current ? current === 'dark' : sysDark;
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
   }
 </script>
 </body>
