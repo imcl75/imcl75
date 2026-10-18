@@ -152,6 +152,26 @@
     section { display: none; }
     section.active { display: block; }
 
+    /* Quick / full switch */
+    .mode-bar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .mode-bar .toggle button { padding: 0.5rem 1rem; font-size: 0.85rem; }
+    .mode-bar .hint { margin: 0; flex: 1; min-width: 200px; }
+    body.quick #stepBar { display: none; }
+    .claude-fills { display: inline-block; font-size: 0.7rem; font-weight: 600; color: #6d28d9; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 20px; padding: 0.05rem 0.5rem; margin-left: 0.35rem; vertical-align: middle; }
+    .qblock { display: grid; grid-template-columns: 2fr 5.5rem 2fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .qblock-head { font-size: 0.72rem; font-weight: 600; color: #4b5563; }
+    .compact-lessons { list-style: none; margin-top: 0.4rem; }
+    .compact-lessons li { display: grid; grid-template-columns: 4.6rem 6.2rem 1fr; gap: 0.5rem; font-size: 0.8rem; padding: 0.3rem 0; border-top: 1px solid #f0f2f5; }
+    .compact-lessons li span:first-child { font-weight: 700; color: var(--wfa-dark); }
+    .compact-lessons .muted { color: var(--muted); }
+    .week-head .btn-small { margin-left: auto; }
+    @media (max-width: 620px) {
+      .qblock { grid-template-columns: 1fr 4.5rem auto; }
+      .qblock .qname { grid-column: 1 / -1; grid-row: 2; }
+      .qblock-head { display: none; }
+      .compact-lessons li { grid-template-columns: 3.6rem 5.4rem 1fr; }
+    }
+
     @media (max-width: 620px) {
       .container { padding: 0 16px 4rem; margin-top: 1.25rem; }
       .card { padding: 1.1rem; }
@@ -168,7 +188,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v18.10.26a</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v18.10.26b</span></p>
 </header>
 
 <div class="container">
@@ -179,14 +199,79 @@
       <button class="btn-primary" type="button" onclick="resumeDraft()">Resume draft</button>
     </div>
   </div>
+  <div class="mode-bar">
+    <div class="toggle" id="modeToggle">
+      <button type="button" data-mode="quick" onclick="setMode('quick')">Quick brief</button>
+      <button type="button" data-mode="full" onclick="setMode('full')">Full brief</button>
+    </div>
+    <span class="hint" id="modeHint"></span>
+  </div>
   <div class="steps" id="stepBar"></div>
 
+  <!-- ── Quick brief: one screen ─────────────────────────────────────── -->
+  <section id="sQ">
+    <div class="card">
+      <h2>Quick brief</h2>
+      <p class="subtitle">Only the essentials. Claude suggests everything else (objectives, small steps, misconceptions, paper or book) in the plan summary, which you check before anything is built.</p>
+      <div id="basicsSlotQuick"></div>
+    </div>
+    <div class="card">
+      <h2>Blocks</h2>
+      <p class="subtitle">One line per topic, in teaching order.</p>
+      <div id="quickBlocks"></div>
+      <button class="btn-add btn-small" type="button" onclick="addBlock()">+ Add a block</button>
+      <div id="quickLessonCountMsg"></div>
+      <div class="errmsg" id="e_qblocks">Every block needs a topic and at least one lesson.</div>
+      <div class="field" style="margin-top:1.1rem">
+        <label class="field-label" for="q_prior">Prior learning <span class="optional">(optional)</span></label>
+        <textarea id="q_prior" rows="3" placeholder="e.g. Year 4 fractions secure for most; place value to 10,000 taught in Term 1"></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Lessons</h2>
+      <p class="subtitle">Dated from the term dates. Tap a day to drop it (INSET, a trip). Switch to the full brief to set a lesson's focus or paper.</p>
+      <div id="quickWeeks"></div>
+    </div>
+    <div class="card">
+      <h2>Rapid Maths and levels</h2>
+      <div class="field">
+        <span class="field-label">Rapid Maths topics</span>
+        <div class="pill-group" id="quickRapid"></div>
+        <span class="hint">For every week of this brief. Place Value is always included.</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Levels</span>
+        <div class="pill-group" id="quickLevels"></div>
+        <span class="hint" id="quickLevelsHint"></span>
+      </div>
+      <div class="field">
+        <label class="field-label" for="q_notes">Notes for Claude <span class="optional">(optional)</span></label>
+        <textarea id="q_notes" rows="3" placeholder="e.g. assessment week after block 2; use bar models for fractions"></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Export</h2>
+      <div id="quickSummary" class="hint" style="margin-bottom:0.9rem"></div>
+      <div class="btn-row" style="margin-bottom:0.6rem">
+        <button class="btn-primary" onclick="if(validateQuick())downloadJSON()">⬇ Download brief JSON</button>
+        <button class="btn-gold" onclick="if(validateQuick())copyPrompt(event)">⎘ Copy Claude prompt</button>
+      </div>
+      <span class="hint">Save the file into <code>~/projects/maths-builder/plan/briefs/</code>, then paste the prompt into Claude Code. Claude writes a plan summary for you to check; nothing is built until you approve it.</span>
+    </div>
+  </section>
+
   <!-- ── Step 1: Basics ──────────────────────────────────────────────── -->
-  <section id="s1" class="active">
+  <section id="s1">
     <div class="card">
       <h2>Maths basics</h2>
       <p class="subtitle">Which year group, which weeks, and which days have maths.</p>
+      <div id="basicsSlotFull"></div>
+    </div>
+    <div class="nav"><span></span><button class="btn-primary" onclick="next(1)">Next →</button></div>
+  </section>
 
+  <!-- The basics fields live once and move between the quick and full screens. -->
+  <div id="basicsCore">
       <div class="field">
         <span class="field-label">Year group</span>
         <div class="pill-group" id="yearPills"></div>
@@ -224,17 +309,19 @@
       <div class="field">
         <span class="field-label">Usual maths days</span>
         <div class="pill-group" id="dayPills"></div>
-        <span class="hint">Monday, Tuesday, Wednesday and Friday unless the timetable changes. You can drop a day in any single week (INSET, a trip) on the Weeks step.</span>
+        <span class="hint">Monday, Tuesday, Wednesday and Friday unless the timetable changes. You can drop a day in any single week (INSET, a trip) below.</span>
       </div>
-    </div>
-    <div class="nav"><span></span><button class="btn-primary" onclick="next(1)">Next →</button></div>
-  </section>
+  </div>
 
   <!-- ── Step 2: Blocks ──────────────────────────────────────────────── -->
   <section id="s2">
     <div class="card">
       <h2>Blocks</h2>
-      <p class="subtitle">A block is one topic taught over a run of lessons. Add them in teaching order.</p>
+      <p class="subtitle">A block is one topic taught over a run of lessons. Add them in teaching order. Only the topic and number of lessons are needed: anything marked <span class="claude-fills">Claude suggests</span> can be left blank.</p>
+      <div class="field">
+        <label class="field-label" for="f_prior">Prior learning for the whole brief <span class="claude-fills">Claude suggests</span></label>
+        <textarea id="f_prior" rows="2" placeholder="e.g. Year 4 fractions secure for most; place value to 10,000 taught in Term 1"></textarea>
+      </div>
       <div id="blocksContainer"></div>
       <button class="btn-add btn-small" type="button" onclick="addBlock()">+ Add a block</button>
       <div id="lessonCountMsg"></div>
@@ -252,6 +339,10 @@
         <strong>No names on this page</strong>
         Each child's usual maths level (S, A, or working at an earlier year) is kept in the private class list the builders read. Here you say which earlier-year levels each block needs, what each level works on, and any child whose level is different for this block only, by initials.
       </div>
+      <div class="field">
+        <span class="field-label">Are the levels for these blocks the same as the class list?</span>
+        <div class="pill-group" id="fullLevels"></div>
+      </div>
       <div id="levelsContainer"></div>
     </div>
     <div class="nav"><button class="btn-sec" onclick="prev(3)">← Back</button><button class="btn-primary" onclick="next(3)">Next →</button></div>
@@ -261,7 +352,12 @@
   <section id="s4">
     <div class="card">
       <h2>Weeks and lessons</h2>
-      <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson starts from its block's next small step; change anything.</p>
+      <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson takes its block's next small step; open "Adjust lessons" only if you want to set a focus, the paper type or manipulatives yourself.</p>
+      <div class="field">
+        <span class="field-label">Rapid Maths topics</span>
+        <div class="pill-group" id="fullRapid"></div>
+        <span class="hint">For every week of this brief. Place Value is always included. A week that needs something different can say so in its note below.</span>
+      </div>
       <div id="weeksContainer"></div>
     </div>
     <div class="nav"><button class="btn-sec" onclick="prev(4)">← Back</button><button class="btn-primary" onclick="next(4)">Next →</button></div>
@@ -307,8 +403,10 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '18.10.26a';
-const FORM_VERSION = '1.0';
+const TOOL_VERSION = '18.10.26b';
+const FORM_VERSION = '1.1';
+// The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
+const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
 
 // Term dates come from the WFA database (the one source of truth), read with
@@ -600,9 +698,11 @@ let blockSeq = 1;
 
 function freshState() {
   return {
+    mode: 'quick',
     year: 'Y5', classes: ['5IM','5LS'], title: '', term: '', week: '', weeks: 1,
     days: DEFAULT_DAYS.slice(), blocks: [], weekDays: {}, weekReasons: {}, manualMondays: {},
-    rapid: {}, lessonEdits: {}, notes: '',
+    rapid: {}, rapidTopics: ['Place Value'], lessonEdits: {}, openWeeks: {},
+    levelsSame: true, prior: '', notes: '',
   };
 }
 function newBlock() {
@@ -645,6 +745,7 @@ async function loadTermDates() {
   }
   renderTermSelects();
   renderCalendarStatus();
+  afterBasicsChange();
 }
 function renderCalendarStatus() {
   const el = $('calendarStatus');
@@ -736,13 +837,89 @@ function renderBar() {
     bar.appendChild(el);
   });
 }
+// ── Quick / full mode ──────────────────────────────────────────────────────
+function setMode(m) {
+  S.mode = m; saveState();
+  applyMode();
+}
+function applyMode() {
+  const quick = S.mode === 'quick';
+  document.body.classList.toggle('quick', quick);
+  document.querySelectorAll('#modeToggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
+  $('modeHint').textContent = quick
+    ? 'One screen: dates, topics and lesson counts. Claude suggests the rest for you to check.'
+    : 'Six steps: set objectives, small steps, levels and each lesson yourself. Anything left blank, Claude suggests.';
+  $(quick ? 'basicsSlotQuick' : 'basicsSlotFull').appendChild($('basicsCore'));
+  if (quick) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    $('sQ').classList.add('active');
+    renderQuick();
+  } else {
+    go(current || 1);
+  }
+}
+function renderQuick() {
+  $('quickBlocks').innerHTML = (S.blocks.length ? `<div class="qblock"><span class="qblock-head">Topic</span><span class="qblock-head">Lessons</span><span class="qblock-head">Name (optional)</span><span></span></div>` : '<p class="hint" style="margin-bottom:0.6rem">No blocks yet.</p>') +
+    S.blocks.map((b, i) => `<div class="qblock">
+      <select aria-label="Block ${i + 1} topic" onchange="setBlock('${b.id}','topic',this.value,true)" class="${!b.topic ? 'err' : ''}">
+        <option value="">Block ${i + 1} topic…</option>
+        ${LABEL_TOPICS.map(t => `<option ${b.topic === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+      </select>
+      <input type="number" aria-label="Block ${i + 1} lessons" min="1" max="40" value="${esc(b.lessons)}" oninput="setBlock('${b.id}','lessons',parseInt(this.value)||0)">
+      <input type="text" class="qname" aria-label="Block ${i + 1} name" value="${esc(b.title)}" placeholder="e.g. mixed numbers and improper fractions" oninput="setBlock('${b.id}','title',this.value)">
+      <button class="btn-rm" type="button" onclick="removeBlock('${b.id}')" title="Remove block">✕</button>
+    </div>`).join('');
+  $('q_prior').value = S.prior;
+  $('q_notes').value = S.notes;
+  renderRapid('quickRapid');
+  renderLevelsQuestion('quickLevels');
+  $('quickLevelsHint').textContent = S.levelsSame
+    ? 'Each child keeps their usual level from the class list.'
+    : 'Choose the levels per block on the Levels step of the full brief.';
+  renderLessonCount();
+  renderWeeks();
+}
+function validateQuick() {
+  const badWhen = !S.term || !S.week || !(S.weeks > 0);
+  $('e_when').classList.toggle('show', badWhen);
+  const badBlocks = !S.blocks.length || S.blocks.some(b => !b.topic || !(parseInt(b.lessons) > 0));
+  $('e_qblocks').classList.toggle('show', badBlocks);
+  if (badWhen || badBlocks) { (badWhen ? $('e_when') : $('e_qblocks')).scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function renderRapid(id) {
+  $(id).innerHTML = RAPID_TOPICS.map(t => {
+    const on = t === 'Place Value' || S.rapidTopics.includes(t);
+    return `<div class="pill${on ? ' on' : ''}" ${t === 'Place Value' ? 'title="Always included"' : `onclick="toggleRapid('${t}')"`}>${esc(t)}</div>`;
+  }).join('');
+}
+function toggleRapid(t) {
+  S.rapidTopics = S.rapidTopics.includes(t) ? S.rapidTopics.filter(x => x !== t) : [...S.rapidTopics, t];
+  saveState(); renderRapid(S.mode === 'quick' ? 'quickRapid' : 'fullRapid');
+}
+function renderLevelsQuestion(id) {
+  $(id).innerHTML = `<div class="pill${S.levelsSame ? ' on' : ''}" onclick="setLevelsSame(true)">Same as the class list</div>
+    <div class="pill${!S.levelsSame ? ' on' : ''}" onclick="setLevelsSame(false)">Some blocks need changes</div>`;
+}
+function setLevelsSame(v) {
+  S.levelsSame = v; saveState();
+  if (S.mode === 'quick') {
+    if (!v) { S.mode = 'full'; current = 3; applyMode(); return; }
+    renderQuick();
+  } else renderLevels();
+}
+function afterBasicsChange() {
+  if (S.mode === 'quick') { renderLessonCount(); renderWeeks(); }
+}
+
 function go(n) {
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   $('s' + n).classList.add('active');
   current = n; renderBar();
-  if (n === 2) renderBlocks();
+  if (n === 2) { $('f_prior').value = S.prior; renderBlocks(); }
   if (n === 3) renderLevels();
-  if (n === 4) renderWeeks();
+  if (n === 4) { renderRapid('fullRapid'); renderWeeks(); }
+  if (n === 5) $('f_notes').value = S.notes;
   if (n === 6) { renderReview(); $('promptPreview').textContent = buildPrompt(collect()); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -766,7 +943,6 @@ function renderBasics() {
   $('dayPills').innerHTML = DAYS.map(([d, full]) => `<div class="pill${S.days.includes(d) ? ' on' : ''}" onclick="toggleDay('${d}')">${full}</div>`).join('');
   $('f_title').value = S.title;
   $('f_weeks').value = S.weeks;
-  $('f_notes').value = S.notes;
   renderTermSelects();
 }
 function setYear(y) {
@@ -776,13 +952,16 @@ function setYear(y) {
 function toggleClass(c) { S.classes = S.classes.includes(c) ? S.classes.filter(x => x !== c) : [...S.classes, c]; renderBasics(); saveState(); }
 function toggleDay(d) {
   S.days = S.days.includes(d) ? S.days.filter(x => x !== d) : DAYS.map(x => x[0]).filter(x => x === d || S.days.includes(x));
-  renderBasics(); saveState();
+  renderBasics(); saveState(); afterBasicsChange();
 }
-$('f_term').addEventListener('change', e => { S.term = e.target.value; S.week = ''; renderTermSelects(); saveState(); });
-$('f_week').addEventListener('change', e => { S.week = e.target.value; saveState(); });
-$('f_weeks').addEventListener('input', e => { S.weeks = Math.max(0, Math.min(14, parseInt(e.target.value) || 0)); saveState(); });
+$('f_term').addEventListener('change', e => { S.term = e.target.value; S.week = ''; renderTermSelects(); saveState(); afterBasicsChange(); });
+$('f_week').addEventListener('change', e => { S.week = e.target.value; saveState(); afterBasicsChange(); });
+$('f_weeks').addEventListener('input', e => { S.weeks = Math.max(0, Math.min(14, parseInt(e.target.value) || 0)); saveState(); afterBasicsChange(); });
 $('f_title').addEventListener('input', e => { S.title = e.target.value; saveState(); });
 $('f_notes').addEventListener('input', e => { S.notes = e.target.value; saveState(); });
+$('q_notes').addEventListener('input', e => { S.notes = e.target.value; saveState(); });
+$('f_prior').addEventListener('input', e => { S.prior = e.target.value; saveState(); });
+$('q_prior').addEventListener('input', e => { S.prior = e.target.value; saveState(); });
 
 // ── Step 2: blocks ─────────────────────────────────────────────────────────
 function addBlock() { S.blocks.push(newBlock()); renderBlocks(); saveState(); }
@@ -801,7 +980,7 @@ function setBlock(id, field, value, rerender) {
   b[field] = value;
   if (field === 'topic') b.showAll = false;
   saveState();
-  if (rerender) renderBlocks(); else renderLessonCount();
+  if (rerender) renderBlocks(); else { renderLessonCount(); if (S.mode === 'quick') renderWeeks(); }
 }
 function toggleObjective(id, oid) {
   const b = S.blocks.find(x => x.id === id); if (!b) return;
@@ -816,6 +995,7 @@ function objectiveList(year, domains, chosen, onToggle) {
     }).join('')).join('');
 }
 function renderBlocks() {
+  if (S.mode === 'quick') { renderQuick(); return; }
   const c = $('blocksContainer');
   if (!S.blocks.length) { c.innerHTML = '<p class="hint" style="margin-bottom:0.8rem">No blocks yet.</p>'; renderLessonCount(); return; }
   c.innerHTML = S.blocks.map((b, i) => {
@@ -847,7 +1027,7 @@ function renderBlocks() {
         <input type="text" value="${esc(b.title)}" oninput="setBlock('${b.id}','title',this.value)">
       </div>
       <div class="field">
-        <span class="field-label">National Curriculum objectives (${esc(S.year)})</span>
+        <span class="field-label">National Curriculum objectives (${esc(S.year)}) <span class="claude-fills">Claude suggests</span></span>
         <div class="row-tools">
           ${b.objectives.length} chosen
           ${hidden > 0 ? `<button class="btn-sec btn-small" type="button" onclick="setBlock('${b.id}','showAll',true,true)">Show all ${esc(S.year)} domains</button>` : ''}
@@ -857,17 +1037,17 @@ function renderBlocks() {
         ${chosenOutside.length ? `<span class="hint">Also chosen from other domains: ${chosenOutside.length}</span>` : ''}
       </div>
       <div class="field">
-        <label class="field-label">Small steps, in order <span class="optional">(one per line; one per lesson unless a step takes two)</span></label>
+        <label class="field-label">Small steps, in order <span class="claude-fills">Claude suggests</span> <span class="optional">(one per line; one per lesson unless a step takes two)</span></label>
         <textarea rows="5" oninput="setBlock('${b.id}','steps',this.value)" placeholder="e.g.&#10;Understand improper fractions&#10;Convert improper fractions to mixed numbers&#10;Convert mixed numbers to improper fractions">${esc(b.steps)}</textarea>
         <span class="hint">${lines(b.steps).length} step${lines(b.steps).length === 1 ? '' : 's'} for ${parseInt(b.lessons) || 0} lesson${b.lessons == 1 ? '' : 's'}. Lessons on the Weeks step take these in order.</span>
       </div>
       <div class="g2">
         <div class="field">
-          <label class="field-label">Prior learning</label>
+          <label class="field-label">Prior learning for this block <span class="claude-fills">Claude suggests</span></label>
           <textarea rows="4" oninput="setBlock('${b.id}','prior',this.value)" placeholder="What the class has already been taught that this builds on">${esc(b.prior)}</textarea>
         </div>
         <div class="field">
-          <label class="field-label">Likely misconceptions <span class="optional">(one per line)</span></label>
+          <label class="field-label">Likely misconceptions <span class="claude-fills">Claude suggests</span> <span class="optional">(one per line)</span></label>
           <textarea rows="4" oninput="setBlock('${b.id}','misconceptions',this.value)" placeholder="e.g. thinks a bigger denominator means a bigger fraction">${esc(b.misconceptions)}</textarea>
         </div>
       </div>
@@ -880,10 +1060,11 @@ function renderBlocks() {
 function renderLessonCount() {
   const slots = weekList().reduce((n, wk) => n + DAYS.filter(([d]) => daysFor(wk.txwy).includes(d)).length, 0);
   const planned = S.blocks.reduce((n, b) => n + (parseInt(b.lessons) || 0), 0);
-  const el = $('lessonCountMsg');
+  const el = $(S.mode === 'quick' ? 'quickLessonCountMsg' : 'lessonCountMsg');
   if (!S.blocks.length || !slots) { el.innerHTML = ''; return; }
-  if (planned === slots) el.innerHTML = `<div class="okmsg">${planned} lessons planned for ${slots} maths lessons in ${S.weeks} week${S.weeks == 1 ? '' : 's'}.</div>`;
-  else el.innerHTML = `<div class="warnmsg">The blocks add up to ${planned} lessons, but the ${S.weeks} week${S.weeks == 1 ? '' : 's'} ha${S.weeks == 1 ? 's' : 've'} ${slots} maths lessons${termSource === 'api' ? '' : ''} (before any days dropped on the Weeks step). ${planned > slots ? 'The extra lessons will not fit.' : 'The last block fills the spare lessons unless you change them.'}</div>`;
+  const wk = `${S.weeks} week${S.weeks == 1 ? '' : 's'}`;
+  if (planned === slots) el.innerHTML = `<div class="okmsg">${planned} lessons planned; ${wk} have ${slots} maths lessons.</div>`;
+  else el.innerHTML = `<div class="warnmsg">The blocks add up to ${planned} lessons, but ${wk} have ${slots} maths lessons. ${planned > slots ? 'The extra lessons will not fit: add a week, or shorten a block.' : 'The last block fills the spare lessons unless you change them.'}</div>`;
 }
 
 // ── Step 3: levels ─────────────────────────────────────────────────────────
@@ -911,8 +1092,10 @@ function setOverride(bid, i, field, value) {
 function removeOverride(bid, i) { S.blocks.find(x => x.id === bid).overrides.splice(i, 1); saveState(); renderLevels(); }
 function renderLevels() {
   const c = $('levelsContainer');
+  renderLevelsQuestion('fullLevels');
   if (!S.blocks.length) { c.innerHTML = '<p class="hint">Add a block first.</p>'; return; }
   const lower = lowerYears(S.year);
+  if (S.levelsSame) { c.innerHTML = '<p class="hint">Every child keeps their usual level from the class list. Choose "Some blocks need changes" to set levels per block.</p>'; return; }
   c.innerHTML = S.blocks.map((b, i) => `<div class="block">
     <div class="block-head"><span class="block-title">${esc(blockLabel(b, i))}</span></div>
     ${lower.length ? `<div class="field">
@@ -958,23 +1141,28 @@ function renderLevels() {
 function toggleWeekDay(txwy, d) {
   const cur = daysFor(txwy).slice();
   S.weekDays[txwy] = cur.includes(d) ? cur.filter(x => x !== d) : DAYS.map(x => x[0]).filter(x => x === d || cur.includes(x));
-  saveState(); renderWeeks();
+  saveState(); renderLessonCount(); renderWeeks();
 }
+function toggleOpenWeek(txwy) { S.openWeeks[txwy] = !S.openWeeks[txwy]; saveState(); renderWeeks(); }
 function renderWeeks() {
-  const c = $('weeksContainer');
+  const quick = S.mode === 'quick';
+  const c = $(quick ? 'quickWeeks' : 'weeksContainer');
   const weeks = weekList();
-  if (!weeks.length) { c.innerHTML = '<p class="hint">Set the start week and number of weeks on the Basics step.</p>'; return; }
-  if (!S.blocks.length) { c.innerHTML = '<p class="hint">Add at least one block first.</p>'; return; }
+  if (!weeks.length) { c.innerHTML = `<p class="hint">Set the start week and number of weeks${quick ? ' above' : ' on the Basics step'}.</p>`; return; }
+  if (!S.blocks.length) { c.innerHTML = `<p class="hint">Add at least one block${quick ? ' above' : ' first'}.</p>`; return; }
   const slots = lessonSlots();
   const planned = S.blocks.reduce((n, b) => n + (parseInt(b.lessons) || 0), 0);
   let html = '';
-  if (planned !== slots.length) html += `<div class="warnmsg" style="margin:0 0 1rem">${slots.length} maths lessons in these weeks; the blocks add up to ${planned}. ${planned > slots.length ? 'The last ' + (planned - slots.length) + ' planned lesson(s) do not fit: add a week, or shorten a block.' : 'The spare lessons go to the last block unless you change them.'}</div>`;
+  if (!quick && planned !== slots.length) html += `<div class="warnmsg" style="margin:0 0 1rem">${slots.length} maths lessons in these weeks; the blocks add up to ${planned}. ${planned > slots.length ? 'The last ' + (planned - slots.length) + ' planned lesson(s) do not fit: add a week, or shorten a block.' : 'The spare lessons go to the last block unless you change them.'}</div>`;
   html += weeks.map(wk => {
     const used = daysFor(wk.txwy);
     const dropped = S.days.filter(d => !used.includes(d));
+    const open = !quick && S.openWeeks[wk.txwy];
+    const wkSlots = slots.filter(s => s.txwy === wk.txwy);
     return `<div class="week">
       <div class="week-head"><span class="week-title">Week ${wk.index}: ${esc(wk.txwy)}</span>
-        <span class="week-sub">${wk.monday ? 'w/c ' + esc(ukDate(wk.monday)) : 'Monday not set'}</span></div>
+        <span class="week-sub">${wk.monday ? 'w/c ' + esc(ukDate(wk.monday)) : 'Monday not set'}</span>
+        ${!quick && wkSlots.length ? `<button class="btn-sec btn-small" type="button" onclick="toggleOpenWeek('${wk.txwy}')">${open ? 'Done' : 'Adjust lessons'}</button>` : ''}</div>
       <div class="week-body">
         ${wk.manual ? `<div class="field"><label class="field-label">Monday of ${esc(wk.txwy)}</label><input type="date" value="${esc(S.manualMondays[wk.txwy] || '')}" onchange="S.manualMondays['${wk.txwy}']=this.value;saveState();renderWeeks()"></div>` : ''}
         <div class="day-row">${DAYS.map(([d], di) => {
@@ -982,11 +1170,13 @@ function renderWeeks() {
           return `<div class="day-chip${on ? ' on' : ''}${!on && usual ? ' lost' : ''}" onclick="toggleWeekDay('${wk.txwy}','${d}')">${d}<small>${wk.monday ? esc(addDays(wk.monday, di).getDate() + '/' + (addDays(wk.monday, di).getMonth() + 1)) : '&nbsp;'}</small></div>`;
         }).join('')}</div>
         ${dropped.length ? `<div class="reason-row">No maths ${dropped.join(', ')} because <input type="text" value="${esc(S.weekReasons[wk.txwy] || '')}" placeholder="e.g. INSET day, Year 5 trip" oninput="S.weekReasons['${wk.txwy}']=this.value;saveState()"></div>` : ''}
-        <div class="field" style="margin-top:0.6rem">
-          <label class="field-label">Rapid Maths fluency focus this week</label>
-          <input type="text" value="${esc(S.rapid[wk.txwy] || '')}" placeholder="e.g. 6, 7 and 9 times tables; number bonds to 1" oninput="S.rapid['${wk.txwy}']=this.value;saveState()">
-        </div>
-        ${slots.filter(s => s.txwy === wk.txwy).map(s => lessonCard(s)).join('') || '<p class="hint" style="margin-top:0.6rem">No maths lessons this week.</p>'}
+        ${!quick ? `<div class="field" style="margin-top:0.6rem">
+          <label class="field-label">Rapid Maths this week <span class="optional">(only if different from the topics above)</span></label>
+          <input type="text" value="${esc(S.rapid[wk.txwy] || '')}" placeholder="e.g. add 6, 7 and 9 times tables" oninput="S.rapid['${wk.txwy}']=this.value;saveState()">
+        </div>` : ''}
+        ${!wkSlots.length ? '<p class="hint" style="margin-top:0.6rem">No maths lessons this week.</p>'
+          : open ? wkSlots.map(s => lessonCard(s)).join('')
+          : `<ul class="compact-lessons">${wkSlots.map(s => `<li><span>Lesson ${s.lesson}</span><span class="muted">${esc(s.dayShort)}${s.date ? ' ' + esc(s.date.toLocaleDateString('en-GB', { day:'numeric', month:'short' })) : ''}</span><span>${esc(s.topic) || '<em class="muted">no topic</em>'}${s.focus ? ' · ' + esc(s.focus) : ' · <span class="claude-fills">Claude suggests</span>'}</span></li>`).join('')}</ul>`}
       </div>
     </div>`;
   }).join('');
@@ -1043,6 +1233,7 @@ function collect() {
     brief_type: 'maths',
     form_version: FORM_VERSION,
     tool_version: TOOL_VERSION,
+    mode: S.mode,
     created: new Date().toISOString().slice(0, 10),
     year_group: S.year,
     classes: S.classes.slice(),
@@ -1054,6 +1245,10 @@ function collect() {
     weeks: S.weeks,
     term_dates_source: termSource === 'api' ? 'wfa_api' : 'typed',
     default_lesson_days: DAYS.filter(([d]) => S.days.includes(d)).map(([, f]) => f),
+    prior_learning: S.prior.trim(),
+    rapid_maths_topics: RAPID_TOPICS.filter(t => t === 'Place Value' || S.rapidTopics.includes(t)),
+    levels_same_as_class_list: !!S.levelsSame,
+    claude_to_suggest: 'Any empty field, and any lesson field not listed in that lesson\'s set_by_teacher, is for Claude to propose in the plan summary.',
     blocks: S.blocks.map((b, i) => ({
       id: b.id,
       order: i + 1,
@@ -1064,7 +1259,8 @@ function collect() {
       small_steps: lines(b.steps),
       prior_learning: b.prior.trim(),
       misconceptions: lines(b.misconceptions),
-      levels: {
+      levels: S.levelsSame ? { same_as_class_list: true, bands: [], adapted_note: '', overrides: [] } : {
+        same_as_class_list: false,
         bands: lowerYears(S.year).filter(l => b.bands[l]).map(l => ({
           level: l,
           nc_objectives: b.bands[l].objectives.map(id => ({ id, text: objText(id) })),
@@ -1100,6 +1296,8 @@ function collect() {
       statistics: !!s.stats,
       manipulatives: s.manip.trim(),
       notes: s.notes.trim(),
+      set_by_teacher: Object.keys(S.lessonEdits[s.key] || {}).filter(k => { const v = S.lessonEdits[s.key][k]; return v !== null && v !== ''; })
+        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives' }[k] || k)),
     })),
     notes: S.notes.trim(),
   };
@@ -1112,6 +1310,8 @@ function renderReview() {
     ${row('Year group', esc(d.year_group) + (d.classes.length ? ' · ' + esc(d.classes.join(', ')) : ''))}
     ${row('Weeks', esc(d.weeks_detail.map(w => w.txwy).join(', ')) || '<em>not set</em>')}
     ${row('Usual days', esc(d.default_lesson_days.join(', ')))}
+    ${row('Rapid Maths', esc(d.rapid_maths_topics.join(', ')))}
+    ${row('Levels', d.levels_same_as_class_list ? 'same as the class list' : 'set per block')}
     ${row('Term dates', d.term_dates_source === 'wfa_api' ? 'from the WFA database' : 'typed by hand')}</div>`;
   h += `<div class="rv-section"><h3>Blocks</h3>${d.blocks.map(b => row(`Block ${b.order}`,
     `${esc(b.title || b.label_topic)} · ${b.lessons} lessons · ${b.nc_objectives.length} objectives · ${b.small_steps.length} small steps` +
@@ -1137,6 +1337,8 @@ function buildPrompt(d) {
   L.push('2. Write the plan summary (lesson by lesson) for me to check. Do not write any plan JSON yet.');
   L.push('3. After I approve the summary, write plan/maths_plan_v4.json in the v3 shape and run setup_env.py with it.');
   L.push('');
+  L.push(`${d.mode === 'quick' ? 'Quick brief: only dates, topics and lesson counts were set. ' : ''}Anything left blank is for you to suggest in the summary.`);
+  L.push('');
   L.push(`Year group ${d.year_group}, classes ${d.classes.join(', ') || '(none chosen)'}; ${d.weeks} week(s) from ${d.txwy || '?'}; ${d.lessons.length} lessons.`);
   d.blocks.forEach(b => {
     L.push('');
@@ -1147,6 +1349,10 @@ function buildPrompt(d) {
     if (b.misconceptions.length) L.push(`  Misconceptions: ${b.misconceptions.join(' | ')}`);
     if (b.levels.bands.length) L.push(`  Levels: ${b.levels.bands.map(x => x.level).join(', ')}`);
   });
+  if (d.prior_learning) { L.push(''); L.push('Prior learning: ' + d.prior_learning); }
+  L.push('');
+  L.push('Rapid Maths topics: ' + d.rapid_maths_topics.join(', '));
+  L.push('Levels: ' + (d.levels_same_as_class_list ? 'same as the class list' : 'set per block in the brief'));
   const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
   if (dropped.length) { L.push(''); L.push('Days with no maths: ' + dropped.map(w => `${w.txwy} ${w.days_dropped.join('/')}${w.days_dropped_reason ? ' (' + w.days_dropped_reason + ')' : ''}`).join('; ')); }
   if (d.notes) { L.push(''); L.push('Notes: ' + d.notes); }
@@ -1194,7 +1400,7 @@ function resumeDraft() {
   blockSeq = _savedState.blockSeq || (S.blocks.length + 1);
   _draftPending = false;
   $('draftBanner').classList.remove('show');
-  renderBasics(); go(1);
+  renderBasics(); current = 1; applyMode();
 }
 function discardDraft() {
   try { localStorage.removeItem(LS_KEY); } catch (e) {}
@@ -1207,6 +1413,7 @@ checkForSavedDraft();
 renderBar();
 renderBasics();
 renderCalendarStatus();
+applyMode();
 loadTermDates();
 </script>
 </body>
