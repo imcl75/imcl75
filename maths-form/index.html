@@ -156,7 +156,7 @@
     .mode-bar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
     .mode-bar .toggle button { padding: 0.5rem 1rem; font-size: 0.85rem; }
     .mode-bar .hint { margin: 0; flex: 1; min-width: 200px; }
-    body.quick #stepBar { display: none; }
+    body.quick #stepBar, body.pathmode #stepBar, body.pathmode #jumpPathways { display: none; }
     .claude-fills { display: inline-block; font-size: 0.7rem; font-weight: 600; color: #6d28d9; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 20px; padding: 0.05rem 0.5rem; margin-left: 0.35rem; vertical-align: middle; }
     .qblock { display: grid; grid-template-columns: 2fr 5.5rem 2fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
     .qblock-head { font-size: 0.72rem; font-weight: 600; color: #4b5563; }
@@ -214,7 +214,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26f</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26g</span></p>
 </header>
 
 <div class="container">
@@ -229,10 +229,57 @@
     <div class="toggle" id="modeToggle">
       <button type="button" data-mode="quick" onclick="setMode('quick')">Quick brief</button>
       <button type="button" data-mode="full" onclick="setMode('full')">Full brief</button>
+      <button type="button" data-mode="pathway" onclick="setMode('pathway')">Pathway lesson (on its own)</button>
     </div>
     <span class="hint" id="modeHint"></span>
+    <button class="btn-sec btn-small" type="button" id="jumpPathways" onclick="jumpToPathways()">↓ Pathway groups in this brief</button>
   </div>
   <div class="steps" id="stepBar"></div>
+
+  <!-- ── Pathway lesson on its own (31.10.26g) ───────────────────────── -->
+  <section id="sP">
+    <div class="card">
+      <h2>Pathway lesson (on its own)</h2>
+      <p class="subtitle">One lesson for a small group working at an earlier year, without planning a class week: a short adult input on an iPad, then independent learning. Claude writes the lesson from what you give here and builds the input deck, its iPad page and the sheet (or labels), zipped on their own. For pathway children inside a planned week, use the Quick or Full brief and its Pathway groups section instead.</p>
+      <div class="g2">
+        <div class="field"><label class="field-label" for="p_date">Date</label>
+          <input type="date" id="p_date" oninput="setSolo('date',this.value)"></div>
+        <div class="field"><label class="field-label" for="p_year">Working at</label>
+          <select id="p_year" onchange="setSolo('year',this.value)"></select></div>
+      </div>
+      <div class="field"><label class="field-label" for="p_step">Small step</label>
+        <input type="text" id="p_step" placeholder="e.g. Add two 2-digit numbers, exchanging ones" oninput="setSolo('step',this.value)">
+        <span class="hint">One small step: what this lesson teaches.</span>
+        <div class="errmsg" id="e_pstep">Give the small step.</div></div>
+      <div class="field"><span class="field-label">Stage</span>
+        <div class="pill-group" id="p_stage"></div>
+        <span class="hint">One stage a lesson. Start with concrete (real equipment such as Dienes); move to pictorial, then abstract, in later lessons once they are secure.</span></div>
+      <div class="field"><span class="field-label">Resources</span>
+        <div class="method-chips" id="p_res"></div>
+        <input type="text" id="p_resOther" style="margin-top:0.5rem" placeholder="Anything else (optional), e.g. a bead string each" oninput="setSolo('resOther',this.value)">
+        <span class="hint">Listed on slide 1 in a 'You will need' box. Leave empty for Claude to choose.</span></div>
+      <div class="g2">
+        <div class="field"><label class="field-label" for="p_group">Group <span class="optional">(optional)</span></label>
+          <input type="text" id="p_group" placeholder="e.g. P1" oninput="setSolo('group',this.value)"></div>
+        <div class="field"><label class="field-label" for="p_initials">Children <span class="optional">(initials only)</span></label>
+          <input type="text" id="p_initials" placeholder="AB, CD, EF" oninput="this.value=this.value.toUpperCase();setSolo('initials',this.value)"></div>
+      </div>
+      <div class="field"><label class="field-label" for="p_topic">Topic <span class="optional">(optional, for the label)</span></label>
+        <select id="p_topic" onchange="setSolo('topic',this.value)"></select></div>
+      <div class="field"><label class="field-label" for="p_now">Where they are now <span class="optional">(optional)</span></label>
+        <input type="text" id="p_now" placeholder="e.g. secure adding ones to a 2-digit number; not yet crossing 10" oninput="setSolo('now',this.value)"></div>
+      <div class="field"><label class="field-label" for="p_notes">Notes for Claude <span class="optional">(optional)</span></label>
+        <textarea id="p_notes" rows="2" placeholder="e.g. keep numbers under 50; one adult for 20 minutes" oninput="setSolo('notes',this.value)"></textarea></div>
+    </div>
+    <div class="card">
+      <h2>Export</h2>
+      <div class="btn-row" style="margin-bottom:0.6rem">
+        <button class="btn-primary" onclick="if(validateSolo())downloadSolo()">⬇ Download brief JSON</button>
+        <button class="btn-gold" onclick="if(validateSolo())copySoloPrompt(event)">⎘ Copy Claude prompt</button>
+      </div>
+      <span class="hint">Save the file into <code>~/projects/maths-builder/plan/briefs/</code>, then paste the prompt into Claude Code. Claude shows you the lesson content to check before it builds.</span>
+    </div>
+  </section>
 
   <!-- ── Quick brief: one screen ─────────────────────────────────────── -->
   <section id="sQ">
@@ -452,8 +499,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26f';
-const FORM_VERSION = '1.6';
+const TOOL_VERSION = '31.10.26g';
+const FORM_VERSION = '1.7';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -1034,7 +1081,11 @@ function freshState() {
     days: DEFAULT_DAYS.slice(), blocks: [], weekDays: {}, weekReasons: {}, manualMondays: {},
     rapid: {}, rapidTopics: ['Place Value'], lessonEdits: {}, openWeeks: {},
     levelsSame: true, prior: '', priorSource: 'rtp', practice: {}, pathways: [], notes: '',
+    solo: freshSolo(),
   };
+}
+function freshSolo() {
+  return { date: '', year: 'Y2', step: '', stage: 'concrete', resources: [], resOther: '', group: '', initials: '', topic: '', now: '', notes: '' };
 }
 function newBlock() {
   return { id: 'B' + (blockSeq++), topic: '', title: '', lessons: 4, objectives: [], showAll: false,
@@ -1184,12 +1235,21 @@ function setMode(m) {
   applyMode();
 }
 function applyMode() {
-  const quick = S.mode === 'quick';
+  const quick = S.mode === 'quick', solo = S.mode === 'pathway';
   document.body.classList.toggle('quick', quick);
+  document.body.classList.toggle('pathmode', solo);
   document.querySelectorAll('#modeToggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
-  $('modeHint').textContent = quick
+  $('modeHint').textContent = solo
+    ? 'One lesson for a small group working at an earlier year, without planning a week.'
+    : quick
     ? 'One screen: dates, topics and lesson counts. Claude suggests the rest for you to check.'
     : 'Six steps: set objectives, small steps, levels and each lesson yourself. Anything left blank, Claude suggests.';
+  if (solo) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    $('sP').classList.add('active');
+    renderSolo();
+    return;
+  }
   $(quick ? 'basicsSlotQuick' : 'basicsSlotFull').appendChild($('basicsCore'));
   if (quick) {
     document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
@@ -1508,6 +1568,88 @@ function renderPathways(id) {
     </div>`;
   }).join('') + `<button class="btn-add btn-small" type="button" onclick="addPathway()">+ Add a pathway group</button>
     ${S.pathways.length ? '' : '<span class="hint" style="margin-top:0.4rem">None yet. Add one for each earlier year that children are working at.</span>'}`;
+}
+function jumpToPathways() {
+  if (S.mode === 'full' && current !== 3) go(3);
+  setTimeout(() => $(S.mode === 'quick' ? 'quickPathways' : 'fullPathways').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+// ── Pathway lesson on its own (31.10.26g): maths-builder build_pathway_lesson.py --brief ──
+const SOLO_STAGES = [['concrete', 'Concrete (make it)'], ['pictorial', 'Pictorial (draw it)'], ['abstract', 'Abstract (write it)']];
+const SOLO_RES = ['Dienes: tens and ones', 'Dienes: hundreds, tens and ones', 'place value mat', 'ten frames', 'counters',
+  'Numicon', 'cubes', 'bead string', 'number line', 'hundred square', 'part-whole model', 'whiteboard and pen'];
+function soloState() { if (!S.solo) S.solo = freshSolo(); return S.solo; }
+function setSolo(field, value, rerender) { soloState()[field] = value; saveState(); if (rerender) renderSolo(); }
+function toggleSoloRes(r) {
+  const o = soloState();
+  o.resources = o.resources.includes(r) ? o.resources.filter(x => x !== r) : [...o.resources, r];
+  saveState(); renderSolo();
+}
+function renderSolo() {
+  const o = soloState();
+  $('p_date').value = o.date;
+  $('p_year').innerHTML = ['Y1', 'Y2', 'Y3', 'Y4'].map(y => `<option ${o.year === y ? 'selected' : ''}>${y}</option>`).join('');
+  $('p_step').value = o.step;
+  $('p_stage').innerHTML = SOLO_STAGES.map(([k, lab]) => `<div class="pill${o.stage === k ? ' on' : ''}" onclick="setSolo('stage','${k}',true)">${lab}</div>`).join('');
+  $('p_res').innerHTML = SOLO_RES.map(r => `<button type="button" class="mchip${o.resources.includes(r) ? ' on' : ''}" onclick="toggleSoloRes('${r}')">${esc(r)}</button>`).join('');
+  $('p_resOther').value = o.resOther;
+  $('p_group').value = o.group;
+  $('p_initials').value = o.initials;
+  $('p_topic').innerHTML = '<option value="">Choose…</option>' + LABEL_TOPICS.map(t => `<option ${o.topic === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  $('p_now').value = o.now;
+  $('p_notes').value = o.notes;
+}
+function validateSolo() {
+  const bad = !soloState().step.trim();
+  $('e_pstep').classList.toggle('show', bad);
+  if (bad) $('e_pstep').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return !bad;
+}
+function collectSolo() {
+  const o = soloState();
+  const res = [...o.resources, ...String(o.resOther || '').split(/[;,]/).map(x => x.trim()).filter(Boolean)];
+  return {
+    brief_type: 'maths_pathway_lesson', form_version: FORM_VERSION, tool_version: TOOL_VERSION,
+    created: new Date().toISOString(),
+    small_step: o.step.trim(), working_year: o.year, date: o.date || null,
+    cpa_stage: o.stage, resources: res, resources_set_by_teacher: res.length > 0,
+    group: (o.group || '').trim() || null,
+    initials: (o.initials || '').toUpperCase().split(/[^A-Z]+/).filter(Boolean),
+    topic: o.topic || null, where_they_are_now: (o.now || '').trim(), notes: (o.notes || '').trim(),
+    content: null,
+    content_note: 'Claude writes content (walt, ican, model, examples for this one stage, resources, misconception, watch_for, critical_moment, task) per maths-builder CLAUDE.md "Pathway groups", shows it to Innes, then builds with build_pathway_lesson.py --brief.',
+  };
+}
+function soloSlug(d) { return (d.small_step || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40); }
+function buildSoloPrompt(d) {
+  const L = [];
+  L.push(`Pathway lesson (on its own) from the Maths Briefing Tool v${TOOL_VERSION}.`);
+  L.push(`Brief file: ~/projects/maths-builder/plan/briefs/maths_pathway_${soloSlug(d)}_${d.date || 'undated'}.json`);
+  L.push('');
+  L.push(`Small step: ${d.small_step} (working at ${d.working_year}).`);
+  L.push(`Stage: ${d.cpa_stage}, one stage this lesson.`);
+  L.push(`Date: ${d.date || 'not set (ask me)'}. Group: ${d.group || 'none named'}. Children: ${d.initials.join(', ') || 'not given'}.`);
+  L.push(`Resources: ${d.resources.length ? d.resources.join('; ') : 'for you to choose'}.`);
+  if (d.topic) L.push(`Topic: ${d.topic}.`);
+  if (d.where_they_are_now) L.push(`Where they are now: ${d.where_they_are_now}.`);
+  if (d.notes) L.push(`Notes: ${d.notes}`);
+  L.push('');
+  L.push('In ~/projects/maths-builder, read CLAUDE.md ("Pathway groups", the standalone --brief route). Write the lesson content for this one stage and show it to me in plain words. Once I agree, add it to the brief as "content" and build with scripts/build_pathway_lesson.py --brief. Open the deck and the sheet and check them before you give them to me.');
+  return L.join('\n');
+}
+function downloadSolo() {
+  const d = collectSolo();
+  const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `maths_pathway_${soloSlug(d)}_${d.date || 'undated'}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+function copySoloPrompt(ev) {
+  const btn = ev.target;
+  navigator.clipboard.writeText(buildSoloPrompt(collectSolo())).then(() => {
+    const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = orig, 2500);
+  });
 }
 function collectPathways(slots) {
   return S.pathways.map(g => {
