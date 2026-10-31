@@ -161,15 +161,34 @@
     .qblock { display: grid; grid-template-columns: 2fr 5.5rem 2fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
     .qblock-head { font-size: 0.72rem; font-weight: 600; color: #4b5563; }
     .compact-lessons { list-style: none; margin-top: 0.4rem; }
-    .compact-lessons li { display: grid; grid-template-columns: 4.6rem 6.2rem 1fr; gap: 0.5rem; font-size: 0.8rem; padding: 0.3rem 0; border-top: 1px solid #f0f2f5; }
+    .compact-lessons li { display: grid; grid-template-columns: 4.6rem 6.2rem 1fr auto; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.3rem 0; border-top: 1px solid #f0f2f5; }
     .compact-lessons li span:first-child { font-weight: 700; color: var(--wfa-dark); }
     .compact-lessons .muted { color: var(--muted); }
     .week-head .btn-small { margin-left: auto; }
+    .stage-pill { display: inline-block; font-size: 0.7rem; font-weight: 700; border: 1px solid; border-radius: 20px; padding: 0.05rem 0.5rem; white-space: nowrap; }
+    .flow-block { border: 1.5px solid var(--border); border-radius: 9px; padding: 0.8rem 0.9rem; margin-bottom: 0.8rem; }
+    .flow-head { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; font-size: 0.88rem; color: var(--wfa-dark); }
+    .flow-head select { width: auto; flex: 1; min-width: 220px; padding: 0.35rem 0.5rem; font-size: 0.8rem; }
+    .flow-bar { display: flex; gap: 3px; margin-bottom: 0.5rem; }
+    .flow-seg { flex: 1; min-width: 26px; height: 30px; padding: 0; border-radius: 5px; color: white; font-size: 0.72rem; font-weight: 700; }
+    .flow-seg.own { outline: 2px solid var(--wfa-dark); outline-offset: 1px; }
+    .flow-runs { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; font-size: 0.78rem; }
+    .flow-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.72rem; color: var(--muted); }
+    .flow-key i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.3rem; vertical-align: -1px; }
+    .muted { color: var(--muted); }
+    details.rtp { font-size: 0.78rem; margin: 0.2rem 0 0.7rem; color: #374151; }
+    details.rtp summary { cursor: pointer; color: #0e7490; font-weight: 600; }
+    details.rtp ul { margin: 0.2rem 0 0.4rem 1.1rem; }
+    details.rtp li { margin: 0.15rem 0; line-height: 1.4; }
+    details.rtp code { font-size: 0.72rem; font-weight: 700; color: var(--wfa-dark); }
+    .rtp-h { font-weight: 700; margin-top: 0.4rem; }
+    .qrtp { grid-column: 1 / -1; margin-top: -0.2rem; }
     @media (max-width: 620px) {
       .qblock { grid-template-columns: 1fr 4.5rem auto; }
       .qblock .qname { grid-column: 1 / -1; grid-row: 2; }
       .qblock-head { display: none; }
       .compact-lessons li { grid-template-columns: 3.6rem 5.4rem 1fr; }
+      .compact-lessons li .stage-pill { grid-column: 3; justify-self: start; }
     }
 
     @media (max-width: 620px) {
@@ -188,7 +207,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v18.10.26b</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26a</span></p>
 </header>
 
 <div class="container">
@@ -223,9 +242,16 @@
       <div id="quickLessonCountMsg"></div>
       <div class="errmsg" id="e_qblocks">Every block needs a topic and at least one lesson.</div>
       <div class="field" style="margin-top:1.1rem">
-        <label class="field-label" for="q_prior">Prior learning <span class="optional">(optional)</span></label>
-        <textarea id="q_prior" rows="3" placeholder="e.g. Year 4 fractions secure for most; place value to 10,000 taught in Term 1"></textarea>
+        <span class="field-label">Prior learning</span>
+        <div class="pill-group" id="quickPriorSource"></div>
+        <span class="hint" id="quickPriorHint"></span>
+        <textarea id="q_prior" rows="2" style="margin-top:0.5rem" placeholder="e.g. place value to 10,000 taught in Term 1"></textarea>
       </div>
+    </div>
+    <div class="card">
+      <h2>Flow of the lessons</h2>
+      <p class="subtitle">How each block moves from one kind of lesson to the next. Pick a flow, or tap a lesson in the bar to change its stage.</p>
+      <div id="quickFlow"></div>
     </div>
     <div class="card">
       <h2>Lessons</h2>
@@ -319,8 +345,10 @@
       <h2>Blocks</h2>
       <p class="subtitle">A block is one topic taught over a run of lessons. Add them in teaching order. Only the topic and number of lessons are needed: anything marked <span class="claude-fills">Claude suggests</span> can be left blank.</p>
       <div class="field">
-        <label class="field-label" for="f_prior">Prior learning for the whole brief <span class="claude-fills">Claude suggests</span></label>
-        <textarea id="f_prior" rows="2" placeholder="e.g. Year 4 fractions secure for most; place value to 10,000 taught in Term 1"></textarea>
+        <span class="field-label">Prior learning</span>
+        <div class="pill-group" id="fullPriorSource"></div>
+        <span class="hint" id="fullPriorHint"></span>
+        <textarea id="f_prior" rows="2" style="margin-top:0.5rem" placeholder="e.g. place value to 10,000 taught in Term 1"></textarea>
       </div>
       <div id="blocksContainer"></div>
       <button class="btn-add btn-small" type="button" onclick="addBlock()">+ Add a block</button>
@@ -353,6 +381,10 @@
     <div class="card">
       <h2>Weeks and lessons</h2>
       <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson takes its block's next small step; open "Adjust lessons" only if you want to set a focus, the paper type or manipulatives yourself.</p>
+      <div class="field">
+        <span class="field-label">Flow of the lessons</span>
+        <div id="fullFlow"></div>
+      </div>
       <div class="field">
         <span class="field-label">Rapid Maths topics</span>
         <div class="pill-group" id="fullRapid"></div>
@@ -403,8 +435,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '18.10.26b';
-const FORM_VERSION = '1.1';
+const TOOL_VERSION = '31.10.26a';
+const FORM_VERSION = '1.2';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -443,6 +475,245 @@ const TOPIC_DOMAINS = {
 };
 // Type A (pupils write on the paper) is the usual choice for these topics; the rest default to Type B (books).
 const TYPE_A_TOPICS = ['Geometry','Geometry - Position and Direction','Statistics'];
+
+// Ready to Progress criteria (DfE, Mathematics guidance: key stages 1 and 2), as the RTP tracker stores them
+// (codes exactly as in rtp_criteria; school-added W targets live only in the tracker).
+const RTP = [
+  ["1NPV–1", "Number and Place Value", 1, "Count within 100, forwards and backwards, starting with any number."],
+  ["1NPV–2", "Number and Place Value", 1, "Reason about the location of numbers to 20 within the linear number system, including comparing using < > and ="],
+  ["2NPV–1", "Number and Place Value", 2, "Recognise the place value of each digit in two-digit numbers, and compose and decompose two-digit numbers using standard and non-standard partitioning."],
+  ["3NPV–1", "Number and Place Value", 3, "Know that 10 tens are equivalent to 1 hundred, and that 100 is 10 times the size of 10; apply this to identify and work out how many 10s there are in other three-digit multiples of 10."],
+  ["3NPV–2", "Number and Place Value", 3, "Recognise the place value of each digit in three-digit numbers, and compose and decompose three-digit numbers using standard and non-standard partitioning."],
+  ["3NPV–3", "Number and Place Value", 3, "Reason about the location of any three-digit number in the linear number system, including identifying the previous and next multiple of 100 and 10."],
+  ["3NPV–4", "Number and Place Value", 3, "Divide 100 into 2, 4, 5 and 10 equal parts, and read scales/number lines marked in multiples of 100 with 2, 4, 5 and 10 equal parts."],
+  ["4NPV–1", "Number and Place Value", 4, "Know that 10 hundreds are equivalent to 1 thousand, and that 1,000 is 10 times the size of 100; apply this to identify and work out how many 100s there are in other four-digit multiples of 100."],
+  ["4NPV–2", "Number and Place Value", 4, "Recognise the place value of each digit in four-digit numbers, and compose and decompose four-digit numbers using standard and non-standard partitioning."],
+  ["4NPV–3", "Number and Place Value", 4, "Reason about the location of any four-digit number in the linear number system, including identifying the previous and next multiple of 1,000 and 100, and rounding to the nearest of each."],
+  ["4NPV–4", "Number and Place Value", 4, "Divide 1,000 into 2, 4, 5 and 10 equal parts, and read scales/number lines marked in multiples of 1,000 with 2, 4, 5 and 10 equal parts."],
+  ["5NPV–1", "Number and Place Value", 5, "Know that 10 tenths are equivalent to 1 one, and that 1 is 10 times the size of 0.1. Know that 100 hundredths are equivalent to 1 one, and that 1 is 100 times the size of 0.01. Know that 10 hundredths are equivalent to 1 tenth, and that 0.1 is 10 times the size of 0.01."],
+  ["5NPV–2", "Number and Place Value", 5, "Recognise the place value of each digit in numbers with up to 2 decimal places, and compose and decompose numbers with up to 2 decimal places using standard and non-standard partitioning."],
+  ["5NPV–3", "Number and Place Value", 5, "Reason about the location of any number with up to 2 decimals places in the linear number system, including identifying the previous and next multiple of 1 and 0.1 and rounding to the nearest of each."],
+  ["5NPV–4", "Number and Place Value", 5, "Divide 1 into 2, 4, 5 and 10 equal parts, and read scales/number lines marked in units of 1 with 2, 4, 5 and 10 equal parts."],
+  ["5NPV–5", "Number and Place Value", 5, "Convert between units of measure, including using common decimals and fractions."],
+  ["6NPV–1", "Number and Place Value", 6, "Understand the relationship between powers of 10 from 1 hundredth to 10 million, and use this to make a given number 10, 100, 1,000, 1 tenth, 1 hundredth or 1 thousandth times the size (multiply and divide by 10, 100 and 1,000)."],
+  ["6NPV–2", "Number and Place Value", 6, "Recognise the place value of each digit in numbers up to 10 million, including decimal fractions, and compose and decompose numbers up to 10 million using standard and non-standard partitioning."],
+  ["6NPV–3", "Number and Place Value", 6, "Reason about the location of any number up to 10 million, including decimal fractions, in the linear number system, and round numbers, as appropriate, including in contexts."],
+  ["6NPV–4", "Number and Place Value", 6, "Divide powers of 10, from 1 hundredth to 10 million, into 2, 4, 5 and 10 equal parts, and read scales/number lines with labelled intervals divided into 2, 4, 5 and 10 equal parts."],
+  ["1NF–1", "Number Facts", 1, "Develop fluency in addition and subtraction facts within 10."],
+  ["1NF–2", "Number Facts", 1, "Count forwards and backwards in multiples of 2, 5 and 10, up to 10 multiples, beginning with any multiple, and count forwards and backwards through the odd numbers."],
+  ["2NF–1", "Number Facts", 2, "Secure fluency in addition and subtraction facts within 10, through continued practice."],
+  ["3NF–1", "Number Facts", 3, "Secure fluency in addition and subtraction facts that bridge 10, through continued practice."],
+  ["3NF–2", "Number Facts", 3, "Recall multiplication facts, and corresponding division facts, in the 10, 5, 2, 4 and 8 multiplication tables, and recognise products in these multiplication tables as multiples of the corresponding number."],
+  ["3NF–3", "Number Facts", 3, "Apply place-value knowledge to known additive and multiplicative number facts (scaling facts by 10)."],
+  ["4NF–1", "Number Facts", 4, "Recall multiplication and division facts up to 12 × 12, and recognise products in multiplication tables as multiples of the corresponding number."],
+  ["4NF–2", "Number Facts", 4, "Solve division problems, with two-digit dividends and one-digit divisors, that involve remainders, and interpret remainders appropriately according to the context."],
+  ["4NF–3", "Number Facts", 4, "Apply place-value knowledge to known additive and multiplicative number facts (scaling facts by 100)"],
+  ["5NF–1", "Number Facts", 5, "Secure fluency in multiplication table facts, and corresponding division facts, through continued practice."],
+  ["5NF–2", "Number Facts", 5, "Apply place-value knowledge to known additive and multiplicative number facts (scaling facts by 1 tenth or 1 hundredth)."],
+  ["1AS–1", "Addition and Subtraction", 1, "Compose numbers to 10 from 2 parts, and partition numbers to 10 into parts, including recognising odd and even numbers."],
+  ["1AS–2", "Addition and Subtraction", 1, "Read, write and interpret equations containing addition (+), subtraction (−) and equals (=) symbols, and relate additive expressions and equations to real-life contexts."],
+  ["2AS–1", "Addition and Subtraction", 2, "Add and subtract across 10."],
+  ["2AS–2", "Addition and Subtraction", 2, "Recognise the subtraction structure of ‘difference’ and answer questions of the form, “How many more…?”."],
+  ["2AS–3", "Addition and Subtraction", 2, "Add and subtract within 100 by applying related one-digit addition and subtraction facts: add and subtract only ones or only tens to/from a two-digit number."],
+  ["2AS–4", "Addition and Subtraction", 2, "Add and subtract within 100 by applying related one-digit addition and subtraction facts: add and subtract any 2 two-digit numbers."],
+  ["3AS–1", "Addition and Subtraction", 3, "Calculate complements to 100."],
+  ["3AS–2", "Addition and Subtraction", 3, "Add and subtract up to three-digit numbers using columnar methods."],
+  ["3AS–3", "Addition and Subtraction", 3, "Manipulate the additive relationship: Understand the inverse relationship between addition and subtraction, and how both relate to the part–part–whole structure. Understand and use the commutative property of addition, and understand the related property for subtraction."],
+  ["6AS/MD–1", "Addition and Subtraction", 6, "Understand that 2 numbers can be related additively or multiplicatively, and quantify additive and multiplicative relationships (multiplicative relationships restricted to multiplication by a whole number)."],
+  ["6AS/MD–2", "Addition and Subtraction", 6, "Use a given additive or multiplicative calculation to derive or complete a related calculation, using arithmetic properties, inverse relationships, and place-value understanding."],
+  ["6AS/MD–3", "Addition and Subtraction", 6, "Solve problems involving ratio relationships."],
+  ["6AS/MD–4", "Addition and Subtraction", 6, "Solve problems with 2 unknowns."],
+  ["2MD–1", "Multiplication and Division", 2, "Recognise repeated addition contexts, representing them with multiplication equations and calculating the product, within the 2, 5 and 10 multiplication tables."],
+  ["2MD–2", "Multiplication and Division", 2, "Relate grouping problems where the number of groups is unknown to multiplication equations with a missing factor, and to division equations (quotitive division)."],
+  ["3MD–1", "Multiplication and Division", 3, "Apply known multiplication and division facts to solve contextual problems with different structures, including quotitive and partitive division."],
+  ["4MD–1", "Multiplication and Division", 4, "Multiply and divide whole numbers by 10 and 100 (keeping to whole number quotients); understand this as equivalent to making a number 10 or 100 times the size."],
+  ["4MD–2", "Multiplication and Division", 4, "Manipulate multiplication and division equations, and understand and apply the commutative property of multiplication."],
+  ["4MD–3", "Multiplication and Division", 4, "Understand and apply the distributive property of multiplication."],
+  ["5MD–1", "Multiplication and Division", 5, "Multiply and divide numbers by 10 and 100; understand this as equivalent to making a number 10 or 100 times the size, or 1 tenth or 1 hundredth times the size."],
+  ["5MD–2", "Multiplication and Division", 5, "Find factors and multiples of positive whole numbers, including common factors and common multiples, and express a given number as a product of 2 or 3 factors."],
+  ["5MD–3", "Multiplication and Division", 5, "Multiply any whole number with up to 4 digits by any one-digit number using a formal written method."],
+  ["5MD–4", "Multiplication and Division", 5, "Divide a number with up to 4 digits by a one-digit number using a formal written method, and interpret remainders appropriately for the context."],
+  ["3F–1", "Fractions", 3, "Interpret and write proper fractions to represent 1 or several parts of a whole that is divided into equal parts."],
+  ["3F–2", "Fractions", 3, "Find unit fractions of quantities using known division facts (multiplication tables fluency)."],
+  ["3F–3", "Fractions", 3, "Reason about the location of any fraction within 1 in the linear number system."],
+  ["3F–4", "Fractions", 3, "Add and subtract fractions with the same denominator, within 1."],
+  ["4F–1", "Fractions", 4, "Reason about the location of mixed numbers in the linear number system."],
+  ["4F–2", "Fractions", 4, "Convert mixed numbers to improper fractions and vice versa."],
+  ["4F–3", "Fractions", 4, "Add and subtract improper and mixed fractions with the same denominator, including bridging whole numbers."],
+  ["5F–1", "Fractions", 5, "Find non-unit fractions of quantities."],
+  ["5F–2", "Fractions", 5, "Find equivalent fractions and understand that they have the same value and the same position in the linear number system."],
+  ["5F–3", "Fractions", 5, "Recall decimal fraction equivalents for 1/2, 1/4, 1/5, 1/10 and for multiples of these proper fractions."],
+  ["6F–1", "Fractions", 6, "Recognise when fractions can be simplified, and use common factors to simplify fractions."],
+  ["6F–2", "Fractions", 6, "Express fractions in a common denomination and use this to compare fractions that are similar in value."],
+  ["6F–3", "Fractions", 6, "Compare fractions with different denominators, including fractions greater than 1, using reasoning, and choose between reasoning and common denomination as a comparison strategy."],
+  ["1G–1", "Geometry", 1, "Recognise common 2D and 3D shapes presented in different orientations, and know that rectangles, triangles, cuboids and pyramids are not always similar to one another."],
+  ["1G–2", "Geometry", 1, "Compose 2D and 3D shapes from smaller shapes to match an example, including manipulating shapes to place them in particular orientations."],
+  ["2G–1", "Geometry", 2, "Use precise language to describe the properties of 2D and 3D shapes, and compare shapes by reasoning about similarities and differences in properties."],
+  ["3G–1", "Geometry", 3, "Recognise right angles as a property of shape or a description of a turn, and identify right angles in 2D shapes presented in different orientations."],
+  ["3G–2", "Geometry", 3, "Draw polygons by joining marked points, and identify parallel and perpendicular sides."],
+  ["4G–1", "Geometry", 4, "Draw polygons, specified by coordinates in the first quadrant, and translate within the first quadrant."],
+  ["4G–2", "Geometry", 4, "Identify regular polygons, including equilateral triangles and squares, as those in which the side-lengths are equal and the angles are equal. Find the perimeter of regular and irregular polygons."],
+  ["4G–3", "Geometry", 4, "Identify line symmetry in 2D shapes presented in different orientations. Reflect shapes in a line of symmetry and complete a symmetric figure or pattern with respect to a specified line of symmetry."],
+  ["5G–1", "Geometry", 5, "Compare angles, estimate and measure angles in degrees (°) and draw angles of a given size."],
+  ["5G–2", "Geometry", 5, "Compare areas and calculate the area of rectangles (including squares) using standard units."],
+  ["6G–1", "Geometry", 6, "Draw, compose, and decompose shapes according to given properties, including dimensions, angles and area, and solve related problems."],
+];
+
+// Which RTP criteria a block's topic draws on: whole strands, plus single codes.
+const TOPIC_RTP = {
+  'Number and Place Value': { strands: ['Number and Place Value'] },
+  'Addition': { strands: ['Addition and Subtraction','Number Facts'] },
+  'Subtraction': { strands: ['Addition and Subtraction','Number Facts'] },
+  'Addition and Subtraction': { strands: ['Addition and Subtraction','Number Facts'] },
+  'Multiplication': { strands: ['Multiplication and Division','Number Facts'] },
+  'Division': { strands: ['Multiplication and Division','Number Facts'] },
+  'Multiplicative Reasoning': { strands: ['Multiplication and Division','Number Facts'] },
+  'Indices': { strands: ['Multiplication and Division'] },
+  'Calculation': { strands: ['Addition and Subtraction','Multiplication and Division','Number Facts'] },
+  'Fractions': { strands: ['Fractions'] },
+  'Fractions and Decimals': { strands: ['Fractions'], codes: ['5NPV–1','5NPV–2','5NPV–3','5NPV–4','5NF–2','6NPV–1'] },
+  'Fractions / Decimals / Percentages': { strands: ['Fractions'], codes: ['5NPV–1','5NPV–2','5NPV–3','5NPV–4','6NPV–1'] },
+  'Geometry': { strands: ['Geometry'] },
+  'Geometry - Position and Direction': { codes: ['4G–1','4G–3'] },
+  'Measurement': { codes: ['3NPV–4','4NPV–4','5NPV–4','5NPV–5','4G–2','5G–2'] },
+  'Measurement - Time': { codes: ['5NPV–5'] },
+  'Ratio and proportion': { codes: ['6AS/MD–1','6AS/MD–3'] },
+  'Algebra': { codes: ['6AS/MD–2','6AS/MD–4'] },
+  'Statistics': {},
+  'Revision': { all: true },
+};
+function rtpFor(topic) {
+  const m = TOPIC_RTP[topic];
+  if (!m) return [];
+  return RTP.filter(([code, strand]) => m.all || (m.strands || []).includes(strand) || (m.codes || []).includes(code));
+}
+// What a block builds on and works towards, from Ready to Progress. Children at the expected standard are taken
+// to have met every earlier year's criteria; "where they finished" is the last year that has criteria here.
+function rtpPicture(year, topic) {
+  const n = yearNum(year), all = rtpFor(topic);
+  const before = all.filter(r => r[2] < n);
+  const lastYear = before.length ? Math.max(...before.map(r => r[2])) : null;
+  return {
+    finished: before.filter(r => r[2] === lastYear),
+    earlier: before.filter(r => r[2] !== lastYear),
+    thisYear: all.filter(r => r[2] === n),
+    lastYear,
+  };
+}
+
+// The flow of a block: each lesson's stage. Usual order unless the teacher changes it.
+const STAGES = [
+  { id: 'understand', label: 'Understanding', hint: 'what it means, with concrete and pictorial models', colour: '#0e7490', tint: '#ecfeff' },
+  { id: 'arithmetic', label: 'Arithmetic', hint: 'calculation: mental and written methods', colour: '#1d4ed8', tint: '#eff6ff' },
+  { id: 'reasoning', label: 'Reasoning', hint: 'explain, compare, always / sometimes / never', colour: '#7c3aed', tint: '#f5f3ff' },
+  { id: 'problem', label: 'Problem solving', hint: 'word problems, one step then several', colour: '#c2410c', tint: '#fff7ed' },
+  { id: 'contexts', label: 'Contexts', hint: 'money, measures, time and other real contexts', colour: '#047857', tint: '#ecfdf5' },
+  { id: 'review', label: 'Review', hint: 'consolidate and check what has stuck', colour: '#4b5563', tint: '#f3f4f6' },
+];
+const STAGE = Object.fromEntries(STAGES.map(x => [x.id, x]));
+const FLOW_PRESETS = [
+  { id: 'usual', label: 'Arithmetic → reasoning → problem solving → contexts', order: ['arithmetic','reasoning','problem','contexts'] },
+  { id: 'understand', label: 'Understanding first, then arithmetic → reasoning → problem solving', order: ['understand','arithmetic','reasoning','problem'] },
+  { id: 'review', label: 'Usual flow, ending with a review lesson', order: ['arithmetic','reasoning','problem','contexts'], endReview: true },
+  { id: 'claude', label: 'Claude decides', order: [] },
+];
+// The stage of each lesson in a block: the preset order spread over the lessons, then the teacher's own changes.
+function blockFlow(b) {
+  const n = parseInt(b.lessons) || 0;
+  const preset = FLOW_PRESETS.find(p => p.id === (b.flowPreset || 'usual')) || FLOW_PRESETS[0];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    let st = '';
+    if (preset.order.length) {
+      const m = preset.endReview && n > 1 ? n - 1 : n;
+      st = preset.endReview && n > 1 && i === n - 1 ? 'review' : preset.order[Math.min(preset.order.length - 1, Math.floor(i * Math.min(preset.order.length, m) / m))];
+    }
+    const own = (b.stageEdits || {})[i];
+    out.push({ stage: own || st, set_by_teacher: !!own });
+  }
+  return out;
+}
+function cycleStage(bid, i) {
+  const b = S.blocks.find(x => x.id === bid); if (!b) return;
+  const flow = blockFlow(b);
+  const ids = STAGES.map(x => x.id);
+  const cur = flow[i] ? flow[i].stage : '';
+  b.stageEdits = b.stageEdits || {};
+  b.stageEdits[i] = ids[(ids.indexOf(cur) + 1) % ids.length];
+  saveState(); renderFlowViews();
+}
+function setStage(bid, i, stage) {
+  const b = S.blocks.find(x => x.id === bid); if (!b) return;
+  b.stageEdits = b.stageEdits || {};
+  if (stage) b.stageEdits[i] = stage; else delete b.stageEdits[i];
+  saveState(); renderFlowViews();
+}
+function setFlowPreset(bid, id) {
+  const b = S.blocks.find(x => x.id === bid); if (!b) return;
+  b.flowPreset = id; b.stageEdits = {};
+  saveState(); renderFlowViews();
+}
+function stagePill(stage, extra) {
+  const st = STAGE[stage];
+  if (!st) return `<span class="stage-pill" style="color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe" ${extra || ''}>Claude suggests</span>`;
+  return `<span class="stage-pill" style="color:${st.colour};background:${st.tint};border-color:${st.colour}40" title="${esc(st.hint)}" ${extra || ''}>${esc(st.label)}</span>`;
+}
+// One row per block: a bar of its lessons coloured by stage (tap a lesson to change its stage), the flow choice,
+// and the stages in order with how many lessons each.
+function flowOverviewHtml() {
+  if (!S.blocks.length) return '<p class="hint">Add a block first.</p>';
+  return S.blocks.map((b, bi) => {
+    const flow = blockFlow(b);
+    const runs = [];
+    flow.forEach(f => { const last = runs[runs.length - 1]; if (last && last.stage === f.stage) last.n++; else runs.push({ stage: f.stage, n: 1 }); });
+    return `<div class="flow-block">
+      <div class="flow-head"><strong>${esc(blockLabel(b, bi))}</strong>
+        <select aria-label="Flow for block ${bi + 1}" onchange="setFlowPreset('${b.id}',this.value)">
+          ${FLOW_PRESETS.map(p => `<option value="${p.id}" ${(b.flowPreset || 'usual') === p.id ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}
+        </select></div>
+      <div class="flow-bar">${flow.map((f, i) => {
+        const st = STAGE[f.stage];
+        return `<button type="button" class="flow-seg${f.set_by_teacher ? ' own' : ''}" style="background:${st ? st.colour : '#a78bfa'}" title="Lesson ${i + 1} of this block: ${esc(st ? st.label : 'Claude suggests')}. Tap to change." onclick="cycleStage('${b.id}',${i})">${i + 1}</button>`;
+      }).join('')}</div>
+      <div class="flow-runs">${runs.map(r => `${stagePill(r.stage)}<span class="muted">×${r.n}</span>`).join('<span class="muted">→</span>')}</div>
+    </div>`;
+  }).join('') + `<div class="flow-key">${STAGES.map(st => `<span><i style="background:${st.colour}"></i>${esc(st.label)}: ${esc(st.hint)}</span>`).join('')}</div>`;
+}
+function renderFlowViews() {
+  ['quickFlow', 'fullFlow'].forEach(id => { const el = $(id); if (el) el.innerHTML = flowOverviewHtml(); });
+  renderWeeks();
+}
+
+// Prior learning from Ready to Progress: per block, last year's criteria (where the children finished) and this year's.
+function rtpListHtml(rows) {
+  return rows.map(([code, , , desc]) => `<li><code>${esc(code)}</code> ${esc(desc)}</li>`).join('');
+}
+function rtpBlockHtml(b) {
+  if (!b.topic) return '<span class="hint">Choose a topic to see its Ready to Progress criteria.</span>';
+  const p = rtpPicture(S.year, b.topic);
+  if (!p.finished.length && !p.thisYear.length) return `<span class="hint">Ready to Progress has no criteria for ${esc(b.topic)}. Claude uses the National Curriculum and earlier years' objectives instead.</span>`;
+  return `<details class="rtp"><summary>Starts from ${p.lastYear ? `Year ${p.lastYear}: ${p.finished.map(r => r[0]).join(', ')}` : 'the start of this strand'}${p.thisYear.length ? ` · works towards ${p.thisYear.map(r => r[0]).join(', ')}` : ''}</summary>
+    ${p.finished.length ? `<p class="rtp-h">Where the children finished (Year ${p.lastYear})</p><ul>${rtpListHtml(p.finished)}</ul>` : ''}
+    ${p.thisYear.length ? `<p class="rtp-h">This year (${esc(S.year)})</p><ul>${rtpListHtml(p.thisYear)}</ul>` : ''}
+    ${p.earlier.length ? `<p class="rtp-h">Earlier years (${p.earlier.length} criteria, taken as secure)</p><ul>${rtpListHtml(p.earlier)}</ul>` : ''}
+  </details>`;
+}
+function priorSourceHtml() {
+  return `<div class="pill${S.priorSource !== 'teacher' ? ' on' : ''}" onclick="setPriorSource('rtp')">From Ready to Progress</div>
+    <div class="pill${S.priorSource === 'teacher' ? ' on' : ''}" onclick="setPriorSource('teacher')">I'll describe it</div>`;
+}
+function setPriorSource(v) { S.priorSource = v; saveState(); if (S.mode === 'quick') renderQuick(); else { renderPriorSource('full'); renderBlocks(); } }
+function renderPriorSource(which) {
+  $(which + 'PriorSource').innerHTML = priorSourceHtml();
+  const rtp = S.priorSource !== 'teacher';
+  $(which + 'PriorHint').textContent = rtp
+    ? "Claude reads the class's results in the Ready to Progress tracker when it writes the plan, and starts each block where the children finished (see each block's criteria). Children at the expected standard are taken to have met every earlier year's criteria. Add anything else below, if you like."
+    : 'Describe what the class has already been taught that these blocks build on.';
+  const ta = $(which === 'quick' ? 'q_prior' : 'f_prior');
+  ta.placeholder = rtp ? 'Anything to add (optional), e.g. fractions were rushed last term' : 'e.g. place value to 10,000 taught in Term 1; Year 4 fractions secure for most';
+  ta.value = S.prior;
+}
+
 
 // National Curriculum (2014) mathematics programmes of study, statutory requirements, Y1-Y6.
 const NC = {
@@ -702,12 +973,13 @@ function freshState() {
     year: 'Y5', classes: ['5IM','5LS'], title: '', term: '', week: '', weeks: 1,
     days: DEFAULT_DAYS.slice(), blocks: [], weekDays: {}, weekReasons: {}, manualMondays: {},
     rapid: {}, rapidTopics: ['Place Value'], lessonEdits: {}, openWeeks: {},
-    levelsSame: true, prior: '', notes: '',
+    levelsSame: true, prior: '', priorSource: 'rtp', notes: '',
   };
 }
 function newBlock() {
   return { id: 'B' + (blockSeq++), topic: '', title: '', lessons: 4, objectives: [], showAll: false,
-    steps: '', prior: '', misconceptions: '', bands: {}, adaptedNote: '', overrides: [] };
+    steps: '', prior: '', misconceptions: '', bands: {}, adaptedNote: '', overrides: [],
+    flowPreset: 'usual', stageEdits: {} };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -808,6 +1080,9 @@ function lessonSlots() {
     const posInBlock = slots.slice(0, i).filter(x => x.block === s.block).length;
     const steps = b ? lines(b.steps) : [];
     s.stepIndex = posInBlock;
+    const fl = b ? blockFlow(b)[posInBlock] : null;
+    s.stage = fl ? fl.stage : '';
+    s.stageSetByTeacher = fl ? fl.set_by_teacher : false;
     s.focusDefault = steps[posInBlock] || '';
     s.focus = e.focus != null ? e.focus : s.focusDefault;
     s.topic = b ? b.topic : '';
@@ -868,8 +1143,10 @@ function renderQuick() {
       <input type="number" aria-label="Block ${i + 1} lessons" min="1" max="40" value="${esc(b.lessons)}" oninput="setBlock('${b.id}','lessons',parseInt(this.value)||0)">
       <input type="text" class="qname" aria-label="Block ${i + 1} name" value="${esc(b.title)}" placeholder="e.g. mixed numbers and improper fractions" oninput="setBlock('${b.id}','title',this.value)">
       <button class="btn-rm" type="button" onclick="removeBlock('${b.id}')" title="Remove block">✕</button>
+      ${S.priorSource !== 'teacher' ? `<div class="qrtp">${rtpBlockHtml(b)}</div>` : ''}
     </div>`).join('');
-  $('q_prior').value = S.prior;
+  renderPriorSource('quick');
+  $('quickFlow').innerHTML = flowOverviewHtml();
   $('q_notes').value = S.notes;
   renderRapid('quickRapid');
   renderLevelsQuestion('quickLevels');
@@ -916,9 +1193,9 @@ function go(n) {
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   $('s' + n).classList.add('active');
   current = n; renderBar();
-  if (n === 2) { $('f_prior').value = S.prior; renderBlocks(); }
+  if (n === 2) { renderPriorSource('full'); renderBlocks(); }
   if (n === 3) renderLevels();
-  if (n === 4) { renderRapid('fullRapid'); renderWeeks(); }
+  if (n === 4) { renderRapid('fullRapid'); $('fullFlow').innerHTML = flowOverviewHtml(); renderWeeks(); }
   if (n === 5) $('f_notes').value = S.notes;
   if (n === 6) { renderReview(); $('promptPreview').textContent = buildPrompt(collect()); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -980,7 +1257,7 @@ function setBlock(id, field, value, rerender) {
   b[field] = value;
   if (field === 'topic') b.showAll = false;
   saveState();
-  if (rerender) renderBlocks(); else { renderLessonCount(); if (S.mode === 'quick') renderWeeks(); }
+  if (rerender) renderBlocks(); else { renderLessonCount(); if (S.mode === 'quick' && field === 'lessons') renderFlowViews(); else if (S.mode === 'quick') renderWeeks(); }
 }
 function toggleObjective(id, oid) {
   const b = S.blocks.find(x => x.id === id); if (!b) return;
@@ -1033,6 +1310,7 @@ function renderBlocks() {
           ${hidden > 0 ? `<button class="btn-sec btn-small" type="button" onclick="setBlock('${b.id}','showAll',true,true)">Show all ${esc(S.year)} domains</button>` : ''}
           ${b.showAll && b.topic && TOPIC_DOMAINS[b.topic] ? `<button class="btn-sec btn-small" type="button" onclick="setBlock('${b.id}','showAll',false,true)">Only this topic</button>` : ''}
         </div>
+        ${S.priorSource !== 'teacher' ? rtpBlockHtml(b) : ''}
         <div class="obj-list">${objectiveList(S.year, doms, b.objectives, `blockObj_${b.id}`)}</div>
         ${chosenOutside.length ? `<span class="hint">Also chosen from other domains: ${chosenOutside.length}</span>` : ''}
       </div>
@@ -1176,7 +1454,7 @@ function renderWeeks() {
         </div>` : ''}
         ${!wkSlots.length ? '<p class="hint" style="margin-top:0.6rem">No maths lessons this week.</p>'
           : open ? wkSlots.map(s => lessonCard(s)).join('')
-          : `<ul class="compact-lessons">${wkSlots.map(s => `<li><span>Lesson ${s.lesson}</span><span class="muted">${esc(s.dayShort)}${s.date ? ' ' + esc(s.date.toLocaleDateString('en-GB', { day:'numeric', month:'short' })) : ''}</span><span>${esc(s.topic) || '<em class="muted">no topic</em>'}${s.focus ? ' · ' + esc(s.focus) : ' · <span class="claude-fills">Claude suggests</span>'}</span></li>`).join('')}</ul>`}
+          : `<ul class="compact-lessons">${wkSlots.map(s => `<li><span>Lesson ${s.lesson}</span><span class="muted">${esc(s.dayShort)}${s.date ? ' ' + esc(s.date.toLocaleDateString('en-GB', { day:'numeric', month:'short' })) : ''}</span><span>${esc(s.topic) || '<em class="muted">no topic</em>'}${s.focus ? ' · ' + esc(s.focus) : ''}</span>${stagePill(s.stage)}</li>`).join('')}</ul>`}
       </div>
     </div>`;
   }).join('');
@@ -1204,6 +1482,11 @@ function lessonCard(s) {
           <button type="button" class="${s.lp === 'A' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','A');renderWeeks()" title="Pupils write on the paper; learning label on the paper">A · paper</button>
           <button type="button" class="${s.lp === 'B' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','B');renderWeeks()" title="Pupils work in books; sticker labels">B · book</button>
         </div></div>
+      <div><span class="mini-label">Stage in the flow</span>
+        <select onchange="setStage('${s.block}',${s.stepIndex},this.value)">
+          <option value="">${s.stageSetByTeacher ? 'Back to the block\'s flow' : (STAGE[s.stage] ? STAGE[s.stage].label + ' (block flow)' : 'Claude suggests')}</option>
+          ${STAGES.map(st => `<option value="${st.id}" ${s.stageSetByTeacher && s.stage === st.id ? 'selected' : ''}>${esc(st.label)}</option>`).join('')}
+        </select></div>
       <div><span class="mini-label">Statistics lesson</span>
         <div class="toggle">
           <button type="button" class="${s.stats ? 'on' : ''}" onclick="editLesson('${s.key}','stats',true);renderWeeks()">Yes</button>
@@ -1245,9 +1528,11 @@ function collect() {
     weeks: S.weeks,
     term_dates_source: termSource === 'api' ? 'wfa_api' : 'typed',
     default_lesson_days: DAYS.filter(([d]) => S.days.includes(d)).map(([, f]) => f),
+    prior_learning_source: S.priorSource === 'teacher' ? 'teacher' : 'ready_to_progress',
     prior_learning: S.prior.trim(),
     rapid_maths_topics: RAPID_TOPICS.filter(t => t === 'Place Value' || S.rapidTopics.includes(t)),
     levels_same_as_class_list: !!S.levelsSame,
+    flow_stages: STAGES.map(st => ({ id: st.id, label: st.label, meaning: st.hint })),
     claude_to_suggest: 'Any empty field, and any lesson field not listed in that lesson\'s set_by_teacher, is for Claude to propose in the plan summary.',
     blocks: S.blocks.map((b, i) => ({
       id: b.id,
@@ -1258,11 +1543,21 @@ function collect() {
       nc_objectives: b.objectives.map(id => ({ id, text: objText(id) })),
       small_steps: lines(b.steps),
       prior_learning: b.prior.trim(),
+      flow: {
+        preset: b.flowPreset || 'usual',
+        stages: blockFlow(b).map((f, k) => ({ lesson_in_block: k + 1, stage: f.stage || null, set_by_teacher: f.set_by_teacher })),
+      },
+      ready_to_progress: (() => {
+        const pic = b.topic ? rtpPicture(S.year, b.topic) : { finished: [], thisYear: [], earlier: [], lastYear: null };
+        const row = r => ({ code: r[0], year: r[2], text: r[3] });
+        return { finished_year: pic.lastYear, where_they_finished: pic.finished.map(row), this_year: pic.thisYear.map(row), earlier_codes: pic.earlier.map(r => r[0]) };
+      })(),
       misconceptions: lines(b.misconceptions),
       levels: S.levelsSame ? { same_as_class_list: true, bands: [], adapted_note: '', overrides: [] } : {
         same_as_class_list: false,
         bands: lowerYears(S.year).filter(l => b.bands[l]).map(l => ({
           level: l,
+          ready_to_progress: b.topic ? rtpFor(b.topic).filter(r => r[2] === yearNum(l)).map(r => r[0]) : [],
           nc_objectives: b.bands[l].objectives.map(id => ({ id, text: objText(id) })),
           note: b.bands[l].note.trim(),
         })),
@@ -1291,13 +1586,15 @@ function collect() {
       block: s.block,
       labelTopic: s.topic,
       focus: (s.focus || '').trim(),
+      stage: s.stage || null,
       small_step_index: s.focus === s.focusDefault && s.focusDefault ? s.stepIndex : null,
       lp_type: s.lp,
       statistics: !!s.stats,
       manipulatives: s.manip.trim(),
       notes: s.notes.trim(),
       set_by_teacher: Object.keys(S.lessonEdits[s.key] || {}).filter(k => { const v = S.lessonEdits[s.key][k]; return v !== null && v !== ''; })
-        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives' }[k] || k)),
+        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives' }[k] || k))
+        .concat(s.stageSetByTeacher ? ['stage'] : []),
     })),
     notes: S.notes.trim(),
   };
@@ -1312,6 +1609,7 @@ function renderReview() {
     ${row('Usual days', esc(d.default_lesson_days.join(', ')))}
     ${row('Rapid Maths', esc(d.rapid_maths_topics.join(', ')))}
     ${row('Levels', d.levels_same_as_class_list ? 'same as the class list' : 'set per block')}
+    ${row('Prior learning', d.prior_learning_source === 'ready_to_progress' ? 'from Ready to Progress' : 'described by you')}
     ${row('Term dates', d.term_dates_source === 'wfa_api' ? 'from the WFA database' : 'typed by hand')}</div>`;
   h += `<div class="rv-section"><h3>Blocks</h3>${d.blocks.map(b => row(`Block ${b.order}`,
     `${esc(b.title || b.label_topic)} · ${b.lessons} lessons · ${b.nc_objectives.length} objectives · ${b.small_steps.length} small steps` +
@@ -1320,8 +1618,9 @@ function renderReview() {
   const missing = d.lessons.filter(l => !l.focus).length;
   h += `<div class="rv-section"><h3>Lessons (${d.lessons.length})</h3>
     ${missing ? `<div class="warnmsg" style="margin-bottom:0.6rem">${missing} lesson(s) have no focus yet. Claude will suggest one from the block's objectives.</div>` : ''}
-    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Focus</th><th>LP</th><th>Stats</th></tr>
-    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${esc(l.labelTopic)}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.lp_type}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
+    ${flowOverviewHtml()}
+    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Stage</th><th>Focus</th><th>LP</th><th>Stats</th></tr>
+    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${esc(l.labelTopic)}</td><td>${l.stage ? esc(STAGE[l.stage].label) : '<em>—</em>'}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.lp_type}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
     </table></div></div>`;
   const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
   if (dropped.length) h += `<div class="rv-section"><h3>Days dropped</h3>${dropped.map(w => row(w.txwy, esc(w.days_dropped.join(', ')) + (w.days_dropped_reason ? ' (' + esc(w.days_dropped_reason) + ')' : ''))).join('')}</div>`;
@@ -1348,8 +1647,17 @@ function buildPrompt(d) {
     if (b.prior_learning) L.push(`  Prior learning: ${b.prior_learning}`);
     if (b.misconceptions.length) L.push(`  Misconceptions: ${b.misconceptions.join(' | ')}`);
     if (b.levels.bands.length) L.push(`  Levels: ${b.levels.bands.map(x => x.level).join(', ')}`);
+    const runs = [];
+    b.flow.stages.forEach(f => { const lab = f.stage ? STAGE[f.stage].label : 'Claude suggests'; const last = runs[runs.length - 1]; if (last && last.l === lab) last.n++; else runs.push({ l: lab, n: 1 }); });
+    if (runs.length) L.push(`  Flow: ${runs.map(r => `${r.l} x${r.n}`).join(' -> ')}`);
+    if (d.prior_learning_source === 'ready_to_progress' && (b.ready_to_progress.where_they_finished.length || b.ready_to_progress.this_year.length))
+      L.push(`  Ready to Progress: from ${b.ready_to_progress.where_they_finished.map(r => r.code).join(', ') || '-'} towards ${b.ready_to_progress.this_year.map(r => r.code).join(', ') || '-'}`);
   });
-  if (d.prior_learning) { L.push(''); L.push('Prior learning: ' + d.prior_learning); }
+  L.push('');
+  L.push(d.prior_learning_source === 'ready_to_progress'
+    ? 'Prior learning: from Ready to Progress. Read the class\'s results in the RTP tracker (see maths-builder CLAUDE.md, Phase 1) and start each block where the children finished.'
+    : 'Prior learning: as described by the teacher.');
+  if (d.prior_learning) L.push('Prior learning notes: ' + d.prior_learning);
   L.push('');
   L.push('Rapid Maths topics: ' + d.rapid_maths_topics.join(', '));
   L.push('Levels: ' + (d.levels_same_as_class_list ? 'same as the class list' : 'set per block in the brief'));
