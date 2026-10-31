@@ -214,7 +214,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26c</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26d</span></p>
 </header>
 
 <div class="container">
@@ -442,8 +442,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26c';
-const FORM_VERSION = '1.3';
+const TOOL_VERSION = '31.10.26d';
+const FORM_VERSION = '1.4';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -611,7 +611,7 @@ function rtpPicture(year, topic) {
 // The flow of a block: each lesson's stage. Usual order unless the teacher changes it.
 const STAGES = [
   { id: 'understand', label: 'Understanding', hint: 'what it means, with concrete and pictorial models', colour: '#0e7490', tint: '#ecfeff' },
-  { id: 'arithmetic', label: 'Arithmetic', hint: 'calculation: mental and written methods', colour: '#1d4ed8', tint: '#eff6ff' },
+  { id: 'procedural', label: 'Procedural fluency', hint: 'methods: mental and written calculation', colour: '#1d4ed8', tint: '#eff6ff' },
   { id: 'reasoning', label: 'Reasoning', hint: 'explain, compare, always / sometimes / never', colour: '#7c3aed', tint: '#f5f3ff' },
   { id: 'problem', label: 'Problem solving', hint: 'word problems, one step then several', colour: '#c2410c', tint: '#fff7ed' },
   { id: 'contexts', label: 'Contexts', hint: 'money, measures, time and other real contexts', colour: '#047857', tint: '#ecfdf5' },
@@ -663,9 +663,9 @@ function practiceRowHtml(wk) {
   </div>`;
 }
 const FLOW_PRESETS = [
-  { id: 'usual', label: 'Arithmetic → reasoning → problem solving → contexts', order: ['arithmetic','reasoning','problem','contexts'] },
-  { id: 'understand', label: 'Understanding first, then arithmetic → reasoning → problem solving', order: ['understand','arithmetic','reasoning','problem'] },
-  { id: 'review', label: 'Usual flow, ending with a review lesson', order: ['arithmetic','reasoning','problem','contexts'], endReview: true },
+  { id: 'usual', label: 'Procedural fluency → reasoning → problem solving → contexts', order: ['procedural','reasoning','problem','contexts'] },
+  { id: 'understand', label: 'Understanding first, then procedural fluency → reasoning → problem solving', order: ['understand','procedural','reasoning','problem'] },
+  { id: 'review', label: 'Usual flow, ending with a review lesson', order: ['procedural','reasoning','problem','contexts'], endReview: true },
   { id: 'claude', label: 'Claude decides', order: [] },
 ];
 // The stage of each lesson in a block: the preset order spread over the lessons, then the teacher's own changes.
@@ -1127,7 +1127,7 @@ function lessonSlots() {
     if (s.practice) {
       const p = practiceFor(s.txwy);
       Object.assign(s, { block: '', topic: 'Calculation', stage: 'practice', stageSetByTeacher: false, focus: p.methods.map(m => METHOD[m]).join(', '),
-        focusDefault: '', stepIndex: null, lp: 'B', stats: false, manip: '', notes: (S.lessonEdits[s.key] || {}).notes || '', methods: p.methods.slice() });
+        focusDefault: '', stepIndex: null, lp: 'B', rec: [], stats: false, manip: '', notes: (S.lessonEdits[s.key] || {}).notes || '', methods: p.methods.slice() });
       return;
     }
     const def = plan[bi++] || { block: S.blocks.length ? S.blocks[S.blocks.length - 1].id : '', step: null };
@@ -1145,6 +1145,8 @@ function lessonSlots() {
     s.focus = e.focus != null ? e.focus : s.focusDefault;
     s.topic = b ? b.topic : '';
     s.lp = e.lp || (TYPE_A_TOPICS.includes(s.topic) ? 'A' : 'B');
+    // Each cycle: A (paper), B (book) or board (questions on the board, no Learning Paper)
+    s.rec = [e.rec1 || s.lp, e.rec2 || s.lp];
     s.stats = e.stats != null ? e.stats : s.topic === 'Statistics';
     s.manip = e.manip || '';
     s.notes = e.notes || '';
@@ -1549,11 +1551,11 @@ function lessonCard(s) {
       <div><span class="mini-label">Focus (small step)</span>
         <input type="text" list="${listId}" value="${esc(s.focus)}" placeholder="${steps.length ? 'Pick or type the small step' : 'Type this lesson\'s focus'}" oninput="editLesson('${s.key}','focus',this.value)">
         <datalist id="${listId}">${steps.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
-      <div><span class="mini-label">Learning paper</span>
+      ${[1, 2].map(c => `<div><span class="mini-label">Cycle ${c}: answers on</span>
         <div class="toggle">
-          <button type="button" class="${s.lp === 'A' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','A');renderWeeks()" title="Pupils write on the paper; learning label on the paper">A · paper</button>
-          <button type="button" class="${s.lp === 'B' ? 'on' : ''}" onclick="editLesson('${s.key}','lp','B');renderWeeks()" title="Pupils work in books; sticker labels">B · book</button>
-        </div></div>
+          ${[['A', 'A · paper', 'A Learning Paper they write on (label on the paper)'], ['B', 'B · book', 'A Learning Paper; answers in books (sticker label)'], ['board', 'Board', 'No Learning Paper: questions on the board, answers in books']].map(([v, lab, tip]) =>
+            `<button type="button" class="${s.rec[c - 1] === v ? 'on' : ''}" title="${tip}" onclick="editLesson('${s.key}','rec${c}','${v}');renderWeeks()">${lab}</button>`).join('')}
+        </div></div>`).join('')}
       <div><span class="mini-label">Stage in the flow</span>
         <select onchange="setStage('${s.block}',${s.stepIndex},this.value)">
           <option value="">${s.stageSetByTeacher ? 'Back to the block\'s flow' : (STAGE[s.stage] ? STAGE[s.stage].label + ' (block flow)' : 'Claude suggests')}</option>
@@ -1661,6 +1663,7 @@ function collect() {
       block: s.block,
       labelTopic: s.topic,
       lesson_type: s.practice ? 'arithmetic_practice' : 'block',
+      cycles: s.practice ? undefined : s.rec.map((r, i) => ({ cycle: i + 1, answers_on: r === 'board' ? 'board' : r === 'A' ? 'paper' : 'book' })),
       methods: s.practice ? s.methods.map(m => ({ id: m, label: METHOD[m] })) : undefined,
       flow: s.practice ? 'i_do_then_you_do' : undefined,
       focus: (s.focus || '').trim(),
@@ -1671,7 +1674,7 @@ function collect() {
       manipulatives: s.manip.trim(),
       notes: s.notes.trim(),
       set_by_teacher: Object.keys(S.lessonEdits[s.key] || {}).filter(k => { const v = S.lessonEdits[s.key][k]; return v !== null && v !== ''; })
-        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives' }[k] || k))
+        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives', rec1: 'cycle1_answers_on', rec2: 'cycle2_answers_on' }[k] || k))
         .concat(s.stageSetByTeacher ? ['stage'] : []),
     })),
     notes: S.notes.trim(),
@@ -1697,8 +1700,8 @@ function renderReview() {
   h += `<div class="rv-section"><h3>Lessons (${d.lessons.length})</h3>
     ${missing ? `<div class="warnmsg" style="margin-bottom:0.6rem">${missing} lesson(s) have no focus yet. Claude will suggest one from the block's objectives.</div>` : ''}
     ${flowOverviewHtml()}
-    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Stage</th><th>Focus</th><th>LP</th><th>Stats</th></tr>
-    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${l.lesson_type === 'arithmetic_practice' ? 'Arithmetic practice' : esc(l.labelTopic)}</td><td>${l.stage ? esc(STAGE[l.stage].label) : '<em>—</em>'}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.lp_type}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
+    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Stage</th><th>Focus</th><th>Answers on (cycle 1 / 2)</th><th>Stats</th></tr>
+    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${l.lesson_type === 'arithmetic_practice' ? 'Arithmetic practice' : esc(l.labelTopic)}</td><td>${l.stage ? esc(STAGE[l.stage].label) : '<em>—</em>'}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.cycles ? l.cycles.map(c => c.answers_on).join(' / ') : '—'}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
     </table></div></div>`;
   const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
   if (dropped.length) h += `<div class="rv-section"><h3>Days dropped</h3>${dropped.map(w => row(w.txwy, esc(w.days_dropped.join(', ')) + (w.days_dropped_reason ? ' (' + esc(w.days_dropped_reason) + ')' : ''))).join('')}</div>`;
@@ -1785,6 +1788,8 @@ function checkForSavedDraft() {
 }
 function resumeDraft() {
   S = Object.assign(freshState(), _savedState.S);
+  // 31.10.26c: the 'arithmetic' stage is now 'procedural' (procedural fluency)
+  (S.blocks || []).forEach(b => Object.keys(b.stageEdits || {}).forEach(k => { if (b.stageEdits[k] === 'arithmetic') b.stageEdits[k] = 'procedural'; }));
   blockSeq = _savedState.blockSeq || (S.blocks.length + 1);
   _draftPending = false;
   $('draftBanner').classList.remove('show');
