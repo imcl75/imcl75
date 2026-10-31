@@ -214,7 +214,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26g</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26h</span></p>
 </header>
 
 <div class="container">
@@ -229,45 +229,53 @@
     <div class="toggle" id="modeToggle">
       <button type="button" data-mode="quick" onclick="setMode('quick')">Quick brief</button>
       <button type="button" data-mode="full" onclick="setMode('full')">Full brief</button>
-      <button type="button" data-mode="pathway" onclick="setMode('pathway')">Pathway lesson (on its own)</button>
+      <button type="button" data-mode="pathway" onclick="setMode('pathway')">Pathway week (on its own)</button>
     </div>
     <span class="hint" id="modeHint"></span>
     <button class="btn-sec btn-small" type="button" id="jumpPathways" onclick="jumpToPathways()">↓ Pathway groups in this brief</button>
   </div>
   <div class="steps" id="stepBar"></div>
 
-  <!-- ── Pathway lesson on its own (31.10.26g) ───────────────────────── -->
+  <!-- ── Pathway week (31.10.26h): a week of pathway lessons, no class week planned ── -->
   <section id="sP">
     <div class="card">
-      <h2>Pathway lesson (on its own)</h2>
-      <p class="subtitle">One lesson for a small group working at an earlier year, without planning a class week: a short adult input on an iPad, then independent learning. Claude writes the lesson from what you give here and builds the input deck, its iPad page and the sheet (or labels), zipped on their own. For pathway children inside a planned week, use the Quick or Full brief and its Pathway groups section instead.</p>
-      <div class="g2">
-        <div class="field"><label class="field-label" for="p_date">Date</label>
-          <input type="date" id="p_date" oninput="setSolo('date',this.value)"></div>
-        <div class="field"><label class="field-label" for="p_year">Working at</label>
-          <select id="p_year" onchange="setSolo('year',this.value)"></select></div>
+      <h2>Pathway week</h2>
+      <p class="subtitle">A week of lessons for a small group working at an earlier year, without planning the class week: each lesson a short adult input on an iPad, then independent learning. The arithmetic lesson is whole class, so it is not a pathway lesson. Claude writes the lessons from what you give here and builds each input deck, its iPad page and the sheet (or labels). For pathway children inside a planned class week, use the Quick or Full brief and its Pathway groups section instead.</p>
+      <div class="g3">
+        <div class="field"><label class="field-label" for="p_term">Term</label><select id="p_term" onchange="setSolo('term',this.value);setSolo('week','',true)"></select></div>
+        <div class="field"><label class="field-label" for="p_week">Week</label><select id="p_week" onchange="setSolo('week',this.value,true)"></select></div>
+        <div class="field"><label class="field-label" for="p_year">Working at</label><select id="p_year" onchange="setSolo('year',this.value,true)"></select></div>
       </div>
-      <div class="field"><label class="field-label" for="p_step">Small step</label>
-        <input type="text" id="p_step" placeholder="e.g. Add two 2-digit numbers, exchanging ones" oninput="setSolo('step',this.value)">
-        <span class="hint">One small step: what this lesson teaches.</span>
-        <div class="errmsg" id="e_pstep">Give the small step.</div></div>
-      <div class="field"><span class="field-label">Stage</span>
-        <div class="pill-group" id="p_stage"></div>
-        <span class="hint">One stage a lesson. Start with concrete (real equipment such as Dienes); move to pictorial, then abstract, in later lessons once they are secure.</span></div>
-      <div class="field"><span class="field-label">Resources</span>
-        <div class="method-chips" id="p_res"></div>
-        <input type="text" id="p_resOther" style="margin-top:0.5rem" placeholder="Anything else (optional), e.g. a bead string each" oninput="setSolo('resOther',this.value)">
-        <span class="hint">Listed on slide 1 in a 'You will need' box. Leave empty for Claude to choose.</span></div>
+      <div class="field" id="p_mondayField" style="display:none"><label class="field-label" for="p_monday">That week's Monday</label>
+        <input type="date" id="p_monday" oninput="setSolo('monday',this.value,true)">
+        <span class="hint">Term dates could not be read, so give the Monday.</span></div>
+      <div class="errmsg" id="e_pweek">Choose the term and week.</div>
+      <div class="field"><span class="field-label">Pathway lesson days</span>
+        <div class="pill-group" id="p_days"></div>
+        <span class="hint">Four lessons: every maths day except the whole-class arithmetic lesson. Tap a day to drop it (INSET, a trip).</span></div>
       <div class="g2">
         <div class="field"><label class="field-label" for="p_group">Group <span class="optional">(optional)</span></label>
           <input type="text" id="p_group" placeholder="e.g. P1" oninput="setSolo('group',this.value)"></div>
         <div class="field"><label class="field-label" for="p_initials">Children <span class="optional">(initials only)</span></label>
           <input type="text" id="p_initials" placeholder="AB, CD, EF" oninput="this.value=this.value.toUpperCase();setSolo('initials',this.value)"></div>
       </div>
-      <div class="field"><label class="field-label" for="p_topic">Topic <span class="optional">(optional, for the label)</span></label>
+      <div class="field"><label class="field-label" for="p_topic">Topic <span class="optional">(optional, for the labels)</span></label>
         <select id="p_topic" onchange="setSolo('topic',this.value)"></select></div>
       <div class="field"><label class="field-label" for="p_now">Where they are now <span class="optional">(optional)</span></label>
         <input type="text" id="p_now" placeholder="e.g. secure adding ones to a 2-digit number; not yet crossing 10" oninput="setSolo('now',this.value)"></div>
+    </div>
+    <div class="card">
+      <h2>Lessons</h2>
+      <p class="subtitle">One small step and one stage each lesson. Start with concrete (real equipment such as Dienes); move to pictorial, then abstract, once they are secure. Anything left blank, Claude suggests in the summary.</p>
+      <div id="p_lessons"></div>
+      <div class="errmsg" id="e_plessons">Keep at least one lesson day.</div>
+    </div>
+    <div class="card">
+      <h2>Resources and notes</h2>
+      <div class="field"><span class="field-label">Resources <span class="optional">(for the week)</span></span>
+        <div class="method-chips" id="p_res"></div>
+        <input type="text" id="p_resOther" style="margin-top:0.5rem" placeholder="Anything else (optional), e.g. a bead string each" oninput="setSolo('resOther',this.value)">
+        <span class="hint">Each deck lists what its lesson needs on slide 1 in a 'You will need' box. Leave empty for Claude to choose.</span></div>
       <div class="field"><label class="field-label" for="p_notes">Notes for Claude <span class="optional">(optional)</span></label>
         <textarea id="p_notes" rows="2" placeholder="e.g. keep numbers under 50; one adult for 20 minutes" oninput="setSolo('notes',this.value)"></textarea></div>
     </div>
@@ -277,7 +285,7 @@
         <button class="btn-primary" onclick="if(validateSolo())downloadSolo()">⬇ Download brief JSON</button>
         <button class="btn-gold" onclick="if(validateSolo())copySoloPrompt(event)">⎘ Copy Claude prompt</button>
       </div>
-      <span class="hint">Save the file into <code>~/projects/maths-builder/plan/briefs/</code>, then paste the prompt into Claude Code. Claude shows you the lesson content to check before it builds.</span>
+      <span class="hint">Save the file into <code>~/projects/maths-builder/plan/briefs/</code>, then paste the prompt into Claude Code. Claude shows you the week's lessons in plain words to check before it builds anything.</span>
     </div>
   </section>
 
@@ -331,7 +339,7 @@
     </div>
     <div class="card">
       <h2>Pathway groups</h2>
-      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. On the arithmetic day they do an earlier-stage version of the class's arithmetic lesson. One group per working year; initials only.</p>
+      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. They join the whole-class arithmetic lesson. One group per working year; initials only.</p>
       <div id="quickPathways"></div>
     </div>
     <div class="card">
@@ -434,7 +442,7 @@
     </div>
     <div class="card">
       <h2>Pathway groups</h2>
-      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. On the arithmetic day they do an earlier-stage version of the class's arithmetic lesson. One group per working year; initials only.</p>
+      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. They join the whole-class arithmetic lesson. One group per working year; initials only.</p>
       <div id="fullPathways"></div>
     </div>
     <div class="nav"><button class="btn-sec" onclick="prev(3)">← Back</button><button class="btn-primary" onclick="next(3)">Next →</button></div>
@@ -499,8 +507,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26g';
-const FORM_VERSION = '1.7';
+const TOOL_VERSION = '31.10.26h';
+const FORM_VERSION = '1.8';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -1085,7 +1093,8 @@ function freshState() {
   };
 }
 function freshSolo() {
-  return { date: '', year: 'Y2', step: '', stage: 'concrete', resources: [], resOther: '', group: '', initials: '', topic: '', now: '', notes: '' };
+  return { term: '', week: '', monday: '', days: ['Mon', 'Tue', 'Wed', 'Thu'], year: 'Y2', lessons: {}, resources: [], resOther: '',
+    group: '', initials: '', topic: '', now: '', notes: '' };
 }
 function newBlock() {
   return { id: 'B' + (blockSeq++), topic: '', title: '', lessons: 4, objectives: [], showAll: false,
@@ -1128,6 +1137,7 @@ async function loadTermDates() {
   }
   renderTermSelects();
   renderCalendarStatus();
+  if (S.mode === 'pathway') renderSolo();
   afterBasicsChange();
 }
 function renderCalendarStatus() {
@@ -1240,7 +1250,7 @@ function applyMode() {
   document.body.classList.toggle('pathmode', solo);
   document.querySelectorAll('#modeToggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
   $('modeHint').textContent = solo
-    ? 'One lesson for a small group working at an earlier year, without planning a week.'
+    ? 'A week of pathway lessons (four, not the whole-class arithmetic lesson) for a small group working at an earlier year.'
     : quick
     ? 'One screen: dates, topics and lesson counts. Claude suggests the rest for you to check.'
     : 'Six steps: set objectives, small steps, levels and each lesson yourself. Anything left blank, Claude suggests.';
@@ -1500,7 +1510,7 @@ function removeOverride(bid, i) { S.blocks.find(x => x.id === bid).overrides.spl
 // ── Pathway groups (31.10.26f) ─────────────────────────────────────────────
 // 4-6 children a year group whose maths is at a much earlier stage: their own sequence from their working year,
 // not an adapted class lesson. One group per working year. Every maths lesson: adult input (iPad slide page),
-// then independent learning; on the arithmetic day an earlier-stage version of the class arithmetic lesson.
+// then independent learning; the arithmetic lesson is whole class (Innes 31.10.26h), not a pathway lesson.
 let pathSeq = 1;
 function newPathway() {
   const lower = lowerYears(S.year);
@@ -1562,9 +1572,6 @@ function renderPathways(id) {
       <div class="field"><label class="field-label">Small steps, in order <span class="claude-fills">Claude suggests</span> <span class="optional">(one per lesson)</span></label>
         <textarea rows="4" oninput="setPathway('${g.id}','steps',this.value)" placeholder="e.g.&#10;Add two 2-digit numbers with no regrouping, using Dienes&#10;Add two 2-digit numbers, regrouping ones">${esc(g.steps)}</textarea>
         <span class="hint">${steps.length} of ${nLessons} lessons have a step; Claude fills the rest from the criteria.</span></div>
-      <div class="field"><span class="field-label">Arithmetic day: methods at their stage <span class="claude-fills">Claude suggests</span></span>
-        <div class="method-chips">${ARITH_METHODS.map(([m, lab]) => `<button type="button" class="mchip${g.arithMethods.includes(m) ? ' on' : ''}" onclick="togglePathMethod('${g.id}','${m}')">${esc(lab)}</button>`).join('')}</div>
-        <span class="hint">Mirrors the class's arithmetic lesson (I do, then you do) with earlier-stage methods and fewer digits.</span></div>
     </div>`;
   }).join('') + `<button class="btn-add btn-small" type="button" onclick="addPathway()">+ Add a pathway group</button>
     ${S.pathways.length ? '' : '<span class="hint" style="margin-top:0.4rem">None yet. Add one for each earlier year that children are working at.</span>'}`;
@@ -1574,67 +1581,111 @@ function jumpToPathways() {
   setTimeout(() => $(S.mode === 'quick' ? 'quickPathways' : 'fullPathways').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
-// ── Pathway lesson on its own (31.10.26g): maths-builder build_pathway_lesson.py --brief ──
-const SOLO_STAGES = [['concrete', 'Concrete (make it)'], ['pictorial', 'Pictorial (draw it)'], ['abstract', 'Abstract (write it)']];
+// ── Pathway week on its own (31.10.26h): maths-builder build_pathway_lesson.py --brief, one lesson at a time ──
+// Innes 31.10.26: "pathway will be multiple lessons ... a week's worth of lessons at a time (4 lessons as the
+// arithmetic lesson will be whole class and not a separate pathway lesson)".
+const SOLO_STAGES = [['concrete', 'Concrete'], ['pictorial', 'Pictorial'], ['abstract', 'Abstract'], ['', 'Claude suggests']];
 const SOLO_RES = ['Dienes: tens and ones', 'Dienes: hundreds, tens and ones', 'place value mat', 'ten frames', 'counters',
   'Numicon', 'cubes', 'bead string', 'number line', 'hundred square', 'part-whole model', 'whiteboard and pen'];
-function soloState() { if (!S.solo) S.solo = freshSolo(); return S.solo; }
+function soloState() {
+  if (!S.solo || !Array.isArray(S.solo.days)) S.solo = freshSolo();
+  return S.solo;
+}
 function setSolo(field, value, rerender) { soloState()[field] = value; saveState(); if (rerender) renderSolo(); }
+function setSoloLesson(day, field, value, rerender) {
+  const o = soloState(); o.lessons[day] = Object.assign({ step: '', stage: '' }, o.lessons[day] || {}); o.lessons[day][field] = value;
+  saveState(); if (rerender) renderSolo();
+}
+function toggleSoloDay(d) {
+  const o = soloState();
+  o.days = o.days.includes(d) ? o.days.filter(x => x !== d) : DAYS.map(x => x[0]).filter(x => x === d || o.days.includes(x));
+  saveState(); renderSolo();
+}
 function toggleSoloRes(r) {
   const o = soloState();
   o.resources = o.resources.includes(r) ? o.resources.filter(x => x !== r) : [...o.resources, r];
   saveState(); renderSolo();
 }
+function soloWeek() {
+  const o = soloState();
+  if (!o.term || !o.week) return null;
+  const r = termRows && termRows.find(x => x.term === parseInt(o.term) && x.week === parseInt(o.week));
+  return { txwy: r ? (r.label || `T${r.term}W${r.week}`) : `T${o.term}W${o.week}`, monday: r ? r.monday : parseISO(o.monday) };
+}
+function soloSlots() {
+  const o = soloState(), wk = soloWeek();
+  return DAYS.map(([d, full], di) => ({ d, full, di })).filter(x => o.days.includes(x.d)).map((x, k) => {
+    const e = o.lessons[x.d] || {};
+    return { lesson: k + 1, day: x.full, dayShort: x.d, date: wk && wk.monday ? addDays(wk.monday, x.di) : null,
+      step: (e.step || '').trim(), stage: e.stage || '' };
+  });
+}
 function renderSolo() {
   const o = soloState();
-  $('p_date').value = o.date;
+  const terms = termRows ? [...new Set(termRows.map(r => r.term))] : [1, 2, 3, 4, 5, 6];
+  $('p_term').innerHTML = '<option value="">Term…</option>' + terms.map(t => `<option value="${t}" ${String(o.term) === String(t) ? 'selected' : ''}>Term ${t}</option>`).join('');
+  const weeks = termRows ? termRows.filter(r => r.term === parseInt(o.term)).map(r => r.week) : [1, 2, 3, 4, 5, 6, 7];
+  $('p_week').innerHTML = '<option value="">Week…</option>' + (o.term ? weeks : []).map(w => `<option value="${w}" ${String(o.week) === String(w) ? 'selected' : ''}>Week ${w}</option>`).join('');
+  $('p_mondayField').style.display = termRows || termSource === 'loading' ? 'none' : '';
+  $('p_monday').value = o.monday;
   $('p_year').innerHTML = ['Y1', 'Y2', 'Y3', 'Y4'].map(y => `<option ${o.year === y ? 'selected' : ''}>${y}</option>`).join('');
-  $('p_step').value = o.step;
-  $('p_stage').innerHTML = SOLO_STAGES.map(([k, lab]) => `<div class="pill${o.stage === k ? ' on' : ''}" onclick="setSolo('stage','${k}',true)">${lab}</div>`).join('');
-  $('p_res').innerHTML = SOLO_RES.map(r => `<button type="button" class="mchip${o.resources.includes(r) ? ' on' : ''}" onclick="toggleSoloRes('${r}')">${esc(r)}</button>`).join('');
-  $('p_resOther').value = o.resOther;
+  $('p_days').innerHTML = DAYS.map(([d, full]) => `<div class="pill${o.days.includes(d) ? ' on' : ''}" onclick="toggleSoloDay('${d}')">${full}</div>`).join('');
   $('p_group').value = o.group;
   $('p_initials').value = o.initials;
   $('p_topic').innerHTML = '<option value="">Choose…</option>' + LABEL_TOPICS.map(t => `<option ${o.topic === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
   $('p_now').value = o.now;
+  const slots = soloSlots();
+  $('p_lessons').innerHTML = slots.length ? slots.map(l => `<div class="block">
+      <div class="block-head"><span class="block-title">Lesson ${l.lesson}: ${l.day}${l.date ? ' ' + esc(ukDate(l.date)) : ''}</span></div>
+      <div class="field"><label class="field-label">Small step <span class="claude-fills">Claude suggests</span></label>
+        <input type="text" value="${esc((o.lessons[l.dayShort] || {}).step || '')}" placeholder="e.g. Add two 2-digit numbers, exchanging ones" oninput="setSoloLesson('${l.dayShort}','step',this.value)"></div>
+      <div class="field"><span class="field-label">Stage</span>
+        <div class="pill-group">${SOLO_STAGES.map(([k, lab]) => `<div class="pill${l.stage === k ? ' on' : ''}" onclick="setSoloLesson('${l.dayShort}','stage','${k}',true)">${lab}</div>`).join('')}</div></div>
+    </div>`).join('') : '<p class="hint">No lesson days chosen.</p>';
+  $('p_res').innerHTML = SOLO_RES.map(r => `<button type="button" class="mchip${o.resources.includes(r) ? ' on' : ''}" onclick="toggleSoloRes('${r}')">${esc(r)}</button>`).join('');
+  $('p_resOther').value = o.resOther;
   $('p_notes').value = o.notes;
 }
 function validateSolo() {
-  const bad = !soloState().step.trim();
-  $('e_pstep').classList.toggle('show', bad);
-  if (bad) $('e_pstep').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  return !bad;
+  const badWeek = !soloWeek(), badLessons = !soloSlots().length;
+  $('e_pweek').classList.toggle('show', badWeek);
+  $('e_plessons').classList.toggle('show', badLessons);
+  if (badWeek || badLessons) { (badWeek ? $('e_pweek') : $('e_plessons')).scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
 }
 function collectSolo() {
-  const o = soloState();
+  const o = soloState(), wk = soloWeek() || {};
   const res = [...o.resources, ...String(o.resOther || '').split(/[;,]/).map(x => x.trim()).filter(Boolean)];
   return {
-    brief_type: 'maths_pathway_lesson', form_version: FORM_VERSION, tool_version: TOOL_VERSION,
+    brief_type: 'maths_pathway_week', form_version: FORM_VERSION, tool_version: TOOL_VERSION,
     created: new Date().toISOString(),
-    small_step: o.step.trim(), working_year: o.year, date: o.date || null,
-    cpa_stage: o.stage, resources: res, resources_set_by_teacher: res.length > 0,
+    txwy: wk.txwy || null, week_monday: iso(wk.monday), working_year: o.year,
     group: (o.group || '').trim() || null,
     initials: (o.initials || '').toUpperCase().split(/[^A-Z]+/).filter(Boolean),
-    topic: o.topic || null, where_they_are_now: (o.now || '').trim(), notes: (o.notes || '').trim(),
-    content: null,
-    content_note: 'Claude writes content (walt, ican, model, examples for this one stage, resources, misconception, watch_for, critical_moment, task) per maths-builder CLAUDE.md "Pathway groups", shows it to Innes, then builds with build_pathway_lesson.py --brief.',
+    topic: o.topic || null, where_they_are_now: (o.now || '').trim(),
+    resources: res, resources_set_by_teacher: res.length > 0, notes: (o.notes || '').trim(),
+    arithmetic_rule: 'The weekly arithmetic lesson is whole class: the pathway group joins it; it is not a pathway lesson.',
+    lessons: soloSlots().map(l => ({ lesson: l.lesson, day: l.day, date: iso(l.date),
+      small_step: l.step, small_step_set_by_teacher: !!l.step,
+      cpa_stage: l.stage || null, cpa_stage_set_by_teacher: !!l.stage, content: null })),
+    content_note: 'For each lesson Claude writes content (content.stage = cpa_stage; walt, ican, model, examples, resources, misconception, watch_for, critical_moment, task) per maths-builder CLAUDE.md "Pathway groups", shows the week to Innes, then builds each lesson with build_pathway_lesson.py --brief.',
   };
 }
-function soloSlug(d) { return (d.small_step || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40); }
+function soloFile(d) { return `maths_pathway_${d.txwy || 'undated'}_${(d.group || d.working_year || 'group').replace(/[^A-Za-z0-9]+/g, '')}.json`; }
 function buildSoloPrompt(d) {
   const L = [];
-  L.push(`Pathway lesson (on its own) from the Maths Briefing Tool v${TOOL_VERSION}.`);
-  L.push(`Brief file: ~/projects/maths-builder/plan/briefs/maths_pathway_${soloSlug(d)}_${d.date || 'undated'}.json`);
+  L.push(`Pathway week (on its own) from the Maths Briefing Tool v${TOOL_VERSION}.`);
+  L.push(`Brief file: ~/projects/maths-builder/plan/briefs/${soloFile(d)}`);
   L.push('');
-  L.push(`Small step: ${d.small_step} (working at ${d.working_year}).`);
-  L.push(`Stage: ${d.cpa_stage}, one stage this lesson.`);
-  L.push(`Date: ${d.date || 'not set (ask me)'}. Group: ${d.group || 'none named'}. Children: ${d.initials.join(', ') || 'not given'}.`);
+  L.push(`${d.txwy || 'Week not set'}: ${d.lessons.length} pathway lessons for a group working at ${d.working_year}. Group: ${d.group || 'none named'}. Children: ${d.initials.join(', ') || 'not given'}.`);
+  d.lessons.forEach(l => L.push(`Lesson ${l.lesson} (${l.day}${l.date ? ' ' + l.date : ''}): ${l.small_step || 'small step for you to suggest'}; stage ${l.cpa_stage || 'for you to suggest'}.`));
   L.push(`Resources: ${d.resources.length ? d.resources.join('; ') : 'for you to choose'}.`);
   if (d.topic) L.push(`Topic: ${d.topic}.`);
   if (d.where_they_are_now) L.push(`Where they are now: ${d.where_they_are_now}.`);
   if (d.notes) L.push(`Notes: ${d.notes}`);
+  L.push('The arithmetic lesson is whole class; the group joins it.');
   L.push('');
-  L.push('In ~/projects/maths-builder, read CLAUDE.md ("Pathway groups", the standalone --brief route). Write the lesson content for this one stage and show it to me in plain words. Once I agree, add it to the brief as "content" and build with scripts/build_pathway_lesson.py --brief. Open the deck and the sheet and check them before you give them to me.');
+  L.push('In ~/projects/maths-builder, read CLAUDE.md ("Pathway groups", the standalone --brief route). Write each lesson (one stage each, concrete before pictorial before abstract) and show me the week in plain words. Once I agree, build every lesson, open the decks and sheets and check them before you give them to me.');
   return L.join('\n');
 }
 function downloadSolo() {
@@ -1642,7 +1693,7 @@ function downloadSolo() {
   const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `maths_pathway_${soloSlug(d)}_${d.date || 'undated'}.json`; a.click();
+  a.href = url; a.download = soloFile(d); a.click();
   URL.revokeObjectURL(url);
 }
 function copySoloPrompt(ev) {
@@ -1660,9 +1711,8 @@ function collectPathways(slots) {
       ready_to_progress: g.rtp.map(code => { const r = RTP.find(x => x[0] === code); return { code, year: r ? r[2] : null, text: r ? r[3] : '' }; }),
       where_they_are_now: (g.now || '').trim(),
       small_steps: steps,
-      arithmetic_methods: g.arithMethods.map(m => ({ id: m, label: METHOD[m] })),
       lessons: slots.map(s => s.practice
-        ? { lesson: s.lesson, week: s.txwy, day: s.day, date: iso(s.date), kind: 'arithmetic_adapted' }
+        ? { lesson: s.lesson, week: s.txwy, day: s.day, date: iso(s.date), kind: 'class_arithmetic' }
         : { lesson: s.lesson, week: s.txwy, day: s.day, date: iso(s.date), kind: 'pathway', small_step: steps[k++] || '' }),
     };
   });
@@ -1912,7 +1962,7 @@ function collect() {
         .concat(s.stageSetByTeacher ? ['stage'] : []),
     })),
     pathways: collectPathways(slots),
-    pathway_rule: 'Pathway children follow their own sequence from their working year, every maths lesson: adult input (iPad slide page, concrete then pictorial then abstract), then independent learning recorded by the LP type rule. On the arithmetic day they do an earlier-stage version of the class arithmetic lesson.',
+    pathway_rule: 'Pathway children follow their own sequence from their working year, every maths lesson: adult input (iPad slide page, concrete then pictorial then abstract), then independent learning recorded by the LP type rule. The arithmetic lesson is whole class: the group joins it.',
     notes: S.notes.trim(),
   };
 }
