@@ -214,7 +214,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26e</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26f</span></p>
 </header>
 
 <div class="container">
@@ -281,6 +281,11 @@
         <label class="field-label" for="q_notes">Notes for Claude <span class="optional">(optional)</span></label>
         <textarea id="q_notes" rows="3" placeholder="e.g. assessment week after block 2; use bar models for fractions"></textarea>
       </div>
+    </div>
+    <div class="card">
+      <h2>Pathway groups</h2>
+      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. On the arithmetic day they do an earlier-stage version of the class's arithmetic lesson. One group per working year; initials only.</p>
+      <div id="quickPathways"></div>
     </div>
     <div class="card">
       <h2>Export</h2>
@@ -380,6 +385,11 @@
       </div>
       <div id="levelsContainer"></div>
     </div>
+    <div class="card">
+      <h2>Pathway groups</h2>
+      <p class="subtitle">Children whose maths is at a much earlier stage follow their own sequence from an earlier year, every maths lesson: a short adult input on an iPad, then independent learning. On the arithmetic day they do an earlier-stage version of the class's arithmetic lesson. One group per working year; initials only.</p>
+      <div id="fullPathways"></div>
+    </div>
     <div class="nav"><button class="btn-sec" onclick="prev(3)">← Back</button><button class="btn-primary" onclick="next(3)">Next →</button></div>
   </section>
 
@@ -442,8 +452,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26e';
-const FORM_VERSION = '1.5';
+const TOOL_VERSION = '31.10.26f';
+const FORM_VERSION = '1.6';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -1023,7 +1033,7 @@ function freshState() {
     year: 'Y5', classes: ['5IM','5LS'], title: '', term: '', week: '', weeks: 1,
     days: DEFAULT_DAYS.slice(), blocks: [], weekDays: {}, weekReasons: {}, manualMondays: {},
     rapid: {}, rapidTopics: ['Place Value'], lessonEdits: {}, openWeeks: {},
-    levelsSame: true, prior: '', priorSource: 'rtp', practice: {}, notes: '',
+    levelsSame: true, prior: '', priorSource: 'rtp', practice: {}, pathways: [], notes: '',
   };
 }
 function newBlock() {
@@ -1206,6 +1216,7 @@ function renderQuick() {
   $('q_notes').value = S.notes;
   renderRapid('quickRapid');
   renderLevelsQuestion('quickLevels');
+  renderPathways('quickPathways');
   $('quickLevelsHint').textContent = S.levelsSame
     ? 'Each child keeps their usual level from the class list.'
     : 'Choose the levels per block on the Levels step of the full brief.';
@@ -1426,9 +1437,99 @@ function setOverride(bid, i, field, value) {
   saveState();
 }
 function removeOverride(bid, i) { S.blocks.find(x => x.id === bid).overrides.splice(i, 1); saveState(); renderLevels(); }
+// ── Pathway groups (31.10.26f) ─────────────────────────────────────────────
+// 4-6 children a year group whose maths is at a much earlier stage: their own sequence from their working year,
+// not an adapted class lesson. One group per working year. Every maths lesson: adult input (iPad slide page),
+// then independent learning; on the arithmetic day an earlier-stage version of the class arithmetic lesson.
+let pathSeq = 1;
+function newPathway() {
+  const lower = lowerYears(S.year);
+  return { id: 'P' + (pathSeq++), year: lower.length ? lower[Math.max(0, lower.length - 3)] : 'Y1', initials: '', rtp: [],
+    showEarlier: false, steps: '', now: '', arithMethods: [] };
+}
+function addPathway() { S.pathways.push(newPathway()); saveState(); rerenderPathways(); }
+function removePathway(id) {
+  const g = S.pathways.find(x => x.id === id);
+  if (g && (g.steps || g.rtp.length || g.initials) && !confirm('Remove this pathway group and everything typed in it?')) return;
+  S.pathways = S.pathways.filter(x => x.id !== id); saveState(); rerenderPathways();
+}
+function setPathway(id, field, value, rerender) {
+  const g = S.pathways.find(x => x.id === id); if (!g) return;
+  g[field] = value;
+  if (field === 'year') g.rtp = [];
+  saveState(); if (rerender) rerenderPathways();
+}
+function togglePathRtp(id, code) {
+  const g = S.pathways.find(x => x.id === id); if (!g) return;
+  g.rtp = g.rtp.includes(code) ? g.rtp.filter(c => c !== code) : [...g.rtp, code];
+  saveState(); rerenderPathways();
+}
+function togglePathMethod(id, m) {
+  const g = S.pathways.find(x => x.id === id); if (!g) return;
+  g.arithMethods = g.arithMethods.includes(m) ? g.arithMethods.filter(x => x !== m) : [...g.arithMethods, m];
+  saveState(); rerenderPathways();
+}
+function rerenderPathways() { renderPathways(S.mode === 'quick' ? 'quickPathways' : 'fullPathways'); }
+function pathInitials(g) { return (g.initials || '').toUpperCase().split(/[^A-Z]+/).filter(Boolean); }
+function renderPathways(id) {
+  const el = $(id); if (!el) return;
+  const lower = lowerYears(S.year);
+  if (!lower.length) { el.innerHTML = '<p class="hint">Year 1 has no earlier year to work from.</p>'; return; }
+  const nLessons = lessonSlots().length;
+  el.innerHTML = S.pathways.map((g, gi) => {
+    const yn = yearNum(g.year);
+    const crit = RTP.filter(r => r[2] === yn || (g.showEarlier && r[2] === yn - 1));
+    const strands = [...new Set(crit.map(r => r[1]))];
+    const steps = lines(g.steps);
+    return `<div class="block">
+      <div class="block-head"><span class="block-title">Pathway ${gi + 1}: working at ${esc(g.year)}</span>
+        <button class="btn-rm" type="button" onclick="removePathway('${g.id}')" title="Remove group">✕</button></div>
+      <div class="g2">
+        <div class="field"><label class="field-label">Working at</label>
+          <select onchange="setPathway('${g.id}','year',this.value,true)">${lower.map(y => `<option ${g.year === y ? 'selected' : ''}>${y}</option>`).join('')}</select></div>
+        <div class="field"><label class="field-label">Children <span class="optional">(initials, e.g. AB, CD)</span></label>
+          <input type="text" value="${esc(g.initials)}" placeholder="AB, CD, EF" oninput="setPathway('${g.id}','initials',this.value.toUpperCase())"></div>
+      </div>
+      <div class="field">
+        <span class="field-label">Ready to Progress criteria to work on (${esc(g.year)}) <span class="claude-fills">Claude suggests</span></span>
+        <div class="row-tools">${g.rtp.length} chosen
+          <button class="btn-sec btn-small" type="button" onclick="setPathway('${g.id}','showEarlier',${!g.showEarlier},true)">${g.showEarlier ? 'Hide' : 'Show'} ${yn > 1 ? 'Y' + (yn - 1) : ''} criteria</button></div>
+        <div class="obj-list" style="max-height:240px">${strands.map(st => `<div class="obj-domain">${esc(st)}</div>` + crit.filter(r => r[1] === st).map(([code, , y, desc]) =>
+          `<label class="obj${g.rtp.includes(code) ? ' on' : ''}"><input type="checkbox" ${g.rtp.includes(code) ? 'checked' : ''} onchange="togglePathRtp('${g.id}','${code}')"><span><strong>${esc(code)}</strong> ${esc(desc)}</span></label>`).join('')).join('')}</div>
+      </div>
+      <div class="field"><label class="field-label">Where they are now <span class="optional">(optional)</span></label>
+        <input type="text" value="${esc(g.now)}" placeholder="e.g. secure adding ones to a 2-digit number; not yet crossing 10" oninput="setPathway('${g.id}','now',this.value)"></div>
+      <div class="field"><label class="field-label">Small steps, in order <span class="claude-fills">Claude suggests</span> <span class="optional">(one per lesson)</span></label>
+        <textarea rows="4" oninput="setPathway('${g.id}','steps',this.value)" placeholder="e.g.&#10;Add two 2-digit numbers with no regrouping, using Dienes&#10;Add two 2-digit numbers, regrouping ones">${esc(g.steps)}</textarea>
+        <span class="hint">${steps.length} of ${nLessons} lessons have a step; Claude fills the rest from the criteria.</span></div>
+      <div class="field"><span class="field-label">Arithmetic day: methods at their stage <span class="claude-fills">Claude suggests</span></span>
+        <div class="method-chips">${ARITH_METHODS.map(([m, lab]) => `<button type="button" class="mchip${g.arithMethods.includes(m) ? ' on' : ''}" onclick="togglePathMethod('${g.id}','${m}')">${esc(lab)}</button>`).join('')}</div>
+        <span class="hint">Mirrors the class's arithmetic lesson (I do, then you do) with earlier-stage methods and fewer digits.</span></div>
+    </div>`;
+  }).join('') + `<button class="btn-add btn-small" type="button" onclick="addPathway()">+ Add a pathway group</button>
+    ${S.pathways.length ? '' : '<span class="hint" style="margin-top:0.4rem">None yet. Add one for each earlier year that children are working at.</span>'}`;
+}
+function collectPathways(slots) {
+  return S.pathways.map(g => {
+    const steps = lines(g.steps);
+    let k = 0;
+    return {
+      id: g.id, working_year: g.year, initials: pathInitials(g),
+      ready_to_progress: g.rtp.map(code => { const r = RTP.find(x => x[0] === code); return { code, year: r ? r[2] : null, text: r ? r[3] : '' }; }),
+      where_they_are_now: (g.now || '').trim(),
+      small_steps: steps,
+      arithmetic_methods: g.arithMethods.map(m => ({ id: m, label: METHOD[m] })),
+      lessons: slots.map(s => s.practice
+        ? { lesson: s.lesson, week: s.txwy, day: s.day, date: iso(s.date), kind: 'arithmetic_adapted' }
+        : { lesson: s.lesson, week: s.txwy, day: s.day, date: iso(s.date), kind: 'pathway', small_step: steps[k++] || '' }),
+    };
+  });
+}
+
 function renderLevels() {
   const c = $('levelsContainer');
   renderLevelsQuestion('fullLevels');
+  renderPathways('fullPathways');
   if (!S.blocks.length) { c.innerHTML = '<p class="hint">Add a block first.</p>'; return; }
   const lower = lowerYears(S.year);
   if (S.levelsSame) { c.innerHTML = '<p class="hint">Every child keeps their usual level from the class list. Choose "Some blocks need changes" to set levels per block.</p>'; return; }
@@ -1668,6 +1769,8 @@ function collect() {
         .map(k => ({ stats: 'statistics', manip: 'manipulatives' }[k] || k))
         .concat(s.stageSetByTeacher ? ['stage'] : []),
     })),
+    pathways: collectPathways(slots),
+    pathway_rule: 'Pathway children follow their own sequence from their working year, every maths lesson: adult input (iPad slide page, concrete then pictorial then abstract), then independent learning recorded by the LP type rule. On the arithmetic day they do an earlier-stage version of the class arithmetic lesson.',
     notes: S.notes.trim(),
   };
 }
@@ -1682,6 +1785,7 @@ function renderReview() {
     ${row('Rapid Maths', esc(d.rapid_maths_topics.join(', ')))}
     ${row('Levels', d.levels_same_as_class_list ? 'same as the class list' : 'set per block')}
     ${row('Prior learning', d.prior_learning_source === 'ready_to_progress' ? 'from Ready to Progress' : 'described by you')}
+    ${row('Pathway groups', d.pathways.length ? esc(d.pathways.map(g => `${g.working_year} (${g.initials.join(', ') || 'no initials'})`).join('; ')) : 'none')}
     ${row('Term dates', d.term_dates_source === 'wfa_api' ? 'from the WFA database' : 'typed by hand')}</div>`;
   h += `<div class="rv-section"><h3>Blocks</h3>${d.blocks.map(b => row(`Block ${b.order}`,
     `${esc(b.title || b.label_topic)} · ${b.lessons} lessons · ${b.nc_objectives.length} objectives · ${b.small_steps.length} small steps` +
@@ -1733,6 +1837,7 @@ function buildPrompt(d) {
   L.push('');
   L.push('Rapid Maths topics: ' + d.rapid_maths_topics.join(', '));
   L.push('Levels: ' + (d.levels_same_as_class_list ? 'same as the class list' : 'set per block in the brief'));
+  if (d.pathways.length) { L.push(''); d.pathways.forEach((g, i) => L.push(`Pathway ${i + 1} (working at ${g.working_year}, ${g.initials.join(', ') || 'children from the class list'}): ${g.ready_to_progress.map(r => r.code).join(', ') || 'criteria for you to suggest'}; ${g.small_steps.length} small steps given.`)); }
   const prac = d.weeks_detail.filter(w => w.arithmetic_practice);
   if (prac.length) { L.push(''); L.push('Arithmetic practice (I do, then you do; slides like the arithmetic paper): ' + prac.map(w => `${w.txwy} ${w.arithmetic_practice.day}: ${w.arithmetic_practice.methods.map(m => m.label).join(', ') || 'methods for you to suggest'}`).join('; ')); }
   const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
@@ -1782,6 +1887,7 @@ function resumeDraft() {
   // 31.10.26c: the 'arithmetic' stage is now 'procedural' (procedural fluency)
   (S.blocks || []).forEach(b => Object.keys(b.stageEdits || {}).forEach(k => { if (b.stageEdits[k] === 'arithmetic') b.stageEdits[k] = 'procedural'; }));
   blockSeq = _savedState.blockSeq || (S.blocks.length + 1);
+  pathSeq = 1 + Math.max(0, ...(S.pathways || []).map(g => parseInt(String(g.id).slice(1)) || 0));
   _draftPending = false;
   $('draftBanner').classList.remove('show');
   renderBasics(); current = 1; applyMode();
