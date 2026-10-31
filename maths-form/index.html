@@ -214,7 +214,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26d</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26e</span></p>
 </header>
 
 <div class="container">
@@ -238,7 +238,7 @@
   <section id="sQ">
     <div class="card">
       <h2>Quick brief</h2>
-      <p class="subtitle">Only the essentials. Claude suggests everything else (objectives, small steps, misconceptions, paper or book) in the plan summary, which you check before anything is built.</p>
+      <p class="subtitle">Only the essentials. Claude suggests everything else (objectives, small steps, misconceptions, and whether each part needs a Learning Paper) in the plan summary, which you check before anything is built.</p>
       <div id="basicsSlotQuick"></div>
     </div>
     <div class="card">
@@ -262,7 +262,7 @@
     </div>
     <div class="card">
       <h2>Lessons</h2>
-      <p class="subtitle">Dated from the term dates. Tap a day to drop it (INSET, a trip). Switch to the full brief to set a lesson's focus or paper.</p>
+      <p class="subtitle">Dated from the term dates. Tap a day to drop it (INSET, a trip). Switch to the full brief to set a lesson's focus.</p>
       <div id="quickWeeks"></div>
     </div>
     <div class="card">
@@ -387,7 +387,7 @@
   <section id="s4">
     <div class="card">
       <h2>Weeks and lessons</h2>
-      <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson takes its block's next small step; open "Adjust lessons" only if you want to set a focus, the paper type or manipulatives yourself.</p>
+      <p class="subtitle">Lessons are laid out from the term dates and your maths days. Tap a day to drop it for that week. Each lesson takes its block's next small step; open "Adjust lessons" only if you want to set a focus or manipulatives yourself.</p>
       <div class="field">
         <span class="field-label">Flow of the lessons</span>
         <div id="fullFlow"></div>
@@ -442,8 +442,8 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26d';
-const FORM_VERSION = '1.4';
+const TOOL_VERSION = '31.10.26e';
+const FORM_VERSION = '1.5';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
 const LS_KEY = 'wfa_maths_brief_v1';
@@ -481,7 +481,6 @@ const TOPIC_DOMAINS = {
   'Ratio and proportion':['RP'], 'Statistics':['ST'], 'Revision':null,
 };
 // Type A (pupils write on the paper) is the usual choice for these topics; the rest default to Type B (books).
-const TYPE_A_TOPICS = ['Geometry','Geometry - Position and Direction','Statistics'];
 
 // Ready to Progress criteria (DfE, Mathematics guidance: key stages 1 and 2), as the RTP tracker stores them
 // (codes exactly as in rtp_criteria; school-added W targets live only in the tracker).
@@ -1127,7 +1126,7 @@ function lessonSlots() {
     if (s.practice) {
       const p = practiceFor(s.txwy);
       Object.assign(s, { block: '', topic: 'Calculation', stage: 'practice', stageSetByTeacher: false, focus: p.methods.map(m => METHOD[m]).join(', '),
-        focusDefault: '', stepIndex: null, lp: 'B', rec: [], stats: false, manip: '', notes: (S.lessonEdits[s.key] || {}).notes || '', methods: p.methods.slice() });
+        focusDefault: '', stepIndex: null, stats: false, manip: '', notes: (S.lessonEdits[s.key] || {}).notes || '', methods: p.methods.slice() });
       return;
     }
     const def = plan[bi++] || { block: S.blocks.length ? S.blocks[S.blocks.length - 1].id : '', step: null };
@@ -1144,9 +1143,6 @@ function lessonSlots() {
     s.focusDefault = steps[posInBlock] || '';
     s.focus = e.focus != null ? e.focus : s.focusDefault;
     s.topic = b ? b.topic : '';
-    s.lp = e.lp || (TYPE_A_TOPICS.includes(s.topic) ? 'A' : 'B');
-    // Each cycle: A (paper), B (book) or board (questions on the board, no Learning Paper)
-    s.rec = [e.rec1 || s.lp, e.rec2 || s.lp];
     s.stats = e.stats != null ? e.stats : s.topic === 'Statistics';
     s.manip = e.manip || '';
     s.notes = e.notes || '';
@@ -1551,11 +1547,6 @@ function lessonCard(s) {
       <div><span class="mini-label">Focus (small step)</span>
         <input type="text" list="${listId}" value="${esc(s.focus)}" placeholder="${steps.length ? 'Pick or type the small step' : 'Type this lesson\'s focus'}" oninput="editLesson('${s.key}','focus',this.value)">
         <datalist id="${listId}">${steps.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
-      ${[1, 2].map(c => `<div><span class="mini-label">Cycle ${c}: answers on</span>
-        <div class="toggle">
-          ${[['A', 'A · paper', 'A Learning Paper they write on (label on the paper)'], ['B', 'B · book', 'A Learning Paper; answers in books (sticker label)'], ['board', 'Board', 'No Learning Paper: questions on the board, answers in books']].map(([v, lab, tip]) =>
-            `<button type="button" class="${s.rec[c - 1] === v ? 'on' : ''}" title="${tip}" onclick="editLesson('${s.key}','rec${c}','${v}');renderWeeks()">${lab}</button>`).join('')}
-        </div></div>`).join('')}
       <div><span class="mini-label">Stage in the flow</span>
         <select onchange="setStage('${s.block}',${s.stepIndex},this.value)">
           <option value="">${s.stageSetByTeacher ? 'Back to the block\'s flow' : (STAGE[s.stage] ? STAGE[s.stage].label + ' (block flow)' : 'Claude suggests')}</option>
@@ -1608,6 +1599,7 @@ function collect() {
     levels_same_as_class_list: !!S.levelsSame,
     flow_stages: STAGES.concat([STAGE.practice]).map(st => ({ id: st.id, label: st.label, meaning: st.hint })),
     arithmetic_practice_rule: 'One lesson a week (unless switched off) practises the chosen arithmetic methods, whatever the block. Flow: I do (model the method) then you do (independent). Slides look like the arithmetic paper.',
+    answers_recorded: 'Claude decides, cycle by cycle, in the plan summary: a Learning Paper only when it carries what the children need to answer (word problems, representations, tables to complete, coordinates to plot); otherwise the questions go on the board, answers in books, with a sticker label.',
     claude_to_suggest: 'Any empty field, and any lesson field not listed in that lesson\'s set_by_teacher, is for Claude to propose in the plan summary.',
     blocks: S.blocks.map((b, i) => ({
       id: b.id,
@@ -1663,18 +1655,17 @@ function collect() {
       block: s.block,
       labelTopic: s.topic,
       lesson_type: s.practice ? 'arithmetic_practice' : 'block',
-      cycles: s.practice ? undefined : s.rec.map((r, i) => ({ cycle: i + 1, answers_on: r === 'board' ? 'board' : r === 'A' ? 'paper' : 'book' })),
       methods: s.practice ? s.methods.map(m => ({ id: m, label: METHOD[m] })) : undefined,
       flow: s.practice ? 'i_do_then_you_do' : undefined,
       focus: (s.focus || '').trim(),
       stage: s.stage || null,
       small_step_index: s.focus === s.focusDefault && s.focusDefault ? s.stepIndex : null,
-      lp_type: s.lp,
       statistics: !!s.stats,
       manipulatives: s.manip.trim(),
       notes: s.notes.trim(),
       set_by_teacher: Object.keys(S.lessonEdits[s.key] || {}).filter(k => { const v = S.lessonEdits[s.key][k]; return v !== null && v !== ''; })
-        .map(k => ({ lp: 'lp_type', stats: 'statistics', manip: 'manipulatives', rec1: 'cycle1_answers_on', rec2: 'cycle2_answers_on' }[k] || k))
+        .filter(k => !['lp', 'rec1', 'rec2'].includes(k))
+        .map(k => ({ stats: 'statistics', manip: 'manipulatives' }[k] || k))
         .concat(s.stageSetByTeacher ? ['stage'] : []),
     })),
     notes: S.notes.trim(),
@@ -1700,8 +1691,8 @@ function renderReview() {
   h += `<div class="rv-section"><h3>Lessons (${d.lessons.length})</h3>
     ${missing ? `<div class="warnmsg" style="margin-bottom:0.6rem">${missing} lesson(s) have no focus yet. Claude will suggest one from the block's objectives.</div>` : ''}
     ${flowOverviewHtml()}
-    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Stage</th><th>Focus</th><th>Answers on (cycle 1 / 2)</th><th>Stats</th></tr>
-    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${l.lesson_type === 'arithmetic_practice' ? 'Arithmetic practice' : esc(l.labelTopic)}</td><td>${l.stage ? esc(STAGE[l.stage].label) : '<em>—</em>'}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.cycles ? l.cycles.map(c => c.answers_on).join(' / ') : '—'}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
+    <div class="rv-wrap"><table class="rv-table"><tr><th>#</th><th>Week</th><th>Day</th><th>Topic</th><th>Stage</th><th>Focus</th><th>Stats</th></tr>
+    ${d.lessons.map(l => `<tr><td>${l.lesson}</td><td>${esc(l.week)}</td><td>${esc(l.day.slice(0,3))}${l.date ? ' ' + esc(l.date.slice(8) + '/' + l.date.slice(5,7)) : ''}</td><td>${l.lesson_type === 'arithmetic_practice' ? 'Arithmetic practice' : esc(l.labelTopic)}</td><td>${l.stage ? esc(STAGE[l.stage].label) : '<em>—</em>'}</td><td>${esc(l.focus) || '<em>—</em>'}</td><td>${l.statistics ? 'Yes' : ''}</td></tr>`).join('')}
     </table></div></div>`;
   const dropped = d.weeks_detail.filter(w => w.days_dropped.length);
   if (dropped.length) h += `<div class="rv-section"><h3>Days dropped</h3>${dropped.map(w => row(w.txwy, esc(w.days_dropped.join(', ')) + (w.days_dropped_reason ? ' (' + esc(w.days_dropped_reason) + ')' : ''))).join('')}</div>`;
