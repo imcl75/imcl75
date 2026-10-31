@@ -207,7 +207,7 @@
 
 <header>
   <h1>Maths Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26a</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v31.10.26b</span></p>
 </header>
 
 <div class="container">
@@ -435,7 +435,7 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const TOOL_VERSION = '31.10.26a';
+const TOOL_VERSION = '31.10.26b';
 const FORM_VERSION = '1.2';
 // The topics rapid_maths_generator.py's question bank uses. Place Value is always in.
 const RAPID_TOPICS = ['Place Value','Addition and Subtraction','Multiplication and Division','Fractions and Decimals','Geometry','Measurement'];
@@ -707,7 +707,7 @@ function renderPriorSource(which) {
   $(which + 'PriorSource').innerHTML = priorSourceHtml();
   const rtp = S.priorSource !== 'teacher';
   $(which + 'PriorHint').textContent = rtp
-    ? "Claude reads the class's results in the Ready to Progress tracker when it writes the plan, and starts each block where the children finished (see each block's criteria). Children at the expected standard are taken to have met every earlier year's criteria. Add anything else below, if you like."
+    ? "Each block starts where the children finished last year (see its criteria): children at the expected standard are taken to have met every earlier year's Ready to Progress criteria. When Claude writes the plan it also reads this year's results in the Ready to Progress tracker, so criteria already taught or secure are not taught again. Add anything else below, if you like."
     : 'Describe what the class has already been taught that these blocks build on.';
   const ta = $(which === 'quick' ? 'q_prior' : 'f_prior');
   ta.placeholder = rtp ? 'Anything to add (optional), e.g. fractions were rushed last term' : 'e.g. place value to 10,000 taught in Term 1; Year 4 fractions secure for most';
@@ -1655,7 +1655,7 @@ function buildPrompt(d) {
   });
   L.push('');
   L.push(d.prior_learning_source === 'ready_to_progress'
-    ? 'Prior learning: from Ready to Progress. Read the class\'s results in the RTP tracker (see maths-builder CLAUDE.md, Phase 1) and start each block where the children finished.'
+    ? 'Prior learning: from Ready to Progress. Earlier years are taken as secure for children at the expected standard; read this year\'s results in the RTP tracker (see maths-builder CLAUDE.md, Phase 1).'
     : 'Prior learning: as described by the teacher.');
   if (d.prior_learning) L.push('Prior learning notes: ' + d.prior_learning);
   L.push('');
