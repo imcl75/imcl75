@@ -133,7 +133,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
     <div class="side" id="side"></div>
   </div>
 
-  <footer><span>05.11.26a</span><span>Names stay in this browser only</span></footer>
+  <footer><span>05.11.26b</span><span>Names stay in this browser only</span></footer>
 </div>
 
 <dialog id="listDlg">
@@ -167,7 +167,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
 
 <script>
 'use strict';
-const VERSION='05.11.26a';
+const VERSION='05.11.26b';
 const STORE='wfa.seatingplan.v1';
 // WFA year-group colours (same as wfa_shared/brand.py)
 const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
@@ -300,7 +300,7 @@ function renderCanvas(p){
   let h='';
   if(mode==='layout'){
     for(let r=0;r<p.rows;r++)for(let c=0;c<p.cols;c++)
-      if(!p.seats.some(s=>s.c===c&&s.r===r))h+=`<div class="cell" data-cell="${c},${r}" style="left:${c*cw}px;top:${r*rp}px;width:${cw}px;height:${sh}px" title="Add a seat">+</div>`;
+      if(!p.seats.some(s=>s.c===c&&s.r===r)&&!p.items.some(i=>i.r===r&&c>=i.c&&c<i.c+i.w))h+=`<div class="cell" data-cell="${c},${r}" style="left:${c*cw}px;top:${r*rp}px;width:${cw}px;height:${sh}px" title="Add a seat">+</div>`;
   }
   p.items.forEach(it=>{
     h+=`<div class="item ${it.kind} ${mode==='layout'?'layoutmode':''}" data-item="${it.id}" style="left:${it.c*cw}px;top:${it.r*rp}px;width:${it.w*cw}px;height:${it.kind==='board'?Math.round(sh*.3):sh}px">${esc(it.label)}</div>`;
@@ -352,7 +352,7 @@ function sideGroup(p){
 }
 function sideLayout(p){
   return `<div class="card"><h2>Room layout</h2>
-    <p class="hint">Click a <b>+</b> to add a seat, × to remove one, and drag seats or the board/desk to move them. Children travel with their seat.</p>
+    <p class="hint">Click a <b>+</b> to add a seat, × to remove one, and drag seats or the board/desk to move them. Children travel with their seat. Leave a row with no seats to make space, e.g. at the front.</p>
     <div class="f" style="margin-top:8px"><label>Columns</label><input type="number" id="lCols" min="1" max="16" value="${p.cols}"><label style="min-width:40px">Rows</label><input type="number" id="lRows" min="1" max="12" value="${p.rows}"></div>
   </div>
   <div class="card"><h2>Board, desk &amp; labels</h2>
