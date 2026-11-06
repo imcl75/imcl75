@@ -395,6 +395,18 @@ const BANK=[
 
 /* ================= STATE ================= */
 let state=load()||{setup:defaultSetup(),pupils:[],sel:null};
+// Microsoft Forms adds a "Language" column (e.g. "United Kingdom (English)"). Older imports took it as an answer — strip it from saved comments.
+const FORMS_LANG=/^\s*((United Kingdom|United States|Australia|Ireland|Canada|New Zealand) \(English\)|English \((United Kingdom|United States|Australia|Ireland|Canada|New Zealand)\))\.?\s*$/i;
+const FORMS_LANG_IN=/\s*\b(United Kingdom|United States|Australia|Ireland|Canada|New Zealand) \(English\)\.?|\s*\bEnglish \((United Kingdom|United States|Australia|Ireland|Canada|New Zealand)\)\.?/gi;
+function cleanFormsLanguage(st){if(!st)return st;
+  if(Array.isArray(st.voiceQuestions))st.voiceQuestions=st.voiceQuestions.filter(q=>!/^\s*language\s*$/i.test(q));
+  (st.pupils||[]).forEach(p=>{
+    if(Array.isArray(p.voiceParts)){const keep=p.voiceParts.map(t=>!FORMS_LANG.test(t||""));
+      if(keep.includes(false)){p.voiceParts=p.voiceParts.filter((t,i)=>keep[i]);if(Array.isArray(p.voiceKinds))p.voiceKinds=p.voiceKinds.filter((t,i)=>keep[i]);p.voiceRaw=p.voiceParts.join("\n")}}
+    else if(p.voiceRaw)p.voiceRaw=p.voiceRaw.replace(FORMS_LANG_IN,"").trim();
+    if(p.voice)p.voice=p.voice.replace(FORMS_LANG_IN,"").trim();
+  });return st}
+{const before=JSON.stringify(state);cleanFormsLanguage(state);if(JSON.stringify(state)!==before)try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){}}
 state.setup=Object.assign(defaultSetup(),state.setup);
 if(!state.setup.clsChosen)state.setup.cls="5H2";
 let customBank=loadBank();
@@ -675,7 +687,7 @@ function importVoice(){
   const cand=h.map((x,i)=>i).filter(i=>/name/.test(h[i])&&h[i].length<40);
   const filled=i=>rows.slice(1).filter(r=>{const v=(r[i]||"").trim().toLowerCase();return v&&v!=="none"&&v!=="anonymous"}).length;
   const nameI=cand.length?cand.sort((a,b)=>filled(b)-filled(a))[0]:0;
-  const skip=x=>/^(id|start time|completion time|email|last modified time)$/.test(x)||/time$/.test(x)||/email/.test(x);
+  const skip=x=>/^(id|start time|completion time|email|last modified time|language)$/.test(x)||/time$/.test(x)||/email/.test(x);
   const ans=h.map((x,i)=>i).filter(i=>!cand.includes(i)&&i!==nameI&&!skip(h[i]));
   const kinds=ans.map(i=>questionKind(head[i]));
   state.voiceQuestions=ans.map(i=>head[i]);
@@ -1091,7 +1103,7 @@ function saveFile(){const blob=new Blob([JSON.stringify({app:"flc-builder",versi
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FLC ${state.setup.month} ${state.setup.year}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 function openFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.app!=="flc-builder")throw 0;
   if(state.pupils.length&&!confirm("Replace the current work with this file?"))return;
-  state=d.state;if(d.customBank){const ids=new Set(customBank.map(x=>x.t));d.customBank.forEach(x=>{if(!ids.has(x.t))customBank.push(x)});saveBank()}
+  state=cleanFormsLanguage(d.state);if(d.customBank){const ids=new Set(customBank.map(x=>x.t));d.customBank.forEach(x=>{if(!ids.has(x.t))customBank.push(x)});saveBank()}
   save();syncSetup();renderAll();renderClaudeSetup();toast("Opened")}catch(e){toast("That isn't an FLC Builder file")}};r.readAsText(f);inp.value=""}
 function copyExport(){
   const cell=v=>{v=String(v??"");return/[\t\n"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
