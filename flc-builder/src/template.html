@@ -396,15 +396,16 @@ const BANK=[
 /* ================= STATE ================= */
 let state=load()||{setup:defaultSetup(),pupils:[],sel:null};
 // Microsoft Forms adds a "Language" column (e.g. "United Kingdom (English)"). Older imports took it as an answer — strip it from saved comments.
+const INVIS=/[\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g; // invisible text-direction marks Forms adds (e.g. after "English (United Kingdom)")
 const FORMS_LANG=/^\s*((United Kingdom|United States|Australia|Ireland|Canada|New Zealand) \(English\)|English \((United Kingdom|United States|Australia|Ireland|Canada|New Zealand)\))\.?\s*$/i;
-const FORMS_LANG_IN=/\s*\b(United Kingdom|United States|Australia|Ireland|Canada|New Zealand) \(English\)\.?|\s*\bEnglish \((United Kingdom|United States|Australia|Ireland|Canada|New Zealand)\)\.?/gi;
+const FORMS_LANG_IN=/\s*\b((United Kingdom|United States|Australia|Ireland|Canada|New Zealand) \(English\)|English \((United Kingdom|United States|Australia|Ireland|Canada|New Zealand)\))\.?/gi;
 function cleanFormsLanguage(st){if(!st)return st;
   if(Array.isArray(st.voiceQuestions))st.voiceQuestions=st.voiceQuestions.filter(q=>!/^\s*language\s*$/i.test(q));
   (st.pupils||[]).forEach(p=>{
-    if(Array.isArray(p.voiceParts)){const keep=p.voiceParts.map(t=>!FORMS_LANG.test(t||""));
+    if(Array.isArray(p.voiceParts)){p.voiceParts=p.voiceParts.map(t=>String(t||"").replace(INVIS,""));const keep=p.voiceParts.map(t=>!FORMS_LANG.test(t));
       if(keep.includes(false)){p.voiceParts=p.voiceParts.filter((t,i)=>keep[i]);if(Array.isArray(p.voiceKinds))p.voiceKinds=p.voiceKinds.filter((t,i)=>keep[i]);p.voiceRaw=p.voiceParts.join("\n")}}
-    else if(p.voiceRaw)p.voiceRaw=p.voiceRaw.replace(FORMS_LANG_IN,"").trim();
-    if(p.voice)p.voice=p.voice.replace(FORMS_LANG_IN,"").trim();
+    else if(p.voiceRaw)p.voiceRaw=p.voiceRaw.replace(INVIS,"").replace(FORMS_LANG_IN,"").trim();
+    if(p.voice)p.voice=p.voice.replace(INVIS,"").replace(FORMS_LANG_IN,"").replace(/^[\s.,;:]+/,"").trim(); // a comment never starts with a full stop
   });return st}
 {const before=JSON.stringify(state);cleanFormsLanguage(state);if(JSON.stringify(state)!==before)try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){}}
 state.setup=Object.assign(defaultSetup(),state.setup);
@@ -693,7 +694,7 @@ function importVoice(){
   state.voiceQuestions=ans.map(i=>head[i]);
   const got=new Map();voicePending=[];
   rows.slice(1).forEach(r=>{
-    const nm=(r[nameI]||"").trim();const parts=ans.map(i=>(r[i]||"").trim());
+    const nm=(r[nameI]||"").trim();const parts=ans.map(i=>(r[i]||"").replace(INVIS,"").trim());
     if(!parts.some(Boolean))return;
     const m=matchPupil(nm);
     if(!m.p){voicePending.push({nm,parts,kinds,why:m.why});return}
