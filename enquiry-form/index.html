@@ -245,7 +245,7 @@
 
 <header>
   <h1>Enquiry Briefing Tool <span id="save-indicator" style="font-size:0.75rem;font-weight:400;color:#86efac;margin-left:0.75rem;opacity:0;transition:opacity 0.3s;">✓ Saved</span></h1>
-  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v29.08.26a</span></p>
+  <p>Wallscourt Farm Academy · Cabot Learning Federation · <span id="tool-version" style="font-family:monospace;opacity:0.8;">v17.11.26a</span></p>
 </header>
 
 <div class="container">
@@ -1589,7 +1589,6 @@ const CLF_TOPICS = {
   'geography_Y5': ['major UK waterways — Avon, Grand Union Canal, Mersey, Ouse, Trent, Thames, Tyne','water cycle — evaporation, condensation, precipitation, run-off, groundwater','rivers — source, tributary, meander, estuary, delta','river processes — erosion, deposition, transportation','biomes and climate zones','renewable vs non-renewable natural resources','fossil fuels and their environmental impact','global distribution of natural resources'],
   'geography_Y6': ['UK highland areas','tectonic plates and the theory of Pangaea','continental drift','mountains, volcanoes and earthquakes','climate change — causes','climate change — evidence and global impacts','human responses to climate change','sustainability and environmental responsibility'],
 };
-const TERM_WEEKS = { '1':7, '2':7, '3':5, '4':6, '5':5, '6':7 };
 const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri'];
 
 // Real WFA academic-year calendar — the exact same source of truth
@@ -1616,6 +1615,17 @@ const TERM_WEEK_MONDAYS = {
   T6W1: '07/06/27', T6W2: '14/06/27', T6W3: '21/06/27', T6W4: '28/06/27',
   T6W5: '05/07/27', T6W6: '12/07/27', T6W7: '19/07/27',
 };
+
+// Weeks per term, worked out from the calendar above so the week picker
+// and the weekly schedule can never disagree with the real dates.
+// 17.11.26: the old hand-typed table said T3=5, T4=6, T5=5 and the
+// schedule rolled over after week 6 in every term, so a T2W5 start
+// showed Week 3 as T3W1 instead of T2W7.
+const TERM_WEEKS = {};
+Object.keys(TERM_WEEK_MONDAYS).forEach(k => {
+  const m = k.match(/^T(\d+)W(\d+)$/);
+  if (m) TERM_WEEKS[m[1]] = Math.max(TERM_WEEKS[m[1]] || 0, parseInt(m[2]));
+});
 
 const STEPS = [
   {n:1,lbl:'Basics'},{n:2,lbl:'About'},{n:3,lbl:'Outcomes'},
@@ -2102,10 +2112,10 @@ function deliveryPath(t, w, subject) {
 }
 
 function nextWeek(t, w) {
-  // Advance by one week; roll over at week 6 (6-week terms)
+  // Advance by one week; roll over at the end of THIS term's real length
   const wNum = parseInt(w);
   const tNum = parseInt(t);
-  if (wNum < 6) return { t: tNum, w: wNum + 1 };
+  if (wNum < (TERM_WEEKS[String(tNum)] || 6)) return { t: tNum, w: wNum + 1 };
   return { t: tNum + 1, w: 1 };
 }
 
