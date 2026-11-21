@@ -34,7 +34,7 @@ h1 a{color:var(--muted);text-decoration:none;font-weight:400;font-size:.85rem;ma
 select,input[type=text],input[type=number],textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
 .tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .tabs button{border:0;background:var(--surface);padding:8px 16px;font-weight:500}
-.tabs button.on{background:var(--yc);color:#fff}
+.tabs button.on{background:var(--yc);color:var(--yct,#fff)}
 .main{display:grid;grid-template-columns:1fr 330px;gap:14px;align-items:start}
 @media(max-width:1000px){.main{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
@@ -135,7 +135,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
       <button class="btn" id="bUndo">↶ Undo</button>
     </div>
     <div class="row">
-      <label class="hint" for="yearSel">Year group colour</label>
+      <label class="hint" for="yearSel">Plan colour</label>
       <select id="yearSel"></select>
       <button class="btn" id="bPrint">🖨 Print</button>
       <button class="btn" id="bExport">Save file</button>
@@ -151,7 +151,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
     <div class="side" id="side"></div>
   </div>
 
-  <footer><span>21.11.26b</span><span>Names stay in this browser only</span></footer>
+  <footer><span>21.11.26c</span><span>Names stay in this browser only</span></footer>
 </div>
 
 <dialog id="listDlg">
@@ -186,10 +186,14 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
 
 <script>
 'use strict';
-const VERSION='21.11.26b';
+const VERSION='21.11.26c';
 const STORE='wfa.seatingplan.v1';
 // WFA year-group colours (same as wfa_shared/brand.py)
-const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
+const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62'],
+  // other whole-plan colours, e.g. yellow for a maths layout
+  yellow:['Yellow','#f2c200'],red:['Red','#d84343'],pink:['Pink','#e05a9c'],purple:['Purple','#7e57c2'],teal:['Teal','#14968c'],navy:['Navy','#2e4a8a'],brown:['Brown','#8d6e4f'],grey:['Grey','#7d8590']};
+const colourName=k=>{const n=YEARS[k][0];return n.includes(' · ')?n.split(' · ')[1]:n.toLowerCase()};
+const darkText=hex=>{const n=parseInt(hex.slice(1),16);return(0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))>170};
 const GREY='#d9d9d9';
 const RADII=[[1,'directly beside, in front or behind'],[1.5,'beside, in front, behind or diagonal'],[2.3,'within two seats']];
 
@@ -329,8 +333,10 @@ function geom(p){
 function renderAll(){
   const p=P();
   document.documentElement.style.setProperty('--yc',YEARS[p.year][1]);
+  document.documentElement.style.setProperty('--yct',darkText(YEARS[p.year][1])?'#1a1a1a':'#fff');
   $('#planSel').innerHTML=S.plans.map(x=>`<option value="${x.id}" ${x.id===p.id?'selected':''}>${esc(x.name)}${x.base?' (one-off)':''}</option>`).join('');
-  $('#yearSel').innerHTML=Object.entries(YEARS).map(([k,v])=>`<option value="${k}" ${k===p.year?'selected':''}>${v[0]}</option>`).join('');
+  const opt=([k,v])=>`<option value="${k}" ${k===p.year?'selected':''}>${v[0]}</option>`,ents=Object.entries(YEARS);
+  $('#yearSel').innerHTML=`<optgroup label="Year groups">${ents.filter(([k])=>/^Y\d$/.test(k)).map(opt).join('')}</optgroup><optgroup label="Other colours">${ents.filter(([k])=>!/^Y\d$/.test(k)).map(opt).join('')}</optgroup>`;
   document.querySelectorAll('#modeTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
   $('#bUndo').disabled=!undo.length;$('#bDel').disabled=S.plans.length<2;
   $('#ptitle').textContent=p.name;
@@ -412,7 +418,7 @@ function sideSeat(p){
 function sideGroup(p){
   const n=gsel.size;
   return `<div class="card"><h2>Pairs &amp; trios</h2>
-    <p class="hint">Tap seats to select them, then group them. Every seat is the light or the dark tone of ${esc(YEARS[p.year][0].split(' · ')[1])}; neighbouring groups should be different tones.</p>
+    <p class="hint">Tap seats to select them, then group them. Every seat is the light or the dark tone of ${esc(colourName(p.year))}; neighbouring groups should be different tones.</p>
     <p style="margin:8px 0"><b>${n}</b> seat${n===1?'':'s'} selected</p>
     <div class="row" style="margin-bottom:8px"><button class="btn primary" id="gMake" ${n?'':'disabled'}>Group selected</button><button class="btn" id="gUn" ${n?'':'disabled'}>Ungroup</button></div>
     <div class="row" style="margin-bottom:8px"><button class="btn" id="gLight" ${n?'':'disabled'}>Make light</button><button class="btn" id="gDark" ${n?'':'disabled'}>Make dark</button></div>
