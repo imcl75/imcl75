@@ -54,17 +54,21 @@ select,input[type=text],input[type=number],textarea{background:var(--surface);bo
 .seat .x{position:absolute;top:1px;right:2px;border:0;background:#c62828;color:#fff;border-radius:50%;width:18px;height:18px;line-height:16px;font-size:12px;padding:0}
 .seat .al{display:block;font-family:'Figtree',sans-serif;font-size:.55em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#444;margin-bottom:1px}
 .seat.area{flex-direction:column;border:2px dashed #222;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 6px,transparent 6px 12px)!important}
-.seat.adult{background:#fff!important;border:3px solid #111;flex-direction:column;font-style:italic}
+.seat.adult{border:3px solid #111;flex-direction:column;font-style:italic}
 .seat.adult .al{font-style:normal;color:#111}
 .chip.adult{background:#fff;border:2px solid #111;color:#111;font-style:italic}
-.plegend .k.ad{width:28px;height:16px;border:3px solid #111;background:#fff}
+.plegend .k.ad{width:28px;height:16px;border:3px solid #111}
+.plegend .k.sw{width:28px;height:16px;border:1px solid #222}
+.swrow{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}.swrow b{font-size:.85rem;font-weight:600;min-width:100%}
+.sw{width:28px;height:28px;border-radius:6px;border:1px solid #888;padding:0;font-size:.7rem;color:#555}
+.sw.on{outline:3px solid var(--accent);outline-offset:1px}
 .seat.area .mv{top:auto;bottom:2px}
 .seat.moved{font-weight:700;box-shadow:inset 0 0 0 3px #111}
 .seat .mv{position:absolute;top:2px;left:2px;background:#111;color:#fff;border-radius:50%;width:17px;height:17px;line-height:17px;font-size:11px;font-family:system-ui,sans-serif;font-weight:400}
 .plegend{font-family:'Andika',sans-serif;font-size:.95rem;margin-top:10px;display:flex;gap:18px;flex-wrap:wrap}
 .plegend .k{display:inline-block;vertical-align:middle;margin-right:5px}
 .plegend .k.mv{background:#111;color:#fff;border-radius:50%;width:17px;height:17px;line-height:17px;text-align:center;font-size:11px}
-.plegend .k.ar{width:28px;height:16px;border:2px dashed #222;background:repeating-linear-gradient(135deg,#ccc 0 4px,#fff 4px 8px)}
+.plegend .k.ar{width:28px;height:16px;border:2px dashed #222}
 .movedlist{font-family:'Andika',sans-serif;font-size:.88rem;margin-top:6px}
 .cell{border:1px dashed #b9bfce;color:#9aa3b8;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;background:transparent}
 .cell:hover{background:#eef3fb}
@@ -147,7 +151,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
     <div class="side" id="side"></div>
   </div>
 
-  <footer><span>21.11.26a</span><span>Names stay in this browser only</span></footer>
+  <footer><span>21.11.26b</span><span>Names stay in this browser only</span></footer>
 </div>
 
 <dialog id="listDlg">
@@ -182,7 +186,7 @@ footer{margin-top:10px;display:flex;justify-content:space-between;color:var(--mu
 
 <script>
 'use strict';
-const VERSION='21.11.26a';
+const VERSION='21.11.26b';
 const STORE='wfa.seatingplan.v1';
 // WFA year-group colours (same as wfa_shared/brand.py)
 const YEARS={Y1:['Year 1 · orange','#e57d24'],Y2:['Year 2 · green','#2bae62'],Y3:['Year 3 · magenta','#c0157b'],Y4:['Year 4 · blue','#1798d3'],Y5:['Year 5 · orange','#e57d24'],Y6:['Year 6 · green','#2bae62']};
@@ -251,6 +255,10 @@ function buildPlan(name,kind,cols,rows){
 }
 
 /* ---------- state ---------- */
+// highlight colours for one-off marks (light enough to read names and to print)
+const HL={none:['No colour',''],yellow:['Yellow','#FFE66D'],pink:['Pink','#F8BBD0'],green:['Green','#C5E1A5'],blue:['Blue','#B3E5FC'],purple:['Purple','#D1C4E9'],orange:['Orange','#FFCC80'],grey:['Grey','#E0E0E0']};
+const HL_DEF={moved:'yellow',area:'blue',adult:'purple'};
+const hl=k=>(HL[S.hl&&S.hl[k]]||HL[HL_DEF[k]])[1];
 let S={cur:null,plans:[]};
 let mode='seat', sel=null, gsel=new Set(), undo=[], lastArea='Breakout space';
 function load(){
@@ -258,6 +266,7 @@ function load(){
   if(!S.plans.length){const p=defaultPlan();S={cur:p.id,plans:[p]}}
   if(!S.plans.find(p=>p.id===S.cur))S.cur=S.plans[0].id;
   S.plans.forEach(sanitise);
+  S.hl=Object.assign({},HL_DEF,S.hl||{});
 }
 function save(){try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
 const P=()=>S.plans.find(p=>p.id===S.cur);
@@ -341,16 +350,16 @@ function renderCanvas(p){
   });
   const mv=p.showMoved===false||mode==='layout'?null:moved(p);
   p.seats.forEach(s=>{
-    const bg=s.a?mix(base,0.92):toneColour(base,s.t!==undefined?s.t:(s.g?p.groupTone[s.g]:0));
     const why=mv&&s.p?mv.m.get(s.p):null;
+    const bg=s.ad?(hl('adult')||'#fff'):why&&hl('moved')?hl('moved'):s.a?(hl('area')||mix(base,0.92)):toneColour(base,s.t!==undefined?s.t:(s.g?p.groupTone[s.g]:0));
     const cls=['seat',s.ad?'adult':'',s.a&&!s.ad?'area':'',why?'moved':'',sel&&sel.seat===s.id?'sel':'',gsel.has(s.id)?'gsel':'',chk.bad.has(s.id)&&mode!=='layout'?'bad':''].join(' ');
     h+=`<div class="${cls}" data-seat="${s.id}" data-has="${s.p||s.ad?1:0}" ${why?`title="${esc(why)}"`:s.a?`title="${esc(s.a)}"`:''} style="left:${s.c*cw}px;top:${s.r*rp}px;width:${cw}px;height:${sh}px;background:${bg}">${why?'<span class="mv">★</span>':''}${s.ad?`<span class="al">Adult</span><span>${esc(s.ad)}</span>`:s.a?`<span class="al">${esc(s.a)}</span>`:''}${s.p?`<span>${esc(s.p)}</span>`:''}${mode==='layout'?`<button class="x" data-del="${s.id}" title="Remove seat">×</button>`:''}</div>`;
   });
   cv.innerHTML=h;
   const lg=[];
-  if(mv&&mv.m.size)lg.push(`<span><span class="k mv">★</span>Sitting somewhere different from usual (usual plan: ${esc(mv.b.name)})</span>`);
-  if(p.seats.some(s=>s.ad))lg.push(`<span><span class="k ad"></span>Adult working with this group</span>`);
-  if(p.seats.some(s=>s.a&&s.p))lg.push(`<span><span class="k ar"></span>Extra space, not usually a seat</span>`);
+  if(mv&&mv.m.size)lg.push(`<span><span class="k mv">★</span>${hl('moved')?`<span class="k sw" style="background:${hl('moved')}"></span>`:''}Sitting somewhere different from usual (usual plan: ${esc(mv.b.name)})</span>`);
+  if(p.seats.some(s=>s.ad))lg.push(`<span><span class="k ad" style="background:${hl('adult')||'#fff'}"></span>Adult working with this group</span>`);
+  if(p.seats.some(s=>s.a&&s.p))lg.push(`<span><span class="k ar" style="background:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 4px,transparent 4px 8px) ${hl('area')||mix(YEARS[p.year][1],0.92)}"></span>Extra space, not usually a seat</span>`);
   $('#plegend').innerHTML=lg.join('');$('#plegend').style.display=lg.length?'flex':'none';
 }
 function renderSide(p){
@@ -369,6 +378,11 @@ function sideSeat(p){
     <div class="f" style="margin-top:8px"><input type="text" id="newAdult" placeholder="e.g. Mrs Khan" style="flex:1"><button class="btn" id="bAddAdult">Add</button></div>
     ${p.adults.map((n,i)=>`<div class="rule"><span>${esc(n)}${aplaced.has(n)?' <span class="hint">· on the plan</span>':''}</span><button data-adel="${i}" title="Remove from list">×</button></div>`).join('')}
     <p class="hint" style="margin-top:6px">Drag an adult onto an empty seat beside the pair or trio. No empty seat there? Add one in <b>Room layout</b>, then join it to the group in <b>Pairs &amp; trios</b>.</p>
+  </div>`;
+  const sw=(k,label)=>`<div class="swrow"><b>${label}</b>${Object.entries(HL).map(([id,[nm,c]])=>`<button class="sw ${S.hl[k]===id?'on':''}" data-hl="${k}:${id}" title="${nm}" style="background:${c||'#fff'}">${c?'':'–'}</button>`).join('')}</div>`;
+  const colours=`<div class="card"><h2>Highlight colours</h2>
+    ${sw('moved','★ Moved for this lesson')}${sw('adult','Adults')}${sw('area','Extra spaces')}
+    <p class="hint">The same colours apply to every plan. Pale shades keep names readable and print well.</p>
   </div>`;
   const mv=moved(p),others=S.plans.filter(x=>x.id!==p.id&&!x.base);
   const oneoff=`<div class="card"><h2>One-off for a lesson</h2>
@@ -393,7 +407,7 @@ function sideSeat(p){
     <div class="f"><select id="rD" style="flex:1">${RADII.map(([d,t])=>`<option value="${d}" ${d===1.5?'selected':''}>${t}</option>`).join('')}</select><button class="btn" id="bRule">Add</button></div>`}
     ${p.rules.map((r,i)=>`<div class="rule ${r.bad?'bad':''}"><span>${esc(r.a)} ⇄ ${esc(r.b)} <span class="hint">(${esc(RADII.find(x=>x[0]===r.d)?.[1]||r.d)})</span></span><button data-rdel="${i}" title="Remove rule">×</button></div>`).join('')}
     <p class="hint" style="margin-top:6px">Children in the same pair/trio always count as too close.</p>
-  </div>${adults}${oneoff}`;
+  </div>${adults}${oneoff}${colours}`;
 }
 function sideGroup(p){
   const n=gsel.size;
@@ -528,6 +542,7 @@ document.addEventListener('click',e=>{
   if(cell&&mode==='layout'){const[c,r]=cell.dataset.cell.split(',').map(Number);mutate(q=>q.seats.push({id:'s'+uid(),c,r,p:null,g:null,f:0}));return}
   if(t.dataset.del){mutate(q=>q.seats=q.seats.filter(s=>s.id!==t.dataset.del));return}
   if(t.dataset.rdel){mutate(q=>q.rules.splice(+t.dataset.rdel,1));return}
+  if(t.dataset.hl){const[k,id]=t.dataset.hl.split(':');S.hl[k]=id;save();renderAll();return}
   if(t.dataset.adel){mutate(q=>q.adults.splice(+t.dataset.adel,1));return}
   if(t.dataset.idel){mutate(q=>q.items=q.items.filter(i=>i.id!==t.dataset.idel));return}
   switch(t.id){
