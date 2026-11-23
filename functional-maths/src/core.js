@@ -12,6 +12,23 @@ const AREAS = [
 function addTopic(t) { TOPICS.push(t); }
 function topicById(id) { return TOPICS.find(t => t.id === id); }
 
+/* ---------- exam weighting ----------
+   Average marks per 60-mark TQUK Level 2 paper, from 5 papers (2 sample, 3 past),
+   counted part by part. SEC_A_W is the share of those marks in Section A (no calculator). */
+const EXAM_W = { 'n-pct': 7.4, 'm-area': 5.6, 'n-ratio': 5.6, 'n-calc': 5.6, 'n-fdp': 5.2, 'd-avg': 5.2,
+  'm-money': 3.6, 'm-compound': 3.0, 'm-shape': 2.8, 'm-volume': 2.6, 'n-formula': 2.4,
+  'd-grouped': 2.2, 'm-convert': 2.2, 'n-num': 2.2, 'd-prob': 1.8, 'm-scale': 1.2, 'n-est': 1.2, 'm-time': 0.2, 'd-charts': 0 };
+const SEC_A_W = { 'n-calc': 3.4, 'n-fdp': 3.0, 'm-compound': 2.0, 'n-pct': 1.2, 'd-prob': 1.2 };
+const TIERS = [
+  { k: 1, name: 'Start here', marks: 'about 35 of the 60 marks', blurb: 'These six come up in every TQUK paper. Together they are worth about the pass mark.' },
+  { k: 2, name: 'Next', marks: 'about 14 marks', blurb: 'Usually one question each, often inside a longer problem.' },
+  { k: 3, name: 'Leave until last', marks: '2 marks or fewer each', blurb: 'Worth learning once the topics above are secure.' }
+];
+function examW(id) { return EXAM_W[id] || 0; }
+function tierOf(id) { const w = examW(id); return w >= 5 ? 1 : w >= 2.4 ? 2 : 3; }
+function byWeight(list) { const k = Object.keys(EXAM_W); return (list || TOPICS).slice().sort((a, b) => examW(b.id) - examW(a.id) || k.indexOf(a.id) - k.indexOf(b.id)); }
+function marksLabel(id) { const w = examW(id); if (w >= 1) { const n = Math.round(w); return `≈${n} mark${n === 1 ? '' : 's'} a paper`; } return w > 0 ? 'Rarely tested' : 'Not on TQUK papers so far'; }
+
 /* ---------- random ---------- */
 const NAMES = ['Sam', 'Priya', 'Tom', 'Aisha', 'Jordan', 'Megan', 'Ravi', 'Chloe', 'Dan', 'Zara', 'Ben', 'Leah',
   'Kofi', 'Hannah', 'Marek', 'Ellie', 'Omar', 'Grace', 'Josh', 'Nadia', 'Callum', 'Freya', 'Imran', 'Rosie'];
@@ -117,7 +134,7 @@ function parseTime(s) {
 function normText(s) { return clean(s).replace(/\s+/g, '').replace(/\.$/, ''); }
 
 function checkPart(p, raw) {
-  const blank = raw == null || String(raw).replace(/\|/g, '').trim() === '';
+  const blank = raw == null || String(raw).replace(/[|~]/g, '').trim() === '';
   if (blank) return { ok: false, blank: true };
   switch (p.type) {
     case 'choice': return { ok: +raw === p.ans };
@@ -168,6 +185,16 @@ function checkPart(p, raw) {
       return { ok: m[0] === p.ans[0] && m[1] === p.ans[1] };
     }
     case 'text': { const n = normText(raw); return { ok: p.accept.some(a => normText(a) === n) }; }
+    case 'decide': {
+      const [c, ...vals] = String(raw).split('~'), m = partMarks(p);
+      const cOk = c !== '' && +c === p.ans, subs = p.subs.map((s, i) => checkPart(s, vals[i])), nOk = subs.every(r => r.ok);
+      const fmtMsg = subs.find(r => !r.ok && r.msg && /^(Right value|Include|Use the 24|Equivalent)/.test(r.msg));
+      if (fmtMsg) return { ok: false, msg: fmtMsg.msg, got: 0 };
+      if (cOk && nOk) return { ok: true };
+      if (nOk) return c === '' ? { ok: false, got: m - 1, msg: 'Include your decision too: choose Yes or No.' } : { ok: false, got: m - 1, msg: 'Your number is right, but the decision doesn’t match it.' };
+      if (cOk) return { ok: false, got: 0, msg: 'Right decision, but the number that proves it is wrong. In the exam, a yes or no with no correct number to back it up gets no marks.' };
+      const other = subs.find(r => r.msg); return { ok: false, got: 0, msg: other ? other.msg : '' };
+    }
   }
   return { ok: false };
 }
@@ -184,10 +211,13 @@ function showAns(p) {
     case 'hm': return hm(p.ans);
     case 'coord': return `(${sn(p.ans[0])}, ${sn(p.ans[1])})`;
     case 'text': return p.accept[0];
+    case 'decide': return `${p.options[p.ans]}. ${p.subs.map(s => (s.label ? s.label + ': ' : '') + showAns(s)).join(', ')}`;
   }
   return '';
 }
 function partMarks(p) { return p.m || 1; }
+/* a decision ("Is X correct?") that only scores fully with the number that proves it */
+function decide(q, yes, subs, m) { return { q, type: 'decide', options: ['Yes', 'No'], ans: yes ? 0 : 1, subs, m: m || 3 }; }
 function qMarks(q) { return q.parts.reduce((s, p) => s + partMarks(p), 0); }
 
 /* make a question from a topic. calc: true = calculator question, false = non-calculator, undefined = either */

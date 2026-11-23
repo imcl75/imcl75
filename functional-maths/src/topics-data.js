@@ -69,6 +69,24 @@ addTopic({
       return { stem: `The mean of ${n} numbers is ${m}. ${n - 1} of the numbers are:<div class="data">${known.join(', &nbsp;')}</div>`,
         parts: [{ q: 'What is the missing number?', type: 'num', ans: miss, m: 2 }],
         steps: [`The total of all ${n} numbers is ${n} × ${m} = ${n * m}`, `The ones you know add up to ${known.join(' + ')} = ${known.reduce((a, b) => a + b, 0)}`, `Missing number = ${n * m} − ${known.reduce((a, b) => a + b, 0)} = <b>${miss}</b>`] };
+    } },
+    { c: true, x: true, f() {
+      const ctx = R.pick([
+        { a: 'Team A', b: 'Team B', intro: 'A manager compares two sales teams. Here are the number of sales each team made in 5 weeks.', what: 'made more sales on average', lo: 20, hi: 60, d: 'Week' },
+        { a: 'Café North', b: 'Café South', intro: 'The owner of two cafés counts how many customers each café had on 5 days.', what: 'had more customers on average', lo: 80, hi: 160, d: 'Day' },
+        { a: 'Driver A', b: 'Driver B', intro: 'A depot records how many parcels two drivers delivered on 5 days.', what: 'delivered more parcels on average', lo: 60, hi: 120, d: 'Day' }]);
+      let A, B, sa, sb;
+      do { A = []; B = []; for (let i = 0; i < 5; i++) { A.push(R.int(ctx.lo, ctx.hi)); B.push(R.int(ctx.lo + 8, ctx.hi - 8)); } sa = statsOf(A); sb = statsOf(B); } while (Math.abs(sa.mean - sb.mean) < 1.5 || Math.abs(sa.range - sb.range) < 3);
+      const X = R.coin() ? 'a' : 'b', Y = R.coin() ? 'a' : 'b';
+      const t1 = X === 'a' ? sa.mean > sb.mean : sb.mean > sa.mean, t2 = Y === 'a' ? sa.range < sb.range : sb.range < sa.range;
+      const hiM = sa.mean > sb.mean ? ctx.a : ctx.b, loR = sa.range < sb.range ? ctx.a : ctx.b;
+      return { stem: ctx.intro + table([''].concat([1, 2, 3, 4, 5].map(i => `${ctx.d} ${i}`)), [[ctx.a].concat(A), [ctx.b].concat(B)]) + `<p>Claim 1: “${ctx[X]} ${ctx.what}.”<br>Claim 2: “${ctx[Y]} was more consistent.”</p>`,
+        parts: [decide('Is claim 1 correct? Choose Yes or No, and give the mean for each.', t1, [{ label: `Mean for ${ctx.a}`, type: 'num', ans: sa.mean }, { label: `Mean for ${ctx.b}`, type: 'num', ans: sb.mean }], 2),
+          decide('Is claim 2 correct? Choose Yes or No, and give the range for each.', t2, [{ label: `Range for ${ctx.a}`, type: 'num', ans: sa.range }, { label: `Range for ${ctx.b}`, type: 'num', ans: sb.range }], 2)],
+        steps: [`Mean for ${ctx.a}: (${A.join(' + ')}) ÷ 5 = ${sa.sum} ÷ 5 = ${fmt(sa.mean)}`, `Mean for ${ctx.b}: (${B.join(' + ')}) ÷ 5 = ${sb.sum} ÷ 5 = ${fmt(sb.mean)}`,
+          `${hiM} has the higher mean, so claim 1 is <b>${t1 ? 'correct (Yes)' : 'not correct (No)'}</b>.`,
+          `Range for ${ctx.a}: ${sa.s[4]} − ${sa.s[0]} = ${sa.range}. Range for ${ctx.b}: ${sb.s[4]} − ${sb.s[0]} = ${sb.range}`,
+          `A smaller range means more consistent. ${loR} has the smaller range, so claim 2 is <b>${t2 ? 'correct (Yes)' : 'not correct (No)'}</b>.`] };
     } }
   ]
 });

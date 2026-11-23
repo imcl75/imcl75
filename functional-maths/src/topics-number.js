@@ -271,6 +271,16 @@ addTopic({
       const st = [`Improper fractions: ${w1}${F(n1, d1)} = ${F(w1 * d1 + n1, d1)} and ${w2}${F(n2, d2)} = ${F(w2 * d2 + n2, d2)}`, `Common denominator ${L}: ${F(A, L)} ${add ? '+' : '−'} ${F(B, L)}`, `${F(A, L)} ${add ? '+' : '−'} ${F(B, L)} = ${F(top, L)}`, `As a mixed number: <b>${M(top, L)}</b>`];
       if (add) return { stem: `A recipe uses ${w1}${F(n1, d1)} cups of milk and ${w2}${F(n2, d2)} cups of water.`, parts: [{ q: 'How many cups of liquid is that altogether?', type: 'frac', ans: [top, L], m: 2 }], steps: st };
       return { stem: `A plank of wood is ${w1}${F(n1, d1)} metres long. ${R.name()} cuts off ${w2}${F(n2, d2)} metres.`, parts: [{ q: 'How long is the piece that is left?', type: 'frac', ans: [top, L], suf: 'm', m: 2 }], steps: st };
+    } },
+    { c: false, x: true, f() {
+      const N = 40 * R.int(3, 12), fr = R.pick([[1, 4], [3, 8], [2, 5], [3, 10], [1, 5]]), pc = R.pick([15, 20, 25, 30, 35, 40]);
+      const walk = N * fr[0] / fr[1], drive = N * pc / 100, bus = N - walk - drive;
+      if (bus <= 0 || bus === walk) return this.f();
+      const ok = bus > walk, place = R.pick(['a hospital', 'a school', 'a supermarket', 'an office']);
+      return { stem: `${N} staff at ${place} were asked how they travel to work. ${F(fr[0], fr[1])} of them walk. ${pc}% drive. The rest get the bus.<p>A manager says: “More staff get the bus than walk.”</p>`,
+        parts: [decide('Is the manager correct? Choose Yes or No, and give the number of staff who walk and the number who get the bus.', ok, [{ label: 'Number who walk', type: 'num', ans: walk }, { label: 'Number who get the bus', type: 'num', ans: bus }], 3)],
+        steps: [`Walk: ${fr[0]}/${fr[1]} of ${N} = ${N} ÷ ${fr[1]} × ${fr[0]} = <b>${walk}</b>`, `Drive: ${pc}% of ${N}. 10% is ${N / 10}, so ${pc}% is <b>${drive}</b>`, `Bus: ${N} − ${walk} − ${drive} = <b>${bus}</b>`,
+          `${bus} is ${ok ? 'more' : 'fewer'} than ${walk}, so <b>${ok ? 'Yes' : 'No'}</b>${ok ? ', the manager is correct.' : ', the manager is wrong.'}`] };
     } }
   ]
 });
@@ -341,6 +351,16 @@ addTopic({
       return { stem: `Two shops sell the same ${item}.` + table(['Shop', 'Price', 'Offer'], [['Shop A', gbp(a), `${F(fr[0], fr[1])} off`], ['Shop B', gbp(b), `${p}% off`]]),
         parts: [{ q: 'Which shop is cheaper?', type: 'choice', options: ['Shop A', 'Shop B'], ans: cheap, shuffle: false, m: 2 }, { q: 'How much cheaper is it?', type: 'num', ans: rd(Math.abs(A - B), 2), money: true, pre: '£' }],
         steps: [`Shop A: ${F(fr[0], fr[1])} of ${gbp(a)} = ${gbp(a * fr[0] / fr[1])}, so the price is ${gbp(a)} − ${gbp(a * fr[0] / fr[1])} = ${gbp(A)}`, `Shop B: ${gbp(b)} × ${fmt(1 - p / 100)} = ${gbp(B)}`, `<b>Shop ${cheap ? 'B' : 'A'}</b> is cheaper by ${gbp(Math.max(A, B))} − ${gbp(Math.min(A, B))} = <b>${gbp(Math.abs(A - B))}</b>`] };
+    } },
+    { c: true, x: true, f() {
+      const claim = R.pick([20, 25, 30, 40]), item = R.pick(['coat', 'pair of boots', 'microwave', 'bike helmet', 'kettle', 'rucksack']);
+      let was, now, pct;
+      do { was = R.int(8, 40) * 5; now = Math.round(was * (1 - (claim + R.int(-5, 5)) / 100)); pct = (was - now) / was * 100; } while (Math.abs(pct - claim) < 1);
+      const ok = pct > claim;
+      return { stem: `In a sale, ${an(item)} ${item} that was £${was} is now £${now}. The sign says <b>“Over ${claim}% off!”</b>`,
+        parts: [decide('Is the sign correct? Choose Yes or No, and give the percentage reduction to 1 decimal place.', ok, [{ label: 'Percentage reduction', type: 'num', ans: pct, dp: 1, tol: 0.051, suf: '%' }], 3)],
+        steps: [`Reduction: £${was} − £${now} = £${was - now}`, `Percentage reduction = reduction ÷ original price × 100`, `${was - now} ÷ ${was} × 100 = <b>${fmt(rd(pct, 1), 1)}%</b>`,
+          ok ? `${fmt(rd(pct, 1), 1)}% is more than ${claim}%, so <b>Yes</b>, the sign is correct.` : `${fmt(rd(pct, 1), 1)}% is less than ${claim}%, so <b>No</b>, the sign is wrong.`] };
     } }
   ]
 });
@@ -402,6 +422,16 @@ addTopic({
       const r = R.pick([4, 5, 6, 8, 10]), k = R.int(3, 9), rem = R.int(1, r - 1), kids = r * k + rem;
       return { stem: `For a school trip, there must be at least 1 adult for every ${r} children. ${kids} children are going.`, parts: [{ q: 'What is the smallest number of adults needed?', type: 'num', ans: k + 1 }],
         steps: [`${kids} ÷ ${r} = ${k} remainder ${rem}`, `${k} adults could only look after ${r * k} children, leaving ${rem} without an adult.`, `So round up: <b>${k + 1} adults</b>`] };
+    } },
+    { c: true, x: true, f() {
+      const s = R.pick([4, 6, 8]), k = R.pick([10, 15, 20, 25, 30, 40, 50]), amt = s * k, it = R.pick([['flour', 'g', 'a cake'], ['butter', 'g', 'a crumble'], ['milk', 'ml', 'pancakes'], ['rice', 'g', 'a curry'], ['stock', 'ml', 'soup']]);
+      let n; do { n = R.int(3, 16); } while (n === s);
+      const need = n * k; let have; do { have = Math.round((need + R.int(-150, 150)) / 50) * 50; } while (Math.abs(have - need) < 20 || have <= 0);
+      const ok = have >= need, nm = R.name();
+      return { stem: `A recipe for ${it[2]} for ${s} people uses ${fmt(amt)} ${it[1]} of ${it[0]}. ${nm} wants to make it for ${n} people, and has ${fmt(have)} ${it[1]} of ${it[0]}.`,
+        parts: [decide(`Does ${nm} have enough ${it[0]}? Choose Yes or No, and give the amount of ${it[0]} needed.`, ok, [{ label: `${it[0][0].toUpperCase() + it[0].slice(1)} needed`, type: 'num', ans: need, suf: it[1] }], 3)],
+        steps: [`For 1 person: ${fmt(amt)} ÷ ${s} = ${k} ${it[1]}`, `For ${n} people: ${k} × ${n} = <b>${fmt(need)} ${it[1]}</b>`,
+          ok ? `${nm} has ${fmt(have)} ${it[1]}, which is enough, so <b>Yes</b>.` : `${nm} has only ${fmt(have)} ${it[1]}, so <b>No</b>. ${nm} needs ${fmt(need - have)} ${it[1]} more.`] };
     } }
   ]
 });
@@ -458,6 +488,28 @@ addTopic({
       return { stem: `${n} uses about ${mins} minutes of calls a month and is choosing a phone plan.` + table(['Plan', 'Cost'], [['Plan A', `£${fa} a month, plus ${pa}p per minute`], ['Plan B', `£${fb} a month, unlimited minutes`]]),
         parts: [{ q: `Which plan is cheaper for ${n}?`, type: 'choice', options: ['Plan A', 'Plan B'], ans: best, shuffle: false, m: 2 }, { q: 'How much would the cheaper plan cost each month?', type: 'num', ans: Math.min(A, B), money: true, pre: '£' }],
         steps: [`Plan A: ${mins} × ${pa}p = ${mins * pa}p = ${gbp(mins * pa / 100)}`, `Plan A total: £${fa} + ${gbp(mins * pa / 100)} = ${gbp(A)}`, `Plan B: ${gbp(B)}`, `<b>Plan ${best ? 'B' : 'A'}</b> is cheaper, at <b>${gbp(Math.min(A, B))}</b> a month.`] };
+    } },
+    { c: true, x: true, f() {
+      const kg = R.pick([3, 3.5, 4, 4.5, 5, 5.5, 6]), per = R.pick([20, 40]), extra = per === 20 ? 70 : 20, rest = 30;
+      const T = per * kg + extra, start = R.pick([10, 11, 12, 13]) * 60 + R.pick([0, 15, 30, 45]), ready = start + T + rest;
+      let target; do { target = Math.round((ready + R.int(-45, 45)) / 15) * 15; } while (Math.abs(target - ready) < 10);
+      const ok = ready <= target, n = R.name();
+      return { stem: `${n} is cooking a turkey. The cooking time, T minutes, is given by <span class="formula inline">T = ${per}W + ${extra}</span> where W is the weight in kg. After cooking, the turkey must rest for ${rest} minutes before it is served.<p>The turkey weighs ${fmt(kg)} kg. ${n} puts it in the oven at ${hhmm(start)} and wants to serve it at ${hhmm(target)}.</p>`,
+        parts: [{ q: 'Work out the cooking time, T, in minutes.', type: 'num', ans: T, suf: 'minutes', m: 2 },
+          decide(`Will the turkey be ready to serve by ${hhmm(target)}? Choose Yes or No, and give the time it will be ready.`, ok, [{ label: 'Ready to serve at', type: 'time', ans: ready }], 3)],
+        steps: [`T = ${per} × ${fmt(kg)} + ${extra} = ${fmt(per * kg)} + ${extra} = <b>${T} minutes</b> (${hm(T)})`, `Add the resting time: ${T} + ${rest} = ${T + rest} minutes = ${hm(T + rest)}`, `${hhmm(start)} + ${hm(T + rest)} = <b>${hhmm(ready)}</b>`,
+          ok ? `${hhmm(ready)} is before ${hhmm(target)}, so <b>Yes</b>, it will be ready in time.` : `${hhmm(ready)} is after ${hhmm(target)}, so <b>No</b>. It will be ${hm(ready - target)} late.`] };
+    } },
+    { c: true, x: true, f() {
+      const l = R.pick([60, 80, 100, 120]), w = R.pick([30, 40, 50]), h = R.pick([40, 45, 50]), cm3 = l * w * h, V = cm3 / 1000, P = rd(1.2 * V + 20, 1);
+      const sizes = [100, 150, 200, 250, 300].filter(s => Math.abs(s - P) >= 5 && Math.abs(s - P) <= 80);
+      if (!sizes.length) return this.f();
+      const H = R.pick(sizes), ok = H >= P, n = R.name();
+      return { stem: `${n} has a fish tank in the shape of a cuboid, ${l} cm long, ${w} cm wide and ${h} cm high. A pet shop says the heater power needed, P watts, is <span class="formula inline">P = 1.2V + 20</span> where V is the volume of the tank in litres. 1 litre = 1,000 cm³.`,
+        parts: [{ q: 'Work out the volume of the tank in litres.', type: 'num', ans: V, suf: 'litres', m: 2 },
+          decide(`${n} has a ${H} W heater. Is it powerful enough? Choose Yes or No, and give the power needed.`, ok, [{ label: 'Power needed, P', type: 'num', ans: P, tol: 0.05, suf: 'W' }], 3)],
+        steps: [`Volume = ${l} × ${w} × ${h} = ${fmt(cm3)} cm³`, `In litres: ${fmt(cm3)} ÷ 1,000 = <b>${fmt(V)} litres</b>`, `P = 1.2 × ${fmt(V)} + 20 = ${fmt(rd(1.2 * V, 1))} + 20 = <b>${fmt(P)} W</b>`,
+          ok ? `${H} W is more than ${fmt(P)} W, so <b>Yes</b>, it is powerful enough.` : `${H} W is less than ${fmt(P)} W, so <b>No</b>, it is not powerful enough.`] };
     } }
   ]
 });

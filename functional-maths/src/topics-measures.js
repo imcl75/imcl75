@@ -74,6 +74,16 @@ addTopic({
       return { stem: `${An(item)} ${item} costs £${fmt(P)} cash. On credit, you pay a ${dp}% deposit and then ${mo} monthly payments of £${mp}.`,
         parts: [{ q: 'What is the total cost on credit?', type: 'num', ans: tot, money: true, pre: '£', m: 2 }, { q: 'How much more is this than the cash price?', type: 'num', ans: tot - P, money: true, pre: '£' }],
         steps: [`Deposit: ${dp}% of £${fmt(P)} = £${fmt(dep)}`, `Payments: ${mo} × £${mp} = £${fmt(mp * mo)}`, `Total on credit: £${fmt(dep)} + £${fmt(mp * mo)} = <b>£${fmt(tot)}</b>`, `Extra cost: £${fmt(tot)} − £${fmt(P)} = <b>£${fmt(tot - P)}</b>`] };
+    } },
+    { c: true, x: true, f() {
+      const P = R.int(30, 90) * 100, r = R.pick([2.5, 3, 3.5, 4, 4.5, 5]), n = R.int(2, 5), m = 1 + r / 100, v = rd(P * Math.pow(m, n), 2);
+      let car; do { car = Math.round((v + R.int(-400, 400)) / 50) * 50; } while (Math.abs(car - v) < 30);
+      const ok = v >= car, nm = R.name(), yrs = [];
+      for (let i = 1; i <= n; i++) yrs.push(`End of year ${i}: ${gbp(P * Math.pow(m, i))}`);
+      return { stem: `${nm} puts £${fmt(P)} into a savings account that pays ${r}% <b>compound</b> interest a year, and adds no more money. ${nm} wants to buy a used car that costs £${fmt(car)}.`,
+        parts: [decide(`After ${n} years, will ${nm} have enough money to buy the car? Choose Yes or No, and give the amount in the account after ${n} years.`, ok, [{ label: `Amount after ${n} years`, type: 'num', ans: v, money: true, pre: '£', tol: 0.02 }], 4)],
+        steps: [`Multiplier: 100% + ${r}% = ${fmt(m)}`, `${fmt(P)} × ${fmt(m)}<sup>${n}</sup> = <b>${gbp(v)}</b>`, yrs.join('<br>'),
+          ok ? `${gbp(v)} is more than £${fmt(car)}, so <b>Yes</b>, ${nm} can buy the car.` : `${gbp(v)} is less than £${fmt(car)}, so <b>No</b>. ${nm} will be ${gbp(car - v)} short.`] };
     } }
   ]
 });
@@ -287,6 +297,53 @@ addTopic({
       return { stem: `A rectangular play area is ${l} m by ${w} m. It needs a fence all the way round, except for a gate ${gate} m wide. Fencing costs ${gbp(cost)} per metre.`,
         parts: [{ q: 'How many metres of fencing are needed?', type: 'num', ans: len, suf: 'm', m: 2 }, { q: 'How much will the fencing cost?', type: 'num', ans: rd(len * cost, 2), money: true, pre: '£' }],
         steps: [`Perimeter: ${l} + ${w} + ${l} + ${w} = ${2 * (l + w)} m`, `Take off the gate: ${2 * (l + w)} − ${gate} = <b>${fmt(len)} m</b>`, `Cost: ${fmt(len)} × ${gbp(cost)} = <b>${gbp(len * cost)}</b>`] };
+    } },
+    { c: true, x: true, f() {
+      const nm = R.name(), med = R.coin();
+      let area, dia, aSteps, intro;
+      if (med) {
+        let W, H, a, b; do { W = R.int(5, 9); H = R.int(4, 8); a = R.int(2, W - 2); b = R.int(2, H - 2); } while (W - a < 2);
+        area = a * H + (W - a) * b; dia = dLshape(W, H, a, b, 'm');
+        intro = `${nm} is putting new flooring in a kitchen. Here is a plan of the floor. All corners are right angles.`;
+        aSteps = [`Split into two rectangles: ${a} × ${H} = ${a * H} m² and ${W - a} × ${b} = ${(W - a) * b} m²`, `Area = ${a * H} + ${(W - a) * b} = <b>${area} m²</b>`];
+      } else {
+        let a, b, h; do { a = R.int(3, 6); b = R.int(6, 10); h = R.int(3, 6); } while (b - a < 2);
+        area = (a + b) / 2 * h; dia = dTrap(a, b, h, 'm');
+        intro = `${nm} is paving a patio in the shape of a trapezium. Area of a trapezium = ½(a + b)h`;
+        aSteps = [`½ × (${a} + ${b}) × ${h} = ½ × ${a + b} × ${h}`, `Area = ${fmt((a + b) / 2)} × ${h} = <b>${fmt(area)} m²</b>`];
+      }
+      const raw = med ? (() => { let v; do { v = []; for (let i = 0; i < 5; i++) v.push(R.int(24, 64)); } while (new Set(v).size < 5); return v; })() : modeList(6, 24, 48);
+      const prices = raw.map(x => x / 2), st = statsOf(prices), price = med ? st.med : st.mode, cost = rd(area * price, 2);
+      let budget; do { budget = Math.round((cost + R.int(-80, 80)) / 10) * 10; } while (Math.abs(budget - cost) < 5);
+      const ok = cost <= budget, word = med ? 'median' : 'mode';
+      return { stem: `${intro}${dia}<p>${nm} looks up the price per m² from ${prices.length} ${med ? 'suppliers' : 'websites'}:</p><div class="data">${prices.map(p => gbp(p)).join(', &nbsp;')}</div><p>${nm} decides to pay the ${word} price${med ? '' : ' (the price that comes up most often)'}.</p>`,
+        parts: [{ q: `Work out the area of the ${med ? 'floor' : 'patio'}.`, type: 'num', ans: area, suf: 'm²', tol: 0.005, m: 2 },
+          { q: `What is the ${word} price per m²?`, type: 'num', ans: price, money: true, pre: '£' },
+          decide(`${nm} has £${fmt(budget)} to spend. Is that enough? Choose Yes or No, and give the total cost.`, ok, [{ label: 'Total cost', type: 'num', ans: cost, money: true, pre: '£' }], 3)],
+        steps: aSteps.concat([med ? `Prices in order: ${st.s.map(p => gbp(p)).join(', ')}. The middle one is <b>${gbp(price)}</b>` : `${gbp(price)} comes up most often, so the mode is <b>${gbp(price)}</b>`,
+          `Total cost: ${fmt(area)} × ${gbp(price)} = <b>${gbp(cost)}</b>`, ok ? `${gbp(cost)} is less than £${fmt(budget)}, so <b>Yes</b>, it is enough.` : `${gbp(cost)} is more than £${fmt(budget)}, so <b>No</b>. ${nm} is ${gbp(cost - budget)} short.`]) };
+    } },
+    { c: true, x: true, f() {
+      const l = rd(R.int(30, 55) / 10, 1), w = rd(R.int(25, 40) / 10, 1), h = 2.4, door = 1.6, win = R.pick([1.2, 1.5, 2]);
+      const walls = rd(2 * (l + w) * h, 2), A = rd(walls - door - win, 2), cov = R.pick([10, 12, 13, 15]), tins = Math.ceil(2 * A / cov - 1e-9), price = R.int(14, 27) + 0.99, cost = rd(tins * price, 2);
+      let budget; do { budget = Math.round((cost + R.int(-40, 40)) / 10) * 10; } while (Math.abs(budget - cost) < 3);
+      const ok = cost <= budget, nm = R.name();
+      return { stem: `${nm} is painting the four walls of a room. The room is ${fmt(l)} m long and ${fmt(w)} m wide, and the walls are ${h} m high. There is a door with an area of ${door} m² and a window with an area of ${win} m², which will not be painted.<p>${nm} will give the walls <b>2 coats</b>. One tin of paint covers ${cov} m² with one coat, and costs ${gbp(price)}.</p>`,
+        parts: [{ q: 'Work out the area of wall to be painted.', type: 'num', ans: A, suf: 'm²', tol: 0.005, m: 2 },
+          decide(`${nm} has £${budget} to spend on paint. Is that enough? Choose Yes or No, and give the number of tins needed and the total cost.`, ok, [{ label: 'Number of tins', type: 'num', ans: tins }, { label: 'Total cost', type: 'num', ans: cost, money: true, pre: '£' }], 3)],
+        steps: [`Perimeter of the room: 2 × (${fmt(l)} + ${fmt(w)}) = ${fmt(rd(2 * (l + w), 1))} m`, `Area of all four walls: ${fmt(rd(2 * (l + w), 1))} × ${h} = ${fmt(walls)} m²`, `Take off the door and window: ${fmt(walls)} − ${door} − ${win} = <b>${fmt(A)} m²</b>`,
+          `Two coats: ${fmt(A)} × 2 = ${fmt(rd(2 * A, 2))} m²`, `Tins: ${fmt(rd(2 * A, 2))} ÷ ${cov} = ${fmt(rd(2 * A / cov, 3))}. Round up: <b>${tins} tins</b>`, `Cost: ${tins} × ${gbp(price)} = <b>${gbp(cost)}</b>`,
+          ok ? `${gbp(cost)} is less than £${budget}, so <b>Yes</b>, it is enough.` : `${gbp(cost)} is more than £${budget}, so <b>No</b>. ${nm} is ${gbp(cost - budget)} short.`] };
+    } },
+    { c: true, x: true, f() {
+      let d, roll, C, rolls;
+      do { d = R.pick([2, 2.4, 2.5, 3, 3.2, 3.6, 4, 4.5, 5]); roll = R.pick([2, 2.5, 3]); C = Math.PI * d; rolls = Math.ceil(C / roll); } while (Math.ceil(3.14 * d / roll) !== rolls || rolls - C / roll < 0.08);
+      const bought = rolls + R.pick([-1, 0, 1]), ok = bought >= rolls, nm = R.name(), ans = rd(C, 1);
+      return { stem: `${nm} wants to put a fence around the edge of a circular pond. The pond has a diameter of ${fmt(d)} m. Fencing is sold in rolls ${fmt(roll)} m long.` + dCircle(d, true, 'm'),
+        parts: [{ q: 'Work out the circumference of the pond. Give your answer to 1 decimal place.', type: 'num', ans, tol: piTol(C, 3.14 * d, 1), suf: 'm', show: `${ans.toFixed(1)} m`, m: 2 },
+          decide(`${nm} has bought ${bought} rolls. Is that enough? Choose Yes or No, and give the number of rolls needed.`, ok, [{ label: 'Rolls needed', type: 'num', ans: rolls }], 2)],
+        steps: [`Circumference = π × d = π × ${fmt(d)} = ${fmt(rd(C, 3))}… = <b>${ans.toFixed(1)} m</b>`, `Rolls: ${fmt(rd(C, 3))} ÷ ${fmt(roll)} = ${fmt(rd(C / roll, 3))}. Round up: <b>${rolls} rolls</b>`,
+          ok ? `${bought} rolls is enough, so <b>Yes</b>.` : `${bought} rolls is not enough, so <b>No</b>. ${nm} needs 1 more roll.`] };
     } }
   ]
 });

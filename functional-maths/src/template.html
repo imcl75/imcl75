@@ -92,6 +92,12 @@ a.chip.focus{font-size:14px;padding:6px 12px}
 .area h2{font-size:24px;display:flex;align-items:center;gap:10px}
 .area h2::before{content:"";width:14px;height:14px;border-radius:4px;background:var(--c,var(--blue))}
 .area .sub{color:var(--muted);margin:-4px 0 12px}
+.tier.t1 h2::before{background:var(--good)}.tier.t2 h2::before{background:var(--warn)}.tier.t3 h2::before{background:var(--muted)}
+.tmarks{font-size:14px;font-weight:800;color:var(--muted);background:var(--soft);border-radius:999px;padding:3px 10px}
+.wpill{align-self:flex-start;font-size:12px;font-weight:900;border-radius:999px;padding:2px 9px;background:var(--soft);color:var(--muted)}
+.wpill.t1{background:var(--good-bg);color:var(--good)}.wpill.t2{background:var(--warn-bg);color:var(--warn)}
+.opts.yn{grid-template-columns:repeat(2,minmax(0,140px))}
+.sublab{font-weight:800;font-size:15px;margin-top:12px}
 .a-num{--c:var(--num)}.a-mea{--c:var(--mea)}.a-dat{--c:var(--dat)}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .tcard{display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--ink);transition:transform .12s,box-shadow .12s}

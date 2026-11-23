@@ -30,6 +30,8 @@ function recentPct(id) { const t = P.t[id]; if (!t || !t.r.length) return null; 
 /* ---------- question rendering ---------- */
 const HINTS = { frac: 'Type a fraction like 3/4, or a mixed number like 2 1/4', prob: 'A fraction, decimal or percentage', ratio: 'Like 2:3', coord: 'Like (3, -2)' };
 function inputHTML(p, id) {
+  if (p.type === 'decide') return `<div class="opts yn" role="radiogroup" aria-label="Your decision">${p.options.map((o, i) => `<button type="button" class="opt" role="radio" aria-checked="false" data-v="${i}">${o}</button>`).join('')}</div>` +
+    p.subs.map((sp, k) => `<div class="sublab">${sp.label}</div>${inputHTML(sp, id + 's' + k)}`).join('');
   if (p.type === 'choice') return `<div class="opts" role="radiogroup">${p.options.map((o, i) => `<button type="button" class="opt" role="radio" aria-checked="false" data-v="${i}">${o}</button>`).join('')}</div>`;
   if (p.type === 'hm') return `<div class="ans hm"><input id="${id}h" class="inp short" type="text" inputmode="numeric" autocomplete="off" aria-label="hours"><span class="suf">hours</span><input id="${id}m" class="inp short" type="text" inputmode="numeric" autocomplete="off" aria-label="minutes"><span class="suf">minutes</span></div>`;
   const pre = p.pre || (p.money ? '£' : ''), im = p.type === 'num' && !p.neg ? 'decimal' : 'text';
@@ -47,11 +49,13 @@ function qHTML(q, o = {}) {
     const lab = q.parts.length > 1 ? `<span class="plab">(${'abcdef'[i]})</span>` : '';
     s += `<div class="part" data-i="${i}"><div class="pq">${lab}<div>${p.q}${partMarks(p) > 1 ? ` <span class="pm">[${partMarks(p)} marks]</span>` : ''}</div></div>`;
     if (o.print && p.type === 'choice') s += `<ul class="choicelist">${p.options.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    else if (o.print && p.type === 'decide') s += printDecide(p);
     else s += o.print ? `<div class="answerline">Answer: <span></span>${p.suf ? ' ' + p.suf : ''}</div>` : inputHTML(p, uid + '_' + i);
     s += '<div class="fb" aria-live="polite"></div></div>';
   });
   return s;
 }
+function printDecide(p) { return `<div class="answerline">Yes / No (circle one)</div>${p.subs.map(sp => `<div class="answerline">${sp.label}: <span></span>${sp.suf ? ' ' + sp.suf : ''}</div>`).join('')}`; }
 function solutionHTML(q) {
   return `<h4>Worked solution</h4><ol class="wsteps">${q.steps.map(s => `<li>${s}</li>`).join('')}</ol><p class="final"><span>Answer${q.parts.length > 1 ? 's' : ''}:</span> ${q.parts.map((p, i) => (q.parts.length > 1 ? `(${'abcdef'[i]}) ` : '') + showAns(p)).join(' &nbsp;·&nbsp; ')}</p>`;
 }
@@ -64,18 +68,21 @@ function wireChoices(el, onChange) {
 }
 function readPart(partEl, p) {
   if (p.type === 'choice') { const b = $('.opt[aria-checked="true"]', partEl); return b ? b.dataset.v : ''; }
+  if (p.type === 'decide') { const b = $('.opt[aria-checked="true"]', partEl); return [b ? b.dataset.v : ''].concat($$('input', partEl).map(x => x.value.replace(/~/g, ''))).join('~'); }
   if (p.type === 'hm') { const [a, b] = $$('input', partEl); return a.value + '|' + b.value; }
   return $('input', partEl).value;
 }
 function setPart(partEl, p, v) {
   if (v == null) return;
   if (p.type === 'choice') { $$('.opt', partEl).forEach(x => x.setAttribute('aria-checked', x.dataset.v === String(v) ? 'true' : 'false')); return; }
+  if (p.type === 'decide') { const [c, ...vals] = String(v).split('~'); $$('.opt', partEl).forEach(x => x.setAttribute('aria-checked', c !== '' && x.dataset.v === c ? 'true' : 'false')); $$('input', partEl).forEach((x, i) => { x.value = vals[i] || ''; }); return; }
   if (p.type === 'hm') { const [a, b] = $$('input', partEl); const [h, m] = String(v).split('|'); a.value = h || ''; b.value = m || ''; return; }
   $('input', partEl).value = v;
 }
 function shownInput(p, raw) {
-  if (raw == null || String(raw).replace('|', '').trim() === '') return '<em>no answer</em>';
+  if (raw == null || String(raw).replace(/[|~]/g, '').trim() === '') return '<em>no answer</em>';
   if (p.type === 'choice') return p.options[+raw];
+  if (p.type === 'decide') { const [c, ...vals] = String(raw).split('~'); return (c !== '' ? p.options[+c] : '<em>no decision</em>') + '. ' + p.subs.map((sp, i) => `${sp.label}: ${vals[i] ? shownInput(sp, vals[i]) : '<em>blank</em>'}`).join(', '); }
   if (p.type === 'hm') { const [h, m] = String(raw).split('|'); return `${esc(h || 0)} h ${esc(m || 0)} min`; }
   return esc((p.pre || (p.money ? '£' : '')) + raw + (p.suf ? ' ' + p.suf : ''));
 }
@@ -156,10 +163,11 @@ function areaColour(a) { return { num: 'a-num', mea: 'a-mea', dat: 'a-dat' }[a];
 function topicCard(t) {
   const st = status(t.id), rp = recentPct(t.id);
   return `<a class="tcard ${areaColour(t.area)}" href="#t/${t.id}"><span class="tname">${t.name}</span><span class="tshort">${t.short}</span>
+    <span class="wpill t${tierOf(t.id)}">${marksLabel(t.id)}</span>
     <span class="tfoot"><span class="chip ${st.k}">${st.l}</span>${rp != null ? `<span class="meter" title="Last ${P.t[t.id].r.length} answers"><i style="width:${Math.round(rp * 100)}%"></i></span>` : ''}</span></a>`;
 }
 function focusTopics() {
-  return TOPICS.filter(t => { const s = status(t.id).k; return s === 'focus' || (s === 'new' && P.checkup && P.checkup.res[t.id] === false); });
+  return byWeight().filter(t => { const s = status(t.id).k; return s === 'focus' || (s === 'new' && P.checkup && P.checkup.res[t.id] === false); });
 }
 function daysTo(d) { if (!d) return null; const ms = new Date(d + 'T09:00:00') - new Date(); return Math.ceil(ms / 864e5); }
 
@@ -179,8 +187,9 @@ function pHome() {
     <div class="stat"><b>${best != null ? best + '%' : '–'}</b><span>best mock score</span></div>
     <div class="stat exam"><b>${dl != null && dl >= 0 ? dl : '–'}</b><span>${dl != null && dl >= 0 ? (dl === 1 ? 'day to the exam' : 'days to the exam') : '<label for="examdate">Exam date</label>'}</span><input id="examdate" type="date" value="${esc(P.exam || '')}" aria-label="Exam date"></div>
   </div>
-  ${AREAS.map(a => `<section class="area"><h2 class="${areaColour(a.id)}">${a.name}</h2><p class="sub">${a.blurb}</p><div class="tgrid">${TOPICS.filter(t => t.area === a.id).map(topicCard).join('')}</div></section>`).join('')}
-  <section class="area"><h2>How to use this</h2><ol class="howto"><li><b>Check-up</b> once, to find your starting point.</li><li>For each focus topic: read the <b>Learn</b> notes, step through a <b>worked example</b>, then <b>practise</b>. A topic is <i>secure</i> when you get at least 8 of your last 10 right.</li><li>Every week, do a <b>Quick 10</b> mixed practice so older topics stay fresh.</li><li>In the last few weeks, sit <b>mock exams</b> under timed conditions. Aim for 70% or more before the real thing.</li></ol></section>`, 'home');
+  <p class="note">Topics are in order of how many marks they usually carry. This comes from counting the marks in five real TQUK Level 2 papers. Work from the top.</p>
+  ${TIERS.map(tr => `<section class="area tier t${tr.k}"><h2>${tr.name} <span class="tmarks">${tr.marks}</span></h2><p class="sub">${tr.blurb}</p><div class="tgrid">${byWeight().filter(t => tierOf(t.id) === tr.k).map(topicCard).join('')}</div></section>`).join('')}
+  <section class="area"><h2>How to use this</h2><ol class="howto"><li><b>Check-up</b> once, to find your starting point.</li><li>Work through the topics from the top of the list, starting with your focus topics. For each one: read the <b>Learn</b> notes, step through a <b>worked example</b>, then <b>practise</b>. A topic is <i>secure</i> when you get at least 8 of your last 10 right.</li><li>Every week, do a <b>Quick 10</b> mixed practice so older topics stay fresh.</li><li>In the last few weeks, sit <b>mock exams</b> under timed conditions. Aim for 70% or more before the real thing.</li></ol></section>`, 'home');
   $('#examdate').addEventListener('change', e => { P.exam = e.target.value; saveP(); pHome(); });
 }
 
@@ -190,7 +199,7 @@ function pTopic(id, tab) {
   const st = status(t.id), rec = P.t[t.id];
   setPage(`<a class="back" href="#home">← All topics</a>
   <section class="thead ${areaColour(t.area)}"><p class="eyebrow">${AREAS.find(a => a.id === t.area).name}</p><h1>${t.name}</h1>
-  <div class="tmeta"><span class="chip ${st.k}">${st.l}</span>${rec ? `<span>${rec.c} of ${rec.a} right overall · ${rec.r.reduce((a, b) => a + b, 0)} of your last ${rec.r.length}</span>` : ''}</div></section>
+  <div class="tmeta"><span class="chip ${st.k}">${st.l}</span><span class="wpill t${tierOf(t.id)}">${marksLabel(t.id)} · priority ${byWeight().indexOf(t) + 1} of ${TOPICS.length}</span>${rec ? `<span>${rec.c} of ${rec.a} right overall · ${rec.r.reduce((a, b) => a + b, 0)} of your last ${rec.r.length}</span>` : ''}</div></section>
   <nav class="tabs" role="tablist">${[['learn', 'Learn'], ['examples', 'Worked examples'], ['practise', 'Practise']].map(([k, l]) => `<a role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" href="#t/${t.id}/${k}">${l}</a>`).join('')}</nav>
   <div id="tabbody"></div>`, 'home');
   const body = $('#tabbody');
@@ -224,11 +233,11 @@ function pCheckup() {
   ${prev ? `<div class="note">You last did the check-up on ${new Date(prev.date).toLocaleDateString('en-GB')} and got ${Object.values(prev.res).filter(Boolean).length} out of ${Object.keys(prev.res).length}. Doing it again will replace that result.</div>` : ''}
   <div id="cu"><div class="actions"><button class="btn primary big" id="go">Start the check-up</button></div></div>`, 'checkup');
   $('#go').onclick = () => {
-    const order = AREAS.flatMap(a => TOPICS.filter(t => t.area === a.id));
+    const order = byWeight();
     practice($('#cu'), { total: order.length, next: n => makeQ(order[n]), skipLabel: 'I haven’t learnt this yet', finishLabel: 'See my results', onFinish: log => {
       P.checkup = { date: Date.now(), res: Object.fromEntries(log.map(l => [l.topic, l.ok])) }; saveP();
-      const miss = log.filter(l => !l.ok).map(l => topicById(l.topic));
-      $('#cu').innerHTML = summaryHTML(log, 'Check-up results') + (miss.length ? `<div class="next"><div><h2>Start with these ${miss.length} topics</h2><div class="chips">${miss.map(t => `<a class="chip focus" href="#t/${t.id}">${t.name}</a>`).join('')}</div></div><a class="btn primary big" href="#t/${miss[0].id}">Start: ${miss[0].name}</a></div>` : '<div class="next"><div><h2>Excellent</h2><p>Every topic right. Sit a mock exam to practise under timed conditions.</p></div><a class="btn primary big" href="#mock">Mock exam</a></div>');
+      const miss = byWeight(log.filter(l => !l.ok).map(l => topicById(l.topic)));
+      $('#cu').innerHTML = summaryHTML(log, 'Check-up results') + (miss.length ? `<div class="next"><div><h2>Start with these ${miss.length} topics</h2><p>In order: the ones worth the most marks first.</p><div class="chips">${miss.map(t => `<a class="chip focus" href="#t/${t.id}">${t.name}</a>`).join('')}</div></div><a class="btn primary big" href="#t/${miss[0].id}">Start: ${miss[0].name}</a></div>` : '<div class="next"><div><h2>Excellent</h2><p>Every topic right. Sit a mock exam to practise under timed conditions.</p></div><a class="btn primary big" href="#mock">Mock exam</a></div>');
       window.scrollTo(0, 0);
     } });
   };
@@ -236,10 +245,10 @@ function pCheckup() {
 
 function pQuick() {
   const w = { focus: 4, going: 3, new: 2, secure: 1 };
-  const pool = []; TOPICS.forEach(t => { for (let i = 0; i < w[status(t.id).k]; i++) pool.push(t); });
+  const pool = []; TOPICS.forEach(t => { for (let i = 0; i < w[status(t.id).k] * (4 - tierOf(t.id)); i++) pool.push(t); });
   const picks = []; let last = null;
   for (let i = 0; i < 10; i++) { let t; let g = 0; do { t = R.pick(pool); g++; } while (t === last && g < 20); picks.push(t); last = t; }
-  setPage(`<section class="hero small"><p class="eyebrow">Quick 10</p><h1>Mixed practice</h1><p class="lede">Ten questions from across the course, weighted towards the topics you find hardest.</p></section><div id="qk"></div>`, 'quick');
+  setPage(`<section class="hero small"><p class="eyebrow">Quick 10</p><h1>Mixed practice</h1><p class="lede">Ten questions from across the course, weighted towards the topics you find hardest and the ones worth the most marks.</p></section><div id="qk"></div>`, 'quick');
   practice($('#qk'), { total: 10, next: n => makeQ(picks[n]), onFinish: log => { $('#qk').innerHTML = summaryHTML(log, 'Quick 10 results') + '<div class="actions"><a class="btn primary" href="#quick" id="again">Another Quick 10</a><a class="btn ghost" href="#home">Home</a></div>'; $('#again').onclick = e => { e.preventDefault(); pQuick(); }; window.scrollTo(0, 0); } });
 }
 
@@ -248,19 +257,24 @@ let MOCK = null, TIMER = null;
 function loadMock() { try { const m = JSON.parse(localStorage.getItem(KEY + '-mock')); if (m && m.stage) return m; } catch (e) { } return null; }
 function saveMock() { try { if (MOCK) localStorage.setItem(KEY + '-mock', JSON.stringify(MOCK)); else localStorage.removeItem(KEY + '-mock'); } catch (e) { } }
 function buildSection(calc, target, maxQ) {
-  const by = { num: [], mea: [], dat: [] };
-  R.shuffle(TOPICS).forEach(t => { if (calc === false ? t.gens.some(g => !g.c) : true) by[t.area].push(t); });
-  const order = []; let more = true;
-  while (more) { more = false; for (const a of ['num', 'mea', 'dat']) if (by[a].length) { order.push(by[a].shift()); more = true; } }
-  const qs = []; let marks = 0;
-  for (let pass = 0; pass < 2 && marks < target; pass++) for (const t of order) {
-    if (marks >= target || qs.length >= maxQ) break;
-    if (pass === 1 && qs.filter(q => q.topic === t.id).length > 1) continue;
-    let q = calc === false ? makeQ(t, false) : (makeQ(t, true, { exam: pass === 0 }) || makeQ(t, undefined, { exam: pass === 0 }));
+  // topics drawn in proportion to the marks they carry in real TQUK papers; the biggest ones can come up twice
+  const wf = calc === false ? t => SEC_A_W[t.id] || 0.3 : t => Math.max(0.3, examW(t.id) - (SEC_A_W[t.id] || 0));
+  const cap = t => (calc === false ? (SEC_A_W[t.id] || 0) >= 3 : tierOf(t.id) === 1) ? 2 : 1;
+  const pool = TOPICS.filter(t => calc !== false || t.gens.some(g => !g.c));
+  const qs = []; let marks = 0, guard = 0;
+  while (marks < target && qs.length < maxQ && guard++ < 300) {
+    const t = weightedOrder(pool, wf)[0], n = qs.filter(q => q.topic === t.id).length;
+    if (n >= cap(t)) continue;
+    const q = calc === false ? makeQ(t, false) : (makeQ(t, true, { exam: n === 0 }) || makeQ(t, undefined, { exam: n === 0 }));
     if (!q) continue;
     q.calc = calc !== false; qs.push(q); marks += qMarks(q);
   }
-  return qs;
+  return qs.sort((a, b) => qMarks(a) - qMarks(b)); // short questions first, like the real paper
+}
+function weightedOrder(list, wf) {
+  const pool = list.map(t => ({ t, w: Math.max(0.05, wf(t)) })), out = [];
+  while (pool.length) { let r = Math.random() * pool.reduce((s, x) => s + x.w, 0), i = 0; while ((r -= pool[i].w) > 0 && i < pool.length - 1) i++; out.push(pool.splice(i, 1)[0].t); }
+  return out;
 }
 function pMock() {
   if (!MOCK) MOCK = loadMock();
@@ -277,7 +291,7 @@ function pMock() {
   ${hist.length ? `<h2 class="h2">Your recent mocks</h2><div class="tw"><table class="qt"><thead><tr><th>Date</th><th>Section A</th><th>Section B</th><th>Total</th></tr></thead><tbody>${hist.map(m => `<tr><th>${new Date(m.date).toLocaleDateString('en-GB')}</th><td>${m.a}/${m.aMax}</td><td>${m.b}/${m.bMax}</td><td><b>${Math.round((m.a + m.b) / (m.aMax + m.bMax) * 100)}%</b></td></tr>`).join('')}</tbody></table></div>` : ''}`, 'mock');
   $('#start').onclick = () => {
     const ta = Math.max(5, +$('#ta').value || 30), tb = Math.max(10, +$('#tb').value || 90);
-    MOCK = { stage: 'A', mins: { A: ta, B: tb }, qs: { A: buildSection(false, 15, 8), B: buildSection(true, 42, 15) }, ans: { A: {}, B: {} }, endAt: Date.now() + ta * 60000, started: Date.now() };
+    MOCK = { stage: 'A', mins: { A: ta, B: tb }, qs: { A: buildSection(false, 15, 10), B: buildSection(true, 42, 15) }, ans: { A: {}, B: {} }, endAt: Date.now() + ta * 60000, started: Date.now() };
     saveMock(); mockSection();
   };
 }
@@ -292,7 +306,7 @@ function mockSection() {
   wireChoices($('.examqs'), store);
   $('.examqs').addEventListener('input', store);
   $('#finish').onclick = () => {
-    const unanswered = qs.reduce((s, q, i) => s + q.parts.filter((p, j) => { const v = MOCK.ans[sec][i + '_' + j]; return v == null || String(v).replace('|', '').trim() === ''; }).length, 0);
+    const unanswered = qs.reduce((s, q, i) => s + q.parts.filter((p, j) => { const v = MOCK.ans[sec][i + '_' + j]; return v == null || String(v).replace(/[|~]/g, '').trim() === ''; }).length, 0);
     $('#fin').innerHTML = `<div class="confirm"><p>${unanswered ? `You have <b>${unanswered}</b> unanswered part${unanswered > 1 ? 's' : ''}. ` : ''}${sec === 'A' ? 'Once you move on you can’t come back to Section A.' : 'This will end the exam and mark your answers.'}</p><div class="row"><button class="btn primary" id="yes">${sec === 'A' ? 'Go to Section B' : 'Finish and mark'}</button><button class="btn ghost" id="no">Keep working</button></div></div>`;
     $('#yes').onclick = () => { store(); endSection(); };
     $('#no').onclick = () => mockSection();
@@ -314,28 +328,29 @@ function endSection() {
   const sc = { A: 0, B: 0 }, mx = { A: 0, B: 0 };
   ['A', 'B'].forEach(s => MOCK.qs[s].forEach((q, i) => {
     let all = true;
-    q.parts.forEach((p, j) => { const r = checkPart(p, MOCK.ans[s][i + '_' + j]); mx[s] += partMarks(p); if (r.ok) sc[s] += partMarks(p); else all = false; });
+    q.parts.forEach((p, j) => { const r = checkPart(p, MOCK.ans[s][i + '_' + j]); mx[s] += partMarks(p); if (r.ok) sc[s] += partMarks(p); else { all = false; sc[s] += r.got || 0; } });
     record(q.topic, all);
   }));
   MOCK.score = { a: sc.A, aMax: mx.A, b: sc.B, bMax: mx.B };
   P.mocks.push(Object.assign({ date: Date.now() }, MOCK.score)); saveP(); saveMock();
   mockResults();
 }
+function gotMarks(p, raw) { const r = checkPart(p, raw); return r.ok ? partMarks(p) : (r.got || 0); }
 function mockResults() {
   const m = MOCK.score, pct = Math.round((m.a + m.b) / (m.aMax + m.bMax) * 100);
   const by = {};
-  ['A', 'B'].forEach(s => MOCK.qs[s].forEach((q, i) => { const b = by[q.topic] || (by[q.topic] = { got: 0, max: 0 }); q.parts.forEach((p, j) => { b.max += partMarks(p); if (checkPart(p, MOCK.ans[s][i + '_' + j]).ok) b.got += partMarks(p); }); }));
+  ['A', 'B'].forEach(s => MOCK.qs[s].forEach((q, i) => { const b = by[q.topic] || (by[q.topic] = { got: 0, max: 0 }); q.parts.forEach((p, j) => { b.max += partMarks(p); b.got += gotMarks(p, MOCK.ans[s][i + '_' + j]); }); }));
   const weak = Object.keys(by).filter(id => by[id].got < by[id].max).sort((x, y) => by[x].got / by[x].max - by[y].got / by[y].max);
   setPage(`<section class="result"><p class="eyebrow">Mock exam results</p><h1>${m.a + m.b} out of ${m.aMax + m.bMax} <small>(${pct}%)</small></h1>
   <div class="stats"><div class="stat"><b>${m.a}<small>/${m.aMax}</small></b><span>Section A</span></div><div class="stat"><b>${m.b}<small>/${m.bMax}</small></b><span>Section B</span></div><div class="stat"><b>${pct}%</b><span>${pct >= 70 ? 'well on track' : pct >= 55 ? 'getting close' : 'keep practising'}</span></div></div>
-  <p class="note">This page marks the final answers only. The real exam also gives marks for correct working, so your real score could be higher if you show every step.</p>
+  <p class="note">This page marks the answers only. For “Is it enough?” questions, the right number earns all but the last mark, and Yes or No earns that last mark only when the number is right too. The real exam also gives marks for correct working, so your real score could be higher if you show every step.</p>
   ${weak.length ? `<div class="next"><div><h2>Topics to work on</h2><div class="chips">${weak.map(id => `<a class="chip focus" href="#t/${id}">${topicById(id).name} (${by[id].got}/${by[id].max})</a>`).join('')}</div></div></div>` : ''}
   <div class="actions"><button class="btn primary" id="newmock">Start a new mock</button><a class="btn ghost" href="#home">Home</a></div>
   <h2 class="h2">Go through your answers</h2></section>
   ${['A', 'B'].map(s => `<h3 class="sechead">Section ${s}</h3>` + MOCK.qs[s].map((q, i) => {
     const res = q.parts.map((p, j) => ({ r: checkPart(p, MOCK.ans[s][i + '_' + j]), raw: MOCK.ans[s][i + '_' + j] }));
-    return `<details class="qcard review ${res.every(x => x.r.ok) ? 'right' : 'wrong'}"><summary><span class="qnum">Q${i + 1}</span> ${topicById(q.topic).name} <span class="rs">${res.reduce((a, x, j) => a + (x.r.ok ? partMarks(q.parts[j]) : 0), 0)} / ${qMarks(q)}</span></summary>
-    <div class="stem">${q.stem}</div>${q.parts.map((p, j) => `<div class="part"><div class="pq">${q.parts.length > 1 ? `<span class="plab">(${'abcdef'[j]})</span>` : ''}<div>${p.q}</div></div><div class="fb ${res[j].r.ok ? 'good' : 'bad'}">Your answer: ${shownInput(p, res[j].raw)} ${res[j].r.ok ? '✓' : `✗ &nbsp;Correct answer: <b>${showAns(p)}</b>`}</div></div>`).join('')}
+    return `<details class="qcard review ${res.every(x => x.r.ok) ? 'right' : 'wrong'}"><summary><span class="qnum">Q${i + 1}</span> ${topicById(q.topic).name} <span class="rs">${res.reduce((a, x, j) => a + (x.r.ok ? partMarks(q.parts[j]) : (x.r.got || 0)), 0)} / ${qMarks(q)}</span></summary>
+    <div class="stem">${q.stem}</div>${q.parts.map((p, j) => `<div class="part"><div class="pq">${q.parts.length > 1 ? `<span class="plab">(${'abcdef'[j]})</span>` : ''}<div>${p.q}</div></div><div class="fb ${res[j].r.ok ? 'good' : 'bad'}">Your answer: ${shownInput(p, res[j].raw)} ${res[j].r.ok ? '✓' : `✗ ${res[j].r.got ? `(${res[j].r.got} of ${partMarks(p)} marks) ` : ''}&nbsp;Correct answer: <b>${showAns(p)}</b>`}</div></div>`).join('')}
     ${MOCK.ans[s]['w' + i] ? `<div class="mywork"><b>Your working:</b><pre>${esc(MOCK.ans[s]['w' + i])}</pre></div>` : ''}<div class="sol">${solutionHTML(q)}</div></details>`;
   }).join('')).join('')}`, 'mock');
   $('#newmock').onclick = () => { MOCK = null; saveMock(); pMock(); };
@@ -352,8 +367,9 @@ function pSheets() {
       <label class="tk"><input type="checkbox" id="ans" checked> Answers page</label>
       <label class="tk"><input type="checkbox" id="sol" checked> Include worked solutions</label>
     </div>
-    <div class="actions"><button class="btn primary" type="submit">Make worksheet</button></div>
+    <div class="actions"><button class="btn primary" type="submit">Make worksheet</button><button class="btn ghost" type="button" id="top6">Tick the top 6 topics only</button></div>
   </form><div id="sheetout"></div>`, 'sheets');
+  $('#top6').onclick = () => { const top = byWeight().filter(t => tierOf(t.id) === 1).map(t => t.id); $$('input[name=t]').forEach(x => { x.checked = top.includes(x.value); }); $$('.all').forEach(x => { x.checked = false; }); };
   $$('.all').forEach(c => c.onchange = () => $$(`input[name=t]`).forEach(x => { if (topicById(x.value).area === c.dataset.a) x.checked = c.checked; }));
   $('#sf').onsubmit = e => {
     e.preventDefault();
@@ -367,7 +383,7 @@ function pSheets() {
     for (let i = 0; i < n; i++) { if (!pool.length) pool = R.shuffle(usable); qs.push(makeQ(pool.shift(), calc)); }
     const withAns = $('#ans').checked, withSol = $('#sol').checked;
     const html = `<div class="sheet"><div class="sheethead"><div><h1>Functional Maths Level 2 · Practice</h1><p class="sheetsub">${[...new Set(qs.map(q => topicById(q.topic).name))].join(' · ')}</p></div><div class="namebox">Name ____________________<br>Date ____________________</div></div>
-      ${qs.map((q, i) => `<div class="pq-print"><p class="qno">Question ${i + 1} <span>${q.calc ? 'Calculator allowed' : 'No calculator'} · ${qMarks(q)} mark${qMarks(q) > 1 ? 's' : ''}</span></p>${q.stem}${q.parts.map((p, j) => `<p class="ppart">${q.parts.length > 1 ? `(${'abcdef'[j]}) ` : ''}${p.q}</p>${p.type === 'choice' ? `<ul class="choicelist">${p.options.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}`).join('')}<div class="workspace"></div><p class="ansline">Answer${q.parts.length > 1 ? 's' : ''}: ____________________________</p></div>`).join('')}
+      ${qs.map((q, i) => `<div class="pq-print"><p class="qno">Question ${i + 1} <span>${q.calc ? 'Calculator allowed' : 'No calculator'} · ${qMarks(q)} mark${qMarks(q) > 1 ? 's' : ''}</span></p>${q.stem}${q.parts.map((p, j) => `<p class="ppart">${q.parts.length > 1 ? `(${'abcdef'[j]}) ` : ''}${p.q}</p>${p.type === 'choice' ? `<ul class="choicelist">${p.options.map(x => `<li>${x}</li>`).join('')}</ul>` : p.type === 'decide' ? printDecide(p) : ''}`).join('')}<div class="workspace"></div><p class="ansline">Answer${q.parts.length > 1 ? 's' : ''}: ____________________________</p></div>`).join('')}
       ${withAns ? `<div class="answers"><h2>Answers</h2>${qs.map((q, i) => `<div class="ansitem"><p class="qno">Question ${i + 1}: ${q.parts.map((p, j) => (q.parts.length > 1 ? `(${'abcdef'[j]}) ` : '') + showAns(p)).join(' · ')}</p>${withSol ? `<ol class="wsteps">${q.steps.map(s => `<li>${s}</li>`).join('')}</ol>` : ''}</div>`).join('')}</div>` : ''}
       <p class="sheetfoot">Version ${VERSION}</p></div>`;
     out.innerHTML = `<div class="actions"><button class="btn primary" id="print">Print worksheet</button><button class="btn ghost" id="remake">New questions</button></div><div class="preview">${html}</div>`;
@@ -387,6 +403,15 @@ function pToolkit() {
   <tr><th>Section B</th><td>Calculator allowed. Around three quarters of the marks. Longer real-life problems that mix topics, often ending with a decision.</td></tr>
   <tr><th>Format</th><td>On paper or on screen, depending on your centre. On screen, there is a built-in calculator for Section B, and you type working into answer boxes.</td></tr>
   <tr><th>Timing</th><td>Commonly about 30 minutes for Section A and about 90 minutes for Section B. Check the exact times with your provider.</td></tr></tbody></table></div>
+  <h3>Where the marks are</h3>
+  <p>Average marks per 60-mark paper, from five real TQUK Level 2 papers. The pass mark on those papers was 34 or 35.</p>
+  <div class="tw"><table class="qt"><thead><tr><th>Topic</th><th>Marks per paper</th></tr></thead><tbody>${byWeight().map(t => `<tr><th><a href="#t/${t.id}">${t.name}</a></th><td>${examW(t.id) ? fmt(examW(t.id)) : '0'}</td></tr>`).join('')}</tbody></table></div>
+  <h3>Questions TQUK sets again and again</h3>
+  <ul><li><b>The last question (about 6 marks):</b> the area of a floor, garden or patio, an average (median or mode) from a price list, then the cost of the job and whether the budget is enough.</li>
+  <li><b>Formula with a decision (about 5 marks):</b> work something out (often a volume or a time), put it into a formula you are given, then decide.</li>
+  <li><b>Comparing data (about 4 marks):</b> work out the mean and range for two groups and say whether two claims are right.</li>
+  <li><b>Contexts that keep coming back:</b> tins of paint (round up), savings with compound interest, fencing round a circular pond, sale signs, recipes.</li></ul>
+  <div class="tip"><strong>“Is it correct? Show how you decide.”</strong> About 7 marks a paper hang on a decision. Always write <b>Yes or No</b> and <b>the number that proves it</b>: “No. The paint costs £148.50, which is more than £140.” A yes or no on its own gets no marks.</div>
   <h3>How to answer a real-life problem</h3>
   <ol class="steps"><li><b>Read</b> the whole question twice. Underline the numbers and what it actually asks.</li><li><b>Plan</b>: what do I need to work out first? Write a short list.</li><li><b>Calculate</b>, writing every step with a label (“Cost of paint = …”).</li><li><b>Check</b>: does it make sense? Estimate, or work backwards.</li><li><b>Answer the question</b> in words, with units: “Yes, she can afford it. She will have £12.40 left.”</li></ol>
   <div class="tip"><strong>Most marks are for working.</strong> A wrong final answer with clear working can still earn most of the marks. A right answer with no working may get only one.</div>
